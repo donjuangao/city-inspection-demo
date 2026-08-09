@@ -75,7 +75,7 @@
   function q3Gaps() {
     var gaps = coverageGaps();
     var body = gaps.length
-      ? '<div class="tiny" style="margin-bottom:6px">' + gaps.length + ' 处设施无绑定传感器/相机 —— 覆盖缺口:AI 无产出时,无法区分「模型漏报」与「覆盖缺失」(设计档 §4③)。</div>' +
+      ? '<div class="tiny" style="margin-bottom:6px">' + gaps.length + ' 处设施无绑定传感器/相机 —— 覆盖缺口:AI 无产出时,无法区分「模型漏报」与「覆盖缺失」。</div>' +
       '<div class="row wrap" style="gap:6px">' + gaps.map(function (f) {
         return '<a class="badge badge-amber" href="#/m3/facility/' + f.id + '">' + UI.esc(f.id) + ' · ' + UI.esc(f.block) + '</a>';
       }).join('') + '</div>'
@@ -85,7 +85,7 @@
   }
 
   function heatMap() {
-    return '<div class="card"><div class="sec-title">覆盖热区示意(HW-17)</div>' +
+    return '<div class="card"><div class="sec-title">覆盖热区示意</div>' +
       '<div style="max-width:360px">' + UI.evidenceSvg('heat') + '</div>' +
       '<div class="tiny" style="margin-top:4px">示意用色深浅代表观测覆盖密度;非真实地理热力图,正式版由传感器在线率 + 移动网轨迹密度生成。</div></div>';
   }

@@ -36,10 +36,10 @@
   }
   function auditSection(au) {
     var rateNote = '<div class="card card-tight">' +
-      '<div class="sec-title">抽审参数(设计档 §2.5⑧;全假设值,冷启动 × 2)</div>' +
+      '<div class="sec-title">抽审参数(全假设值,冷启动 × 2)</div>' +
       '<div class="small">记账道 ' + UI.assume('5%') + ' · 自动升格道 ' + UI.assume('10%') + ' · 机械驳回 ' + UI.assume('5%') +
       ' · 批量确认件 ' + UI.assume('15%') + ' · 复验通过件 ' + UI.assume('10%') + ' · 抽审时限 ' + UI.assume('48h') + '</div>' +
-      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=DMT 类目开关,R72)。</div>' +
+      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=DMT 类目开关)。</div>' +
       '</div>';
     if (!au.length) {
       return '<h3>抽审队列</h3>' + rateNote + '<div class="tiny" style="margin-top:8px">暂无抽审件。</div>';
@@ -73,7 +73,7 @@
       '<div class="small muted">' + loc + ' · 联系:' + UI.esc(r.contact || '—') + ' · 回执 ' + UI.esc(r.receipt || '—') + '</div>' +
       (r.mergedInto
         ? '<div class="small" style="margin-top:4px">合并标:<a href="#/m1/clue/' + UI.esc(r.mergedInto) + '">→ 线索 ' + UI.esc(r.mergedInto) + '</a>(去重合并,证据叠加)</div>'
-        : '<div class="tiny" style="margin-top:4px">进人工甄别并入队列,未直接进应急(§2.4 P1)</div>') +
+        : '<div class="tiny" style="margin-top:4px">进人工甄别并入队列,未直接进应急</div>') +
       '<div class="tiny" style="margin-top:2px">催办计数:' + (r.urges || 0) + '</div>' +
       (r.status === '已驳回'
         ? '<div class="tiny" style="margin-top:4px">驳回理由(上报人可见):' + UI.esc(r.rejectReason || '') + '</div>'
@@ -84,14 +84,14 @@
             return '<button type="button" class="btn' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
               ' data-act="public_reject" data-p="' + UI.attr({ reportId: r.id, reason: rs }) + '">甄别驳回:' + UI.esc(rs) + '</button>';
           }).join(' ') +
-          '<span class="tiny" style="margin-left:6px">(E3 无效分支:驳回理由上报人可见)</span></div>'
+          '<span class="tiny" style="margin-left:6px">(甄别无效即驳回,理由上报人可见)</span></div>'
         : '') +
       (ev ? '<div class="sep"></div><div class="ev-grid">' + ev + '</div>' : '') +
       '</div>';
   }
   function publicSection(pr) {
     var note = '<div class="card card-tight">' +
-      '<div class="small">防滥用三件(设计档 §2.4 P1):同点位去重合并 / 单设备限频 / 重复无效上报降权;上报先入本清单人工甄别升格,不直接进应急。</div>' +
+      '<div class="small">防滥用三件:同点位去重合并 / 单设备限频 / 重复无效上报降权;上报先入本清单人工甄别升格,不直接进应急。</div>' +
       '</div>';
     if (!pr.length) {
       return '<h3 style="margin-top:16px">公众上报并入清单</h3>' + note +

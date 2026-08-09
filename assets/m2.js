@@ -124,13 +124,13 @@
       ]);
     if (al.status !== '成立') {
       html += '<div class="sep"></div>' + UI.banner('warn',
-        '已撤销:理由「' + UI.esc(al.revokeReason || '') + '」· ' + UI.esc(al.revokeT || '') + ' —— 记录不删除,状态置「已撤销」(§2.5⑥)。');
+        '已撤销:理由「' + UI.esc(al.revokeReason || '') + '」· ' + UI.esc(al.revokeT || '') + ' —— 记录不删除,状态置「已撤销」。');
     } else {
       var reasonId = 'm2-rv-reason-' + al.id, eviId = 'm2-rv-evi-' + al.id, btnId = 'm2-rv-btn-' + al.id;
       var initP = { alertId: al.id, reason: '', evidence: '' };
       var chk = S.check('revoke', initP);
       html += '<div class="sep"></div>' +
-        '<div class="sec-title">撤销告警(需主管权限;告警→撤销,不删除记录;R34/§2.5⑥)</div>' +
+        '<div class="sec-title">撤销告警(需主管权限;告警→撤销,不删除记录)</div>' +
         '<label class="fl" for="' + reasonId + '">撤销理由</label>' +
         '<input type="text" id="' + reasonId + '" placeholder="如:复核后确认为误判 / 现场复查无异常" oninput="M2.syncRevoke(\'' + al.id + '\')">' +
         '<label class="fl" for="' + eviId + '">附证据说明</label>' +
@@ -145,7 +145,7 @@
   }
   function renderAlerts(curId) {
     var alerts = S.get().alerts.slice().reverse();
-    var note = '<div class="tiny" style="margin-bottom:6px">仅展示复核员「确认」后成立的告警——确认前只是「线索」,不在此列(术语分权,R32)。</div>';
+    var note = '<div class="tiny" style="margin-bottom:6px">仅展示复核员「确认」后成立的告警——确认前只是「线索」,不在此列(术语分权)。</div>';
     var table = alerts.length
       ? '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>告警号</th><th>设施</th><th>业务线</th><th>状态</th><th>确认</th><th>关联工单</th></tr></thead><tbody>' +
         alerts.map(function (al) { return alertRow(al, curId); }).join('') + '</tbody></table></div>'
@@ -186,9 +186,9 @@
   function renderRecon() {
     var items = S.get().recon || [];
     var head = '<div class="card card-tight">' +
-      '<div class="sec-title">裁决规则(§2.3b④)</div>' +
+      '<div class="sec-title">裁决规则</div>' +
       '<div class="small">处置状态以客户系统为准,巡检定性以我方为准;异常 ' +
-      UI.assume('24h', '假设值:对账周期,试点首周与客户核实后按区可配(R48)') +
+      UI.assume('24h', '假设值:对账周期,试点首周与客户核实后按区可配') +
       ' 内主管人工裁定,裁定=动作入日志。M1-3 期以人工日对账清单先行(P0-lite),自动对账 P1。</div>' +
       '</div>';
     if (!items.length) {
@@ -252,7 +252,7 @@
     }).join('');
     var body = t.suspended
       ? UI.banner('warn', '已挂起:原因「' + UI.esc(t.suspendReason || '') + '」(' + UI.esc(t.suspendT || '') + ');SLA 停表,班组已释放;条件解除后回队重派——下方「改派/合并/拆单」表对本单重新指派班组即完成回补。')
-      : ('<div class="sep"></div><div class="sec-title">值班长可抢占:第二井盖应急件承接池无空闲班组时,挂起本单释放班组(D6/D7)</div><div class="act-panel">' + btnsHtml + '</div>');
+      : ('<div class="sep"></div><div class="sec-title">值班长可抢占:第二井盖应急件承接池无空闲班组时,挂起本单释放班组</div><div class="act-panel">' + btnsHtml + '</div>');
     return '<div class="card" style="border-color:var(--amberw)">' +
       '<div class="card-hd"><h3>T9 应急抢占演示 · ' + UI.esc(t.id) + '</h3>' + UI.badge(t.type, 'blue') + '</div>' +
       '<div class="small muted">' + UI.addr(t.facility) + ' · 承接班组 ' + (cw ? UI.esc(cw.name) : '<span class="faint">—</span>') + '</div>' +
@@ -312,7 +312,7 @@
   function renderDispatch() {
     var crews = S.get().crews;
     return '<div class="card card-tight">' +
-      '<div class="small">概念分立(§0.8.5):<b>撤回</b> = 事件不成立(线索转驳回流,召回班组);<b>改派</b> = 事件成立但派错了承接方(单子换人,事件不动)。以下三件均为显名动作,理由入日志。不新增「调度员」角色——调度职能落在复核主管(常规改派)+ 区值班长(应急仲裁)。</div>' +
+      '<div class="small">概念分立:<b>撤回</b> = 事件不成立(线索转驳回流,召回班组);<b>改派</b> = 事件成立但派错了承接方(单子换人,事件不动)。以下三件均为显名动作,理由入日志。不新增「调度员」角色——调度职能落在复核主管(常规改派)+ 区值班长(应急仲裁)。</div>' +
       '</div>' +
       '<div class="sec-title" style="margin-top:10px">班组负载卡(在办/在途/空闲)</div>' +
       '<div class="grid3">' + crews.map(crewCard).join('') + '</div>' +

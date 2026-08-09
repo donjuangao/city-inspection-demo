@@ -59,9 +59,9 @@
   function recallBranch(tk) {
     if (!tk) return '尚未产生工单,撤回仅回收线索。';
     var cw = tk.crew ? UI.crewName(tk.crew) : '(未指派)';
-    if (tk.state === '已到场') return '班组 ' + cw + ' 已到场 → 撤回转「现场核实」:确有异常重新确认,无异常方撤(D1 分支②)。';
-    if (tk.state === '作业中' || tk.state === '已开井') return '班组 ' + cw + ' 已开井 → 不能一撤了之,转「现场收尾单」:恢复原状 + 安全确认后销单(D1 分支③)。';
-    return '班组 ' + cw + ' 在途 → 班组端撤单通知,返程或转下一单(D1 分支①);白跑不计班组考核,班组可申诉。';
+    if (tk.state === '已到场') return '班组 ' + cw + ' 已到场 → 撤回转「现场核实」:确有异常重新确认,无异常方撤。';
+    if (tk.state === '作业中' || tk.state === '已开井') return '班组 ' + cw + ' 已开井 → 不能一撤了之,转「现场收尾单」:恢复原状 + 安全确认后销单。';
+    return '班组 ' + cw + ' 在途 → 班组端撤单通知,返程或转下一单;白跑不计班组考核,班组可申诉。';
   }
 
   /* ============ 弹层规格(理由码/原因码全部走选择器,零自由文本)============ */
@@ -69,7 +69,7 @@
     reject: {
       title: '驳回线索 · 必选六原因码之一',
       action: 'reject', submit: '提交驳回',
-      intro: function () { return '驳回 ≠ 删除:线索转归档并按原因码回流各自消费者(R45a);高危件驳回自动拘进主管抽审(R34)。'; },
+      intro: function () { return '驳回 ≠ 删除:线索转归档并按原因码回流各自消费者;高危件驳回自动拘进主管抽审。'; },
       fields: [
         { k: 'code', label: '驳回原因码(六码)', opts: rejectOpts() },
         { k: 'note', label: '备注(原因码⑥ 必填)', when: function (f) { return f.code === '⑥'; }, opts: [['转人工周审', '转人工周审(周会逐条过)'], ['规则组待判', '规则组待判(判据边界不清)']] }
@@ -217,14 +217,14 @@
 
     return '<div class="card card-tight">' +
       '<div class="card-hd"><h2>1 · 复核工作台 —— 定性签字的地方</h2>' +
-      '<span class="tiny">复核员 90% 的时间在这一页(设计档 §0.7 路由)</span></div>' +
+      '<span class="tiny">复核员 90% 的时间在这一页</span></div>' +
       '<div class="grid3">' +
-      '<div class="small"><b>线索 vs 告警</b><div class="tiny">AI 与规则只产「线索」;人确认签字后才叫「告警」—— 定性权永远在人(R32)。</div></div>' +
+      '<div class="small"><b>线索 vs 告警</b><div class="tiny">AI 与规则只产「线索」;人确认签字后才叫「告警」—— 定性权永远在人。</div></div>' +
       '<div class="small"><b>双闸</b><div class="tiny">第一闸 = AI 识别;第二闸 = 机械证据校验(硬编码判据逐项打钩)。两闸都过的应急件才有资格走快车道。</div></div>' +
-      '<div class="small"><b>快车道 = 先派后审</b><div class="tiny">派单是处置调度,不是定性;人 ' + UI.assume('15 分钟', '快车道并行复核窗 15 分钟=假设值,区可配(R48)') + ' 内并行复核,撤回可召回。</div></div>' +
+      '<div class="small"><b>快车道 = 先派后审</b><div class="tiny">派单是处置调度,不是定性;人 ' + UI.assume('15 分钟', '快车道并行复核窗 15 分钟=假设值,区可配') + ' 内并行复核,撤回可召回。</div></div>' +
       '</div>' +
       '<div class="sep"></div>' +
-      '<div class="tiny">跨线仲裁默认序(R33):<b>井盖应急 &gt; 管网紧急 &gt; 路面急修</b>;本线内快车道件再置顶。区值班主管可临时置顶改序,动作留痕。本页 SLA / 阈值数字均为' + UI.assume('假设值', '全部 SLA 与阈值为演示假设值,试点首周与客户核实后按区可配参数(R48)调整') + '。</div>' +
+      '<div class="tiny">跨线仲裁默认序:<b>井盖应急 &gt; 管网紧急 &gt; 路面急修</b>;本线内快车道件再置顶。区值班主管可临时置顶改序,动作留痕。本页 SLA / 阈值数字均为' + UI.assume('假设值', '全部 SLA 与阈值为演示假设值,试点首周与客户核实后按区可配参数调整') + '。</div>' +
       '</div>' +
       hint +
       '<div class="tabs">' + tabs + '</div>';
@@ -262,8 +262,8 @@
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:220px">' +
       UI.kv([
-        ['并行复核窗', '截止 ' + esc(c.reviewEnd || '—') + ' · ' + UI.sla(c.reviewEnd || c.slaDeadline) + ' ' + UI.assume('(窗长 15 分钟)', '15 分钟并行复核窗 = 假设值(R44/R78);超时走三级升级'), true],
-        ['准入硬条件', '应急级 + 传感器硬证据(已认证设备签名报文)+ 机械四项全过 + 该类目快车道开关开启'],
+        ['并行复核窗', '截止 ' + esc(c.reviewEnd || '—') + ' · ' + UI.sla(c.reviewEnd || c.slaDeadline) + ' ' + UI.assume('(窗长 15 分钟)', '15 分钟并行复核窗 = 假设值;超时走三级升级'), true],
+        ['准入硬条件', '应急级 + [传感器硬证据(已认证设备签名报文)或 高置信 + 机械四项全过] + 该类目快车道开关开启'],
         ['当前工单', tk ? (esc(tk.id) + ' · ' + esc(tk.state) + ' · ' + esc(cw ? cw.name : '—')) : '—'],
         ['撤回后果', esc(recallBranch(tk))]
       ]) +
@@ -294,9 +294,9 @@
       '<div class="grow" style="min-width:230px">' +
       UI.kv([
         ['车道', '应急人审档(加急队列人工单条确认)'],
-        ['SLA 倒计时', UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline || '—') + ' ' + UI.assume('(档长 30 分钟)', '应急人审档 SLA 30 分钟 = 假设值(R44),区可配'), true],
+        ['SLA 倒计时', UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline || '—') + ' ' + UI.assume('(档长 30 分钟)', '应急人审档 SLA 30 分钟 = 假设值,区可配'), true],
         ['超时', '三级升级:复核员 → 复核主管 → 区值班长;并发只读预警(不定性、不派工)'],
-        ['兜底', '本档确认与驳回<b>都</b>拘进主管抽审(R34)', true]
+        ['兜底', '本档确认与驳回<b>都</b>拘进主管抽审', true]
       ]) + '</div>' +
       '<div style="width:220px;flex:none">' + UI.evidenceGrid(c.evidence.slice(0, 1)) + '</div>' +
       '</div>' +
@@ -319,20 +319,20 @@
     var body =
       '<div class="banner banner-warn"><span class="banner-ico">!</span><span>' +
       '<b>机械校验硬失败,但高危件零自动归档</b> —— 未过项:' + esc(bad || '—') +
-      '。证据卡<b>置顶</b>,转加急人工驳回确认(线卡 B / §2.7 验收线)。</span></div>' +
+      '。证据卡<b>置顶</b>,转加急人工驳回确认(高危零自动归档验收线)。</span></div>' +
       (done ? UI.banner('warn', '<b>高危驳回已拘主管抽审</b> —— ' + esc(c.id) + ' 原因码 ' + esc(c.rejectCode || '') +
-        ';复核员把真异常驳回成树影时,由抽审发现(R34 / 反审 F5)。') : '') +
+        ';复核员把真异常驳回成树影时,由抽审发现。') : '') +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div style="width:240px;flex:none">' + UI.evidenceGrid(c.evidence.slice(0, 1)) + '</div>' +
       '<div class="grow" style="min-width:240px">' + UI.checksCard(c) +
-      '<div class="tiny" style="margin-top:6px">诚实边界(R71):树影这类<b>物理上持续存在的假目标</b>,多帧复现与几何域判据跟第一闸高度相关,机械闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。</div>' +
+      '<div class="tiny" style="margin-top:6px">诚实边界:树影这类<b>物理上持续存在的假目标</b>,多帧复现与几何域判据跟第一闸高度相关,机械闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。</div>' +
       '</div></div>' +
       '<div class="sep"></div>' +
       '<div class="row wrap"><div class="grow">' +
       pw(UI.actionPanel([{ action: 'reject', params: { clueId: c.id, code: '①' }, label: '认可机械判定 · 驳回(码① 拍摄干扰)' }]) +
       modalBtn('其他原因码驳回…', 'reject', c.id)) +
       '</div><div class="grow">' +
-      pw(modalBtn('推翻机械判定(D4 · 理由码必填)', 'overrule', c.id, 'btn-danger')) +
+      pw(modalBtn('推翻机械判定(理由码必填)', 'overrule', c.id, 'btn-danger')) +
       '<div class="tiny">推翻 = 线索复活进人审 + 自动触发抽审;误杀样本回流规则组。</div>' +
       '</div></div>';
     return card('机械驳回置顶 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('机械驳回', 'blue'),
@@ -382,7 +382,7 @@
       '<div class="row wrap" style="align-items:center;margin-bottom:8px">' +
       '<label class="chk"><input type="checkbox" data-pick="*"' + (allOn ? ' checked' : '') + '> 全选本批</label>' +
       '<button type="button" class="btn btn-sm" data-ui="expand">' + (M.expanded ? '✓ 缩略证据已展开' : '展开批内缩略证据') + '</button>' +
-      '<span class="tiny">已选 <b>' + picked.length + '</b> 条 · 单批上限 ' + UI.assume('20 条', '单批 ≤20 条 = 提交校验(设计档 §4 批量确认行),假设值') + ' · 批量件抽审率 ' + UI.assume('15%', '批量确认件抽审率 15% = 假设值') + '</span>' +
+      '<span class="tiny">已选 <b>' + picked.length + '</b> 条 · 单批上限 ' + UI.assume('20 条', '单批 ≤20 条 = 提交校验,假设值') + ' · 批量件抽审率 ' + UI.assume('15%', '批量确认件抽审率 15% = 假设值') + '</span>' +
       '<span class="top-spacer"></span>' +
       '</div>' +
       pw(UI.actionPanel([{ action: 'batch_confirm', params: { clueIds: picked, expanded: M.expanded }, label: '批量确认(' + picked.length + ' 条)→ 并入养护计划', cls: 'btn-primary' }])) +
@@ -414,7 +414,7 @@
         ['调查案#', esc(k.id) + ' · ' + esc(k.dma)],
         ['关于', UI.addr(k.facility), true],
         ['观察窗', esc(k.window || '—')],
-        ['判据', esc(k.basis || '—') + ' ' + UI.assume('(y% / M 次 = 假设值)', '偏差阈值 y% 与连续次数 M = 假设值,试点首周实测标定(线卡 C / HW-01)'), true],
+        ['判据', esc(k.basis || '—') + ' ' + UI.assume('(y% / M 次 = 假设值)', '偏差阈值 y% 与连续次数 M = 假设值,试点首周实测标定'), true],
         ['旁证', '自动调度视觉旁证 + 现场核查(听漏 / 分段关阀)—— 视觉在本线是<b>弱辅助</b>:湿 ≠ 漏', true],
         ['流量回归', k.flowGreen ? UI.badge('绿标已亮 · 水量平衡回落阈值内', 'green') : UI.badge('未回归基线', 'grey'), true],
         ['核查工单', tk ? (esc(tk.id) + ' · ' + esc(tk.state) + ' · ' + esc(UI.crewName(tk.crew))) : '—']
@@ -476,7 +476,7 @@
       all.filter(function (c) { return c.lane === '应急人审档' && isOpen(c); }).forEach(function (c) { html += urgentReviewCard(c); });
       all.filter(function (c) { return c.mechFail || (c.lane === '机械驳回' && isHigh(c)); }).forEach(function (c) { html += mechRejectCard(c); });
       html += stormCard();
-      html += card('井盖 / 排水线队列 · ' + all.length + ' 条(R33 仲裁序:快车道件最顶,应急件置顶)',
+      html += card('井盖 / 排水线队列 · ' + all.length + ' 条(仲裁序:快车道件最顶,应急件置顶)',
         queueTable(all, '暴雨预警期:雨水口养护件整体升一档(线卡 B「养护→雨前急修」);井筒淤积对视觉与液位<b>皆盲</b>,由雨前清掏核查任务型兜底。'));
       html += healthCard(L);
 
@@ -493,7 +493,7 @@
         '<tr><td>自动升格</td><td>养护级 × 高置信 × 机械全过</td><td><b>免人工</b>,自动并入周期养护计划(周批工单)</td><td>事后抽审;冷启动关闭,按数据判据开启</td></tr>' +
         '<tr><td>批量半审</td><td>养护级 × 中低置信</td><td>复核员批量确认视图(机械校验做辅助列)</td><td>抽审;可存疑归档</td></tr>' +
         '<tr><td>单条必审</td><td>急修级(<b>不看置信度</b>)</td><td>人工确认 → 急修工单,确认 SLA ' + UI.assume('4 小时', '路面急修确认 SLA 4 小时 = 假设值,区可配') + '</td><td>高危确认 / 驳回拘抽审</td></tr>' +
-        '<tr><td>机械驳回</td><td>机械硬失败(不在路网 / 多帧不复现 / 重复)</td><td>自动归档,原因码自动填</td><td>影子池抽样标注</td></tr>' +
+        '<tr><td>机械驳回</td><td>机械硬失败(不在路网 / 多帧不复现 / 重复)</td><td>自动归档,原因码自动填</td><td>待核查池抽样标注(批量车道)</td></tr>' +
         '</tbody></table>');
 
     } else {
@@ -549,14 +549,14 @@
 
     left += card('机械校验闸(第二闸)', UI.checksCard(c) +
       '<div class="tiny" style="margin-top:6px">校验项<b>变长按线</b>:路面 5 项 / 井盖 4 项 / 管网 3 项;每项留痕规则包版本。' +
-      '机械闸实际拦截面 = 定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行;树影类持续假目标由人驳回回流(R71 诚实边界)。</div>');
+      '机械闸实际拦截面 = 定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行;树影类持续假目标由人驳回回流(诚实边界)。</div>');
 
     var covRows = (f && f.sensors || []).map(function (sid) {
       var sn = S.find.sensor(sid);
       return sn ? ('<tr><td><b>' + esc(sn.id) + '</b></td><td>' + esc(sn.type) + '</td><td>' +
         UI.badge(sn.health, sn.health === '正常' ? 'green' : 'amber') + '</td><td class="tiny">' + esc(sn.window || '') + '</td></tr>') : '';
     }).join('');
-    left += card('观测覆盖窗 · 漏报正面答(R35)',
+    left += card('观测覆盖窗 · 漏报正面答',
       (covRows ? '<table class="tb"><thead><tr><th style="width:110px">数据源点位</th><th style="width:120px">类型</th><th style="width:110px">自检</th><th>覆盖窗</th></tr></thead><tbody>' + covRows + '</tbody></table>'
         : '<div class="tiny">本设施<b>无传感器绑定</b>(观测覆盖缺口)—— 事故回查时可据此区分「模型漏报」与「覆盖缺失」。</div>') +
       '<div class="tiny" style="margin-top:6px">不承诺不漏报;承诺每次定性可追溯:该点位全部线索与处置记录 + 该点位观测覆盖窗。</div>');
@@ -584,7 +584,7 @@
       modalBtn('快车道撤回 · 召回班组(D1)', 'recall', c.id, 'btn-danger');
 
     if (tk) {
-      acts += '<div class="sep"></div><div class="sec-title">复验人裁(P5 · 永不默认打回)</div>' +
+      acts += '<div class="sep"></div><div class="sec-title">复验人裁(永不默认打回)</div>' +
         UI.actionPanel([{ action: 'verify_pass', params: { ticketId: tk.id }, label: '复验人裁 · 合格(闭环)', cls: 'btn-ok' }]) +
         modalBtn('复验打回(须附对比证据)', 'verifyreject', tk.id, '', c.id);
     }
@@ -637,7 +637,7 @@
     return '<div class="card card-tight"><div class="act-row">' +
       '<a class="btn btn-sm" href="' + back + '">← 返回 ' + esc(c.line) + '线队列</a>' +
       '<span class="tiny" style="align-self:center">路由 #/m1/clue/' + esc(c.id) + '</span></div></div>' +
-      card('下游对象 · 处置真源在客户系统(R67)', relate) +
+      card('下游对象 · 处置真源在客户系统', relate) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:320px">' + left + '</div>' +
       '<div style="width:352px;flex:none;min-width:300px">' + right + '</div>' +

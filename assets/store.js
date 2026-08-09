@@ -105,7 +105,7 @@
 
   /* ---- 复核员动作族 ---- */
   A.view_evidence = {
-    label: '查看证据卡', actors: ['*'], hint: '高危件确认前的强制前置(R53)',
+    label: '查看证据卡', actors: ['*'], hint: '高危件确认前的强制前置',
     v: function (s, p) { return clueOf(p.clueId) ? null : '线索不存在'; },
     run: function (s, p) { var c = clueOf(p.clueId); c.evidenceViewed = true; return '查看证据卡:' + c.id + '(高危件确认前置已满足)'; }
   };
@@ -136,13 +136,13 @@
         s.tickets.push(tk); c.ticketId = tk.id;
         out.push('告警 ' + al.id + ' 成立;副作用开' + tk.type + ' ' + tk.id + '(镜像 ' + tk.mirror + ')');
       }
-      if (isHigh(c)) { hold('高危确认拘审', c.id, '高危确认件全量拘进主管抽审(R34)'); out.push('高危确认已拘主管抽审'); }
+      if (isHigh(c)) { hold('高危确认拘审', c.id, '高危确认件全量拘进主管抽审'); out.push('高危确认已拘主管抽审'); }
       return '确认 ' + c.id + ':' + out.join(';');
     }
   };
 
   A.reject = {
-    label: '驳回', actors: ['区复核员', '复核主管'], hint: '必选六驳回原因码之一(R45a),按码回流各自消费者',
+    label: '驳回', actors: ['区复核员', '复核主管'], hint: '必选六驳回原因码之一,按码回流各自消费者',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
       if (c.status !== 'open') return '线索非「待核查」态,不可驳回';
@@ -154,7 +154,7 @@
       var def = w.DATA.dict.rejectCodes.filter(function (r) { return r.code === p.code || r.name === p.code; })[0];
       var out = '驳回 ' + c.id + ':原因码 ' + def.code + ' ' + def.name + ' → 回流「' + def.to + '」';
       if (isHigh(c)) {
-        hold('高危驳回拘审', c.id, '高危驳回件拘进主管抽审(R34)');
+        hold('高危驳回拘审', c.id, '高危驳回件拘进主管抽审');
         banner('warn', '高危驳回已拘主管抽审:' + c.id + '(' + def.code + ' ' + def.name + ')', 'm1');
         out += ';高危驳回已拘主管抽审';
       }
@@ -425,7 +425,7 @@
     label: '类目快车道开关', actors: ['DMT'], hint: '关 = 安全侧动作即时生效 + 强制通知横幅 + 区申诉通道;开 = 需数据判据',
     v: function (s, p) {
       if (!p.cat) return '未指定类目';
-      if (p.on && !p.dataBasis) return '重开需按数据判据(R42)填写批准依据';
+      if (p.on && !p.dataBasis) return '重开需按数据判据填写批准依据';
       if (!p.on && !p.reason) return '关闭需填写理由(进动作日志)';
       return null;
     },
@@ -525,7 +525,7 @@
     label: '拒单', actors: ['班组账号'], hint: '理由码必填(缺资质/在办应急/装备不符);立即触发改派',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
-      if (t.state !== '已派工' && t.state !== '已接单') return '工单已进入处置,不可拒单';
+      if (t.state !== '已派工') return '工单已进入处置,不可拒单';
       if (!p.code) return '拒单理由码必填';
       return null;
     },
@@ -715,7 +715,7 @@
         return '机械驳回判定 ' + c.id + ':未过项「' + bad.join(' / ') + '」;高危件不自动归档 → 转加急人工驳回确认';
       }
       c.status = 'rejected'; c.rejectCode = '②';
-      return '机械驳回自动归档 ' + c.id + ':未过项「' + bad.join(' / ') + '」;原因码自动填,影子池抽样兜底';
+      return '机械驳回自动归档 ' + c.id + ':未过项「' + bad.join(' / ') + '」;原因码自动填,待核查池抽样兜底(批量车道)';
     });
 
   A.auto_upgrade = autoDef('自动升格(免人工车道)', '养护级 × 高置信 × 机械全过 = 免人工并入周期养护计划;事后抽审',

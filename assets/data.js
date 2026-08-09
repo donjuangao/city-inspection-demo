@@ -16,7 +16,7 @@
     'Green Mubazzarah', 'Jebel Hafeet'];
 
   // 设计档 §0.6 角色(人类五角色 + 非人三账号)
-  var ROLES = ['区复核员', '复核主管', '区值班长', '区巡检管理者', 'DMT'];
+  var ROLES = ['区复核员', '复核主管', '区值班长', '区巡检管理者', '区管理员', 'DMT'];
   var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号'];
   var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '区巡检管理者': 2, 'DMT': 2 };
 
@@ -230,10 +230,10 @@
 
   /* ============ 5 · T0 抽审队列 3 条 + 治理开关 ============ */
   var GOV = {
-    fastlane: { '井盖缺失': true, '爆管': true, '路面急修': false },
+    fastlane: { '井盖缺失': true, '爆管': true },
     stormMode: false,
     auditQueue: [
-      { id: 'AU-1201', src: '高危确认拘审', clueId: 'CL-0198', reason: '井盖移位·高危确认件全量拘审(R34)', t: '17:42', status: '待抽审' },
+      { id: 'AU-1201', src: '高危确认拘审', clueId: 'CL-0198', reason: '井盖移位·高危确认件全量拘审', t: '17:42', status: '待抽审' },
       { id: 'AU-1202', src: '批量确认 15% 抽样', clueId: 'CL-0175', reason: '路面养护批量件抽样', t: '17:55', status: '待抽审' },
       { id: 'AU-1203', src: '快车道件全量抽审', clueId: 'CL-0166', reason: '快车道自动派单件·误派率月报口径', t: '18:10', status: '待抽审' }
     ]
@@ -278,7 +278,7 @@
     { date: '今夜', role: '复核主管', who: '复核主管', note: '抽审与 override 授权位' }
   ];
   var PARAM_CHANGES = [
-    { id: 'PC-0031', item: '井盖线 应急人审档 SLA', from: '30 分', to: '30 分', status: '现行', by: 'DMT', note: '假设值,区可配(R48)' }
+    { id: 'PC-0031', item: '井盖线 应急人审档 SLA', from: '30 分', to: '30 分', status: '现行', by: '区巡检管理者', note: '假设值,区可配' }
   ];
 
   /* ============ 9 · 顶层 DATA(施工图 §4)============ */
@@ -379,7 +379,7 @@
       manual: '非理想态①:低置信高危仍强制人核,30min SLA + 三级升级。'
     },
     {
-      id: 'T6', t: '19:40', figs: 'D3/D4',
+      id: 'T6', t: '19:40', figs: 'D3/D4/P10',
       title: '树影误报件 · 机械驳回不自动归档',
       narration: '19:40 树影误报件:机械校验硬失败 → 高危零自动归档,证据卡置顶转人工驳回确认;「推翻机械判定」同屏可点。',
       unlocks: [{ type: 'clue', obj: 'CL-0588' }],
@@ -490,7 +490,7 @@
         checks: checks('井盖', ['fail', 'na', 'fail', 'warn']),
         evidence: [{ kind: 'tree-shadow', label: 'AI 生成示意' }],
         lane: '机械驳回', mechFail: true, t: '19:40',
-        note: '树影类持续假目标:机械闸拦不住,由人驳回按原因码①回流(R71 诚实边界);高危件零自动归档'
+        note: '树影类持续假目标:机械闸拦不住,由人驳回按原因码①回流(诚实边界);高危件零自动归档'
       }),
       'CL-0705': clue({
         id: 'CL-0705', line: '路面', level: '养护', conf: 0.91, source: '城市移动传感网',

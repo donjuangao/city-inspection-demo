@@ -19,8 +19,8 @@
   <main class="mob-body" id="view"></main>
 
   <footer class="mob-foot">
-    动作写回客户系统 · 证据双写进证据链——操作界面,不是第二真源(R67)<br>
-    <span class="tiny">离线/无信号时本地暂存,回连补传(P9 浅演示)· 全站虚构演示数据,零真实照片</span>
+    动作写回客户系统 · 证据双写进证据链——操作界面,不是第二真源<br>
+    <span class="tiny">离线/无信号时本地暂存,回连补传 · 全站虚构演示数据,零真实照片</span>
     <span style="float:right"><a href="#" id="btnReset">重置演示</a></span>
   </footer>
 </div>
@@ -169,7 +169,7 @@
     if (t.phase) html += '<div class="objcard-l3">处置阶段:' + esc(t.phase) + '</div>';
     if (t.rejectNote) html += '<div class="objcard-l3" style="color:var(--red)">复验打回:' + esc(t.rejectNote) + ' —— 请核实现场后重新提交;如有异议可联系复核主管申诉</div>';
     html += '<div class="objcard-l3">状态写回:区市政工单系统镜像 ' + esc(t.mirror) +
-      '(状态机 已派工→已接单→已到场→已完工→已验收 逐格映射,§2.3b②;操作界面不是第二真源)</div>';
+      '(状态机 已派工→已接单→已到场→已完工→已验收 逐格映射;操作界面不是第二真源)</div>';
 
     html += '<div class="ev-grid" style="margin-top:10px">';
     html += UI.evidenceGrid(clue ? clue.evidence : [{ kind: 'field', label: 'AI 生成示意' }]);
@@ -242,7 +242,7 @@
       facs.map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.id) + ' · ' + esc(f.block) + '</option>'; }).join('') + '</select>';
     html += '<label class="fl">类目</label><select id="rn-cat">' +
       (crewObj.lines || []).map(function (l) { return '<option value="' + esc(l) + '">' + esc(l) + '</option>'; }).join('') + '</select>';
-    html += '<label class="fl">现场情况(选填)</label><input type="text" id="rn-note" placeholder="如:井盖周边路面塌陷">';
+    html += '<label class="fl">现场情况(选填)</label><input type="text" id="rn-note" placeholder="如:相邻雨水口箅面堵塞">';
     html += '<div style="margin-top:8px"><button type="button" class="btn btn-sm" onclick="CREW_ACT.reportNew(\'' + crewObj.id + '\')">提交上报</button></div>';
     html += '</div>';
     return html;

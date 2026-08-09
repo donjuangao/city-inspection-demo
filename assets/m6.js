@@ -13,11 +13,12 @@
 
   /* ---------------- 1 · 角色权限表(设计档 §0.6) ---------------- */
   var ROLE_DESC = {
+    '区管理员': '账号与角色授予(走审批,动作留痕);不参与业务定性与调度。',
     '区复核员': '工作台读写 / 告警读。可执行:确认 / 驳回 / 推翻机械判定 / 快车道撤回 / 批量确认 / 存疑归档 / 立案·结案 / 转办 / 复验人裁与打回。',
     '复核主管': '复核员全部权限 + 抽审 / 撤销 / 兜底读写。另可:紧急 override(红色动作,双确认)/ 证据冻结 / 调度改派·合并·拆单。',
     '区值班长': '升级链第三级兜底(电话/短信);应急单作业时窗豁免批准;过载三步中的临时借调启动;与主管共享调度仲裁(改派/合并/拆单)与挂起(手动)。',
     '区巡检管理者': '台账读写 / 总览本区(模块 5)/ 发起参数变更(走审批)。快车道关闭后的区申诉发起人之一。',
-    'DMT': '跨区只读 + 框架标准 + 类目快车道入池开关 + 月报。关车道 = 安全侧动作即时生效;重开需按数据判据(R42)批准。'
+    'DMT': '跨区只读 + 框架标准 + 类目快车道入池开关 + 月报。关车道 = 安全侧动作即时生效;重开需按数据判据批准。'
   };
   var SVC_DESC = {
     '规则引擎': '机械校验闸 / 自动车道(记账·升格·机械驳回·设备工单)/ 预警广播 / 快车道自动派单的执行身份;机械自动化也不豁免审计,每步入动作日志。',
@@ -39,7 +40,7 @@
         '<td class="tiny">—</td><td>' + UI.esc(SVC_DESC[r] || '') + '</td></tr>';
     }).join('');
     return '<div class="card">' +
-      '<div class="card-hd"><h3>6 · 系统管理</h3><span class="tiny">角色权限表 · 人类五角色 + 非人三账号(设计档 §0.6)</span></div>' +
+      '<div class="card-hd"><h3>6 · 系统管理</h3><span class="tiny">角色权限表 · 五角色 + 值班长(辅助)+ 非人三账号</span></div>' +
       '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>角色 / 账号</th><th>权限层级</th><th>权限范围</th></tr></thead>' +
       '<tbody>' + rows + svcRows + '</tbody></table></div>' +
       '<div class="tiny" style="margin-top:6px">顶栏「角色」切换器可换身份(不做登录,只改可用动作);权限层级 L 值取自 dict.roleRank,越大调度权越高。</div>' +
@@ -57,7 +58,7 @@
     var on = !!w.S.get().gov.fastlane[cat];
     var toggleBtn = on
       ? { action: 'toggle_fastlane', label: '关闭快车道', cls: 'btn-danger', params: { cat: cat, on: false, reason: '系统管理页治理演示:DMT 关闭该类目快车道' } }
-      : { action: 'toggle_fastlane', label: '重开快车道', cls: 'btn-ok', params: { cat: cat, on: true, dataBasis: '近 30 天误派率回落至阈值内(R42;演示数据)' } };
+      : { action: 'toggle_fastlane', label: '重开快车道', cls: 'btn-ok', params: { cat: cat, on: true, dataBasis: '近 30 天误派率回落至阈值内(演示数据)' } };
     var appealBtn = { action: 'appeal_fastlane', label: '区申诉(G1)', params: { cat: cat, reason: '本区应急处置等不起人审,申请复议重开' } };
     return '<tr>' +
       '<td><b>' + UI.esc(cat) + '</b><div class="tiny">' + UI.esc(CAT_NOTE[cat] || '') + '</div></td>' +
@@ -81,8 +82,8 @@
   function paramTable() {
     var rows = w.S.get().paramChanges.map(function (p) {
       return '<tr><td class="mono">' + UI.esc(p.id) + '</td><td>' + UI.esc(p.item) + '</td>' +
-        '<td>' + UI.assume(p.from, '假设值,区可配(R48)') + '</td>' +
-        '<td>' + UI.assume(p.to, '假设值,区可配(R48)') + '</td>' +
+        '<td>' + UI.assume(p.from, '假设值,区可配') + '</td>' +
+        '<td>' + UI.assume(p.to, '假设值,区可配') + '</td>' +
         '<td>' + UI.badge(p.status, 'blue') + '</td><td class="tiny">' + UI.esc(p.by) + '</td></tr>';
     }).join('');
     return '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
@@ -94,7 +95,7 @@
     return '<div class="sep"></div>' +
       '<div class="tiny" style="margin-bottom:6px">影子重算预演(不写入正式参数、不产生动作日志——仅治理演示):试算「井盖线应急人审档 SLA」阈值变化对在池待核查件的影响。</div>' +
       '<div class="row wrap" style="align-items:flex-end;gap:14px">' +
-      '<div class="tiny">现行值 ' + UI.assume('30 分', '假设值,区可配 R48') + '</div>' +
+      '<div class="tiny">现行值 ' + UI.assume('30 分', '假设值,区可配') + '</div>' +
       '<div style="width:140px"><label class="fl" for="m6ParamInput">候选新值(分)</label><input type="text" id="m6ParamInput" value="24"></div>' +
       '<div><button type="button" class="btn" id="m6ParamPreviewBtn">影子重算预估</button></div>' +
       '</div>' +
@@ -103,7 +104,7 @@
 
   function paramBlock() {
     return '<div class="card"><div class="card-hd"><h3 style="margin:0;font-size:14px">参数变更</h3>' +
-      '<span class="tiny">走审批(设计档 §2.4);发起人 = 区巡检管理者</span></div>' +
+      '<span class="tiny">走审批;发起人 = 区巡检管理者</span></div>' +
       paramTable() + paramPreview() + '</div>';
   }
 
@@ -119,7 +120,7 @@
     var overNew = Math.min(pool.length, Math.round(overNow + pool.length * Math.max(0, 1 - ratio) * 0.4));
     return '影子重算(演示简化估算,不生效):SLA 30 分 → ' + mins + ' 分候选值下,在池 ' + pool.length +
       ' 条应急人审档件中,预估超时件数由 ' + overNow + ' 条变为约 ' + overNew +
-      ' 条。仅供治理演示,非真实排队论模型;正式变更需走审批并按试点数据标定(R48)。';
+      ' 条。仅供治理演示,非真实排队论模型;正式变更需走审批并按试点数据标定。';
   }
 
   /* ---------------- 4 · 值班表 ---------------- */
@@ -128,7 +129,7 @@
       return '<tr><td>' + UI.esc(d.date) + '</td><td>' + UI.esc(d.role) + '</td>' +
         '<td>' + UI.esc(d.who) + '</td><td class="tiny">' + UI.esc(d.note) + '</td></tr>';
     }).join('');
-    return '<div class="card"><div class="sec-title">值班表(升级链兜底依据,设计档 §0.8.4)</div>' +
+    return '<div class="card"><div class="sec-title">值班表(升级链兜底依据)</div>' +
       '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>日期</th><th>值班角色</th><th>在岗</th><th>备注</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div></div>';
   }

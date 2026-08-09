@@ -150,7 +150,7 @@ window.VIEW_PUBLIC = (function (w, d) {
       ]) +
       '</div>' +
       '<div class="card">' +
-      '<div class="sec-title">系统会自动执行(防滥用三件,设计档 §2.4 M10)</div>' +
+      '<div class="sec-title">系统会自动执行(防滥用三件)</div>' +
       '<ul class="tiny" style="margin:0;padding-left:16px;line-height:1.7">' +
       '<li><b>同点位去重合并</b>:该设施若已有活跃线索,本次上报将直接并入既有事件,不重复开单——本 demo 可现场触发(见回执页)。</li>' +
       '<li><b>单设备限频</b>:短时间内同设备多次上报会被限流——静态前端无真实设备指纹,此处仅作机制说明。</li>' +
@@ -158,7 +158,7 @@ window.VIEW_PUBLIC = (function (w, d) {
       '</ul></div>' +
       '<div class="row wrap" style="margin-top:10px"><button type="button" class="btn" data-nav="back3">← 上一步</button></div>' +
       '<div style="margin-top:8px">' + UI.actionPanel([{ action: 'public_report', label: '提交上报', params: params, cls: 'btn-primary btn-block' }]) + '</div>' +
-      '<div class="tiny" style="margin-top:6px">提交后并入线索池,按复核员同规甄别(R30);不直接进应急。</div>';
+      '<div class="tiny" style="margin-top:6px">提交后并入线索池,按复核员同规甄别;不直接进应急。</div>';
   }
 
   function renderReceipt(ctx) {
@@ -188,7 +188,7 @@ window.VIEW_PUBLIC = (function (w, d) {
       ]) + '</div>' +
       '<div class="card">' +
       '<div class="sec-title">同一个问题还没解决?</div>' +
-      '<div class="tiny" style="margin-bottom:8px">再次针对同一问题上报会被记为「催办」,不会另开重复记录(§0.9 E3)。</div>' +
+      '<div class="tiny" style="margin-bottom:8px">再次针对同一问题上报会被记为「催办」,不会另开重复记录。</div>' +
       UI.actionPanel([{ action: 'public_urge', label: '催办(同一问题再次上报)', params: { actor: '公众', reportId: r.id }, cls: 'btn-block' }]) +
       '</div>' +
       '<button type="button" class="btn btn-block" style="margin-top:8px" data-nav="new">提交新的问题</button>' +
