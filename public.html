@@ -93,7 +93,7 @@ window.VIEW_PUBLIC = (function (w, d) {
     return stepDots(1) +
       '<div class="card">' +
       '<div class="sec-title">第一步 · 拍一张</div>' +
-      '<div class="tiny" style="margin-bottom:8px">把镜头对准问题位置,点击下方按钮模拟拍摄(全站零真实照片,证据均为矢量示意,A16)。</div>' +
+      '<div class="tiny" style="margin-bottom:8px">把镜头对准问题位置,点击下方按钮模拟拍摄(全站零真实照片,证据均为矢量示意)。</div>' +
       UI.evidenceCard('field', ST.photo ? '已拍摄 1 张(矢量示意)' : '取景框示意 · 尚未拍摄') +
       '<div class="row wrap" style="margin-top:10px">' +
       (ST.photo
@@ -171,7 +171,7 @@ window.VIEW_PUBLIC = (function (w, d) {
     var mergeLine = '';
     if (mergedClue) {
       var state = mergedClue.alertId ? ('对应告警 ' + mergedClue.alertId + ' 处理中') : ('线索 ' + mergedClue.id + ' 待复核员确认');
-      mergeLine = UI.banner('info', '<b>已合并入既有事件,进度同步</b> —— ' + UI.esc(state) + ';证据已叠加(同点位去重合并,M10)。');
+      mergeLine = UI.banner('info', '<b>已合并入既有事件,进度同步</b> —— ' + UI.esc(state) + ';证据已叠加(同点位去重合并)。');
     }
     return '<div class="card" style="text-align:center">' +
       '<div class="sec-title">受理成功</div>' +
