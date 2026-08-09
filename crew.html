@@ -5,6 +5,136 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>班组处置端 · 设施智能巡检(演示原型)</title>
 <link rel="stylesheet" href="assets/tokens.css">
+<style>
+/* ===== 班组处置端 页面级样式(自包含,不改 tokens.css 本体)=====
+   视觉沿用 origen 品牌体系:近黑壳 / 暖白内容区 / 品牌绿 / 卡其金。
+   结构:底部 tab 三分区(工单 / 上报 / 班组)+ 工单卡单主 CTA + 次级动作收进抽屉。 */
+
+:root{ --ctab:64px }
+
+.mob{background:var(--bg)}
+.mob-top{padding:12px 14px}
+.mob-top b{font-size:15px}
+.mob-body{padding:12px 12px 4px}
+.mob-foot{margin-bottom:var(--ctab);line-height:1.7}
+
+/* ---- 底部 tab ---- */
+.c-tabbar{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:390px;
+  height:var(--ctab);background:#fff;border-top:1px solid var(--line);display:flex;z-index:30;
+  box-shadow:0 -2px 18px rgba(11,26,18,.07)
+}
+.c-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  border:0;background:none;font-family:inherit;color:var(--faint);font-size:11px;font-weight:600;
+  cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent
+}
+.c-tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.c-tab.is-on{color:var(--blue)}
+.c-tab-n{
+  position:absolute;transform:translate(14px,-11px);background:var(--red);color:#fff;
+  font-size:10px;line-height:15px;min-width:15px;height:15px;border-radius:8px;padding:0 4px;text-align:center;font-weight:700
+}
+
+/* ---- 班组身份卡(深色)---- */
+.c-idcard{
+  background:var(--shell);color:#fff;border-radius:16px;padding:13px 15px;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px
+}
+.c-idcard .n{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.c-idcard .s{font-size:11.5px;color:var(--shell-mute);margin-top:3px}
+.c-idcard .r{margin-left:auto;text-align:right;flex:none}
+.c-idcard .r .t{font-size:11px;color:var(--shell-mute);margin-top:5px}
+
+/* ---- 安全上报置顶条 ---- */
+.c-safety{border:1px solid var(--red-line);background:var(--red-soft);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.c-safety-hd{display:flex;align-items:center;gap:9px;padding:11px 13px;cursor:pointer}
+.c-safety-hd b{font-size:13px;color:var(--red);flex:1}
+.c-safety-hd .k{font-size:11px;color:#b06153}
+.c-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none;animation:cpulse 2s ease-in-out infinite}
+@keyframes cpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(201,59,43,.45)}50%{opacity:.5;box-shadow:0 0 0 5px rgba(201,59,43,0)}}
+.c-safety-bd{padding:0 13px 13px;border-top:1px solid var(--red-line)}
+.c-safety-bd p{margin:10px 0 8px;font-size:11.5px;color:#8d5347;line-height:1.7}
+
+/* ---- 统计条 ---- */
+.c-stats{display:flex;gap:8px;margin-bottom:12px}
+.c-stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+.c-stat u{display:block;font-size:21px;font-weight:700;color:var(--ink-hi);text-decoration:none;font-variant-numeric:tabular-nums;line-height:1.25}
+.c-stat span{font-size:11px;color:var(--faint)}
+
+/* ---- 分区标题 ---- */
+.c-sec{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 2px 9px}
+.c-sec b{font-size:13.5px;color:var(--ink-hi);letter-spacing:-.01em}
+.c-sec span{font-size:11.5px;color:var(--faint)}
+
+/* ---- 工单卡 ---- */
+.c-job{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.c-job.is-hot{border-color:var(--red-line)}
+.c-job-hd{display:flex;align-items:flex-start;gap:8px}
+.c-id{font-size:17px;font-weight:700;color:var(--ink-hi);letter-spacing:-.02em;line-height:1.3}
+.c-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.c-job-hd .r{margin-left:auto;text-align:right;flex:none;font-size:11px;color:var(--faint)}
+.c-meta{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink)}
+.c-meta div{display:flex;gap:8px}
+.c-meta i{font-style:normal;color:var(--faint);flex:none;width:38px}
+.c-note{margin-top:9px;font-size:11.5px;line-height:1.7;color:var(--mute)}
+
+/* ---- 四步进度 ---- */
+.c-steps{display:flex;align-items:flex-start;margin:14px 0 2px}
+.c-stp{display:flex;flex-direction:column;align-items:center;gap:5px;flex:none;width:46px}
+.c-stp i{
+  width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--faint);font-style:normal
+}
+.c-stp span{font-size:10.5px;color:var(--faint)}
+.c-stp.is-done i{background:var(--green-soft);border-color:var(--green-line);color:var(--green)}
+.c-stp.is-on i{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-soft)}
+.c-stp.is-on span{color:var(--blue);font-weight:700}
+.c-bar{flex:1;height:2px;background:var(--line);border-radius:2px;margin-top:12px}
+.c-bar.is-done{background:var(--green-line)}
+
+/* ---- 主 CTA / 折叠 / 抽屉 ---- */
+.c-cta{width:100%;justify-content:center;padding:12px 16px;font-size:14px;border-radius:12px}
+.c-ctawrap{margin-top:14px}
+.c-ctawrap .act-item{gap:5px}
+.c-ctawrap .act-why{text-align:center}
+.c-fold{border-top:1px solid var(--line-soft);margin-top:12px;padding-top:10px}
+.c-fold-hd{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--mute);padding:2px 0;-webkit-tap-highlight-color:transparent
+}
+.c-fold-hd:active{color:var(--blue)}
+.c-fold-hd em{font-style:normal;font-size:11px;color:var(--faint);font-weight:400}
+.c-caret{font-size:10px;color:var(--faint);flex:none}
+.c-fold-bd{padding-top:11px}
+.c-sheet{background:#f7f8f5;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:11px}
+.c-mini{display:flex;gap:6px;align-items:center}
+.c-mini select{flex:1;min-width:0;font-size:12.5px}
+.c-mini .btn{flex:none}
+
+/* ---- 现场回传双照 ---- */
+.c-shots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.c-shot-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:140px;
+  padding:14px;border:1px dashed var(--line);border-radius:12px;background:#fff;text-align:center
+}
+.c-shot-empty .tiny{color:var(--faint)}
+.c-shot-empty .act-panel{width:100%}
+.c-shot-empty .btn{width:100%;justify-content:center}
+
+/* ---- 空态 ---- */
+.c-empty{
+  background:#fff;border:1px dashed var(--line);border-radius:16px;padding:28px 20px;
+  text-align:center;color:var(--faint);font-size:12.5px;line-height:1.8
+}
+.c-empty b{display:block;color:var(--mute);font-size:13.5px;margin-bottom:6px}
+
+/* ---- 表单卡 ---- */
+.c-form .fl{margin-top:12px}
+.c-form .fl:first-of-type{margin-top:4px}
+.c-info{font-size:11.5px;line-height:1.75;color:var(--mute)}
+.c-info b{color:var(--ink-hi)}
+</style>
 </head>
 <body>
 
@@ -32,24 +162,20 @@
 <script src="assets/ui.js"></script>
 
 <!-- ===== 页面体 · 归属 W1-C 工兵 · 开始 =====
-     规格:施工图 §7 crew.html + §5 crew 动作行 + 设计档 §3「移动端页面细节」/ §2.3b③ 回传闭环 / §0.8.2 第5步接单
-     W1-C 工兵填充位:已实现班组处置端四块流(新工单卡→工单详情→现场回传→完工提交)+ 动作族全量。
-     四块流:①新工单卡(类目/位置/建议时限/接单键;快车道件标「系统自动派单」)
-             ②工单详情(证据示意+导航示意 SVG+状态写回说明)
-             ③现场回传(修复前/后双照=两个 evidenceSvg 占位点击「拍摄」填充)
-             ④完工提交(触发 AI 复验提示)
-     动作族(施工图 §5 crew 行,全部上屏):
-       crew_accept 接单 / crew_arrive 到场 / crew_photo 现场回传(phase='修复前'|'修复后')
-       crew_done 完工提交 / crew_reject 拒单(理由码) / crew_blocked 受阻上报(原因码)
-       crew_safety 安全上报(置顶红) / crew_report_new 现场新增上报(产线索)
-       crew_partial_done 部分完工 / crew_handover 交接
-     铁律:S.commit 是唯一状态变更入口;班组动作 params 一律显式带 actor:'班组账号'(不依赖 state.role 兜底);
-           灰态按钮 = S.check 取原因 + 可见文字展示(R53,移动端无 hover,不能只放 title 提示)。
+     重构(任务书「班组处置端 UI 重构」):底部 tab 三分区 + 工单卡单主 CTA + 次级动作收进抽屉 + 证据/写回说明折叠。
+     契约未动:壳层挂点(#clock/#crewSel/#view/#btnReset)、S.commit 唯一入口、data-act 委托、
+              CREW_ACT.* 表单桥接、灰态可见原因、动作族全量、零真实照片与假设值标注、页脚两句。
+     动作族:crew_accept 接单 / crew_arrive 到场 / crew_photo 双照 / crew_done 完工提交
+            crew_reject 拒单 / crew_blocked 受阻 / crew_safety 安全上报 / crew_report_new 现场新增上报
+            crew_partial_done 部分完工 / crew_handover 交接
      =============================================================== -->
 <script>
 (function (w, d) {
   'use strict';
   var esc = UI.esc;
+
+  /* 页面局部 UI 态(不进 store;store 只经 S.commit 变更) */
+  var M = { tab: 'jobs', safety: false, open: {} };
 
   /* ---------------- 小工具 ---------------- */
   var TSTATE_TONE = {
@@ -63,50 +189,64 @@
   function crewStatusBadge(c) { return UI.badge(c.status, CREW_STATUS_TONE[c.status] || 'grey'); }
 
   function sameBlock(crewObj, f) { return !!(crewObj && f && crewObj.loc === f.block); }
+  function hasPhoto(t, ph) {
+    return (t.photos || []).filter(function (p) { return p.phase === ph; }).length > 0;
+  }
+  function isHotTicket(t) { return /应急|紧急|急修/.test(t.type || ''); }
+  function on(key) { return !!M.open[key]; }
+  function caret(key) { return '<span class="c-caret">' + (on(key) ? '收起 ▲' : '展开 ▼') + '</span>'; }
 
   /* 导航示意:自建 inline SVG(非证据图但同守全站零位图标签、无命名空间声明、统一角标口径) */
   function navSvg(fromLoc, toBlock) {
     return '<svg viewBox="0 0 240 132" role="img" aria-label="导航路线示意(AI 生成示意)">' +
-      '<rect x="0" y="0" width="240" height="132" fill="#eef1f4"></rect>' +
-      '<path d="M40 104 Q120 24 202 46" fill="none" stroke="#1a5fb4" stroke-width="2.4" stroke-dasharray="7 5"></path>' +
-      '<circle cx="40" cy="104" r="6" fill="#5b6b7c"></circle>' +
-      '<circle cx="202" cy="46" r="6" fill="#c0392b"></circle>' +
-      '<text x="40" y="120" font-size="10.5" fill="#243342" text-anchor="middle" font-family="sans-serif">' + esc(fromLoc || '—') + '</text>' +
-      '<text x="202" y="34" font-size="10.5" fill="#c0392b" text-anchor="middle" font-family="sans-serif">' + esc(toBlock || '—') + '</text>' +
-      '<g><rect x="8" y="8" width="86" height="17" rx="3" fill="#243342" opacity="0.82"></rect>' +
+      '<rect x="0" y="0" width="240" height="132" fill="#eef0ec"></rect>' +
+      '<path d="M40 104 Q120 24 202 46" fill="none" stroke="#17a05e" stroke-width="2.4" stroke-dasharray="7 5"></path>' +
+      '<circle cx="40" cy="104" r="6" fill="#5c6660"></circle>' +
+      '<circle cx="202" cy="46" r="6" fill="#c93b2b"></circle>' +
+      '<text x="40" y="120" font-size="10.5" fill="#1b231f" text-anchor="middle" font-family="sans-serif">' + esc(fromLoc || '—') + '</text>' +
+      '<text x="202" y="34" font-size="10.5" fill="#c93b2b" text-anchor="middle" font-family="sans-serif">' + esc(toBlock || '—') + '</text>' +
+      '<g><rect x="8" y="8" width="86" height="17" rx="3" fill="#1b231f" opacity="0.82"></rect>' +
       '<text x="51" y="20" font-size="10.5" fill="#ffffff" text-anchor="middle" font-family="sans-serif">AI 生成示意</text></g>' +
       '</svg>';
   }
 
-  /* ---------------- ① 新工单卡 ---------------- */
-  function newJobCard(t) {
-    var f = w.S.find.facility(t.facility);
-    var fastlane = t.source === w.S.dict().ticketSources.auto;
-    var clue = t.clueId ? w.S.find.clue(t.clueId) : null;
-    var badges = [UI.badge(t.type, 'blue')];
-    if (fastlane) badges.push(UI.badge('系统自动派单', 'amber'));
-    var html = '<div class="card card-tight">';
-    html += '<div class="objcard-id">' + esc(t.id) + ' ' + badges.join(' ') + '</div>';
-    html += '<div class="objcard-l2">类目:' + esc(t.line || '—') + (clue && clue.kindText ? ' · ' + esc(clue.kindText) : '') + '</div>';
-    html += '<div class="objcard-l3">位置:' + UI.addr(t.facility) + (f && f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : '') + '</div>';
-    html += '<div class="objcard-l3">建议时限:接单 ' + UI.sla(t.sla.accept) + ' · 到场 ' + UI.sla(t.sla.arrive) + '</div>';
-    html += UI.actionPanel([{ action: 'crew_accept', params: { ticketId: t.id, actor: '班组账号' }, label: '接单', cls: 'btn-primary' }]);
-    html += rejectMiniForm(t);
-    html += '</div>';
-    return html;
+  /* ---------------- 班组身份卡 ---------------- */
+  function idCard(crewObj, all) {
+    var busy = all.filter(function (t) {
+      return ['已接单', '已到场', '待条件', '现场核实中', '现场收尾单'].indexOf(t.state) >= 0;
+    }).length;
+    return '<div class="c-idcard">' +
+      '<div><div class="n">' + esc(crewObj.name) + (crewObj.contractor ? ' <span style="font-size:11px;opacity:.65">年度承包商</span>' : '') + '</div>' +
+      '<div class="s">辖区 ' + esc(crewObj.loc) + ' · 班次 ' + esc(crewObj.shift) + '</div></div>' +
+      '<div class="r">' + crewStatusBadge(crewObj) + '<div class="t">在办 ' + busy + ' 张</div></div>' +
+      '</div>';
   }
 
-  /* ---------------- 动作族小表单(需用户选码/选目标,不能用静态 data-p)---------------- */
+  /* ---------------- 安全上报置顶条 ---------------- */
+  function safetyStrip() {
+    var head = '<div class="c-safety-hd" onclick="CREW_UI.toggleSafety()">' +
+      '<span class="c-dot"></span><b>紧急 · 安全上报</b>' +
+      '<span class="k">' + (M.safety ? '收起' : '直达区值班长') + '</span></div>';
+    if (!M.safety) return '<div class="c-safety">' + head + '</div>';
+    return '<div class="c-safety">' + head +
+      '<div class="c-safety-bd">' +
+      '<p>置顶通道:不排队、不走工单流,提交即刻通知区值班长。现场人身安全相关一律走这里。</p>' +
+      '<input type="text" id="sf-note" placeholder="现场情况简述,如:井口周边有车流,需交通导改">' +
+      '<div style="margin-top:10px"><button type="button" class="btn btn-danger btn-block" onclick="CREW_ACT.safety()">立即上报</button></div>' +
+      '</div></div>';
+  }
+
+  /* ---------------- 动作族小表单(需用户选码/选目标)---------------- */
   function rejectMiniForm(t) {
     var codes = w.S.dict().reasonCodes.crew_reject;
     var chk = w.S.check('crew_reject', { ticketId: t.id, code: codes[0], actor: '班组账号' });
-    return '<div class="act-item" style="margin-top:6px">' +
-      '<span style="display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-      '<select id="rj-' + esc(t.id) + '" style="width:auto;font-size:12px"' + (chk.ok ? '' : ' disabled') + '>' +
+    return '<div class="act-item">' +
+      '<div class="c-mini">' +
+      '<select id="rj-' + esc(t.id) + '"' + (chk.ok ? '' : ' disabled') + '>' +
       codes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
       '</select>' +
       '<button type="button" class="btn btn-sm' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
-      ' onclick="CREW_ACT.reject(\'' + t.id + '\')">拒单</button></span>' +
+      ' onclick="CREW_ACT.reject(\'' + t.id + '\')">拒单</button></div>' +
       (chk.ok ? '' : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
       '</div>';
   }
@@ -114,12 +254,12 @@
     var codes = w.S.dict().reasonCodes.crew_blocked;
     var chk = w.S.check('crew_blocked', { ticketId: t.id, code: codes[0], actor: '班组账号' });
     return '<div class="act-item">' +
-      '<span style="display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-      '<select id="bk-' + esc(t.id) + '" style="width:auto;font-size:12px"' + (chk.ok ? '' : ' disabled') + '>' +
+      '<div class="c-mini">' +
+      '<select id="bk-' + esc(t.id) + '"' + (chk.ok ? '' : ' disabled') + '>' +
       codes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
       '</select>' +
       '<button type="button" class="btn btn-sm' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
-      ' onclick="CREW_ACT.blocked(\'' + t.id + '\')">受阻上报</button></span>' +
+      ' onclick="CREW_ACT.blocked(\'' + t.id + '\')">受阻上报</button></div>' +
       (chk.ok ? '' : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
       '</div>';
   }
@@ -128,65 +268,159 @@
     if (!others.length) return '';
     var chk = w.S.check('crew_handover', { ticketId: t.id, toCrew: others[0].id, actor: '班组账号' });
     return '<div class="act-item">' +
-      '<span style="display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-      '<select id="ho-' + esc(t.id) + '" style="width:auto;font-size:12px"' + (chk.ok ? '' : ' disabled') + '>' +
+      '<div class="c-mini">' +
+      '<select id="ho-' + esc(t.id) + '"' + (chk.ok ? '' : ' disabled') + '>' +
       others.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join('') +
       '</select>' +
       '<button type="button" class="btn btn-sm' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
-      ' onclick="CREW_ACT.handover(\'' + t.id + '\')">交接</button></span>' +
+      ' onclick="CREW_ACT.handover(\'' + t.id + '\')">交接</button></div>' +
       (chk.ok ? '' : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
       '</div>';
   }
 
-  /* ---------------- ② 工单详情 ---------------- */
-  function ticketStage(t) {
-    if (t.state === '已完工' || t.state === '已验收') return 4;
-    if (t.state === '已到场') return 3;
-    return 2;
-  }
-  function stepDots(stage) {
-    var labels = ['接单', '详情', '回传', '提交'], html = '<div class="step-dots">';
-    for (var i = 1; i <= 4; i++) {
-      html += '<span class="step-dot' + (i <= stage ? ' is-on' : '') + '">' + i + '</span>';
-      html += '<span class="tiny">' + labels[i - 1] + '</span>';
-      if (i < 4) html += '<span class="step-line"></span>';
+  /* ---------------- 四步进度 ---------------- */
+  function steps(t) {
+    var done = [
+      t.state !== '已派工',
+      ['已到场', '已完工', '已验收'].indexOf(t.state) >= 0,
+      hasPhoto(t, '修复前') && hasPhoto(t, '修复后'),
+      ['已完工', '已验收'].indexOf(t.state) >= 0
+    ];
+    var labels = ['接单', '到场', '回传', '提交'];
+    var cur = 4; for (var k = 0; k < 4; k++) { if (!done[k]) { cur = k; break; } }
+    var html = '<div class="c-steps">';
+    for (var i = 0; i < 4; i++) {
+      var cls = done[i] ? 'is-done' : (i === cur ? 'is-on' : '');
+      html += '<div class="c-stp ' + cls + '"><i>' + (done[i] ? '✓' : (i + 1)) + '</i><span>' + labels[i] + '</span></div>';
+      if (i < 3) html += '<div class="c-bar' + (done[i] ? ' is-done' : '') + '"></div>';
     }
     return html + '</div>';
   }
 
-  function ticketBlock(t, crewObj) {
-    var crewId = crewObj.id;
+  /* ---------------- 主 CTA:一屏只推一个下一步 ---------------- */
+  function mainCta(t) {
+    if (t.state === '已派工') {
+      return UI.actionPanel([{ action: 'crew_accept', params: { ticketId: t.id, actor: '班组账号' }, label: '接单', cls: 'btn-primary c-cta' }]);
+    }
+    if (t.state === '已接单') {
+      return UI.actionPanel([{ action: 'crew_arrive', params: { ticketId: t.id, actor: '班组账号' }, label: '到场打卡', cls: 'btn-primary c-cta' }]);
+    }
+    if (t.state === '已到场') {
+      if (!hasPhoto(t, '修复前')) {
+        return UI.actionPanel([{ action: 'crew_photo', params: { ticketId: t.id, phase: '修复前', actor: '班组账号' }, label: '拍摄修复前', cls: 'btn-primary c-cta' }]);
+      }
+      if (!hasPhoto(t, '修复后')) {
+        return UI.actionPanel([{ action: 'crew_photo', params: { ticketId: t.id, phase: '修复后', actor: '班组账号' }, label: '拍摄修复后', cls: 'btn-primary c-cta' }]);
+      }
+      return UI.actionPanel([{ action: 'crew_done', params: { ticketId: t.id, actor: '班组账号' }, label: '完工提交', cls: 'btn-primary c-cta' }], { showHint: true });
+    }
+    return '';
+  }
+
+  /* ---------------- 次级动作抽屉 ---------------- */
+  function moreSheet(t, crewId) {
+    var key = 'more-' + t.id;
+    var body = '';
+    if (on(key)) {
+      var items = [];
+      if (t.state === '已到场') items.push({ action: 'crew_partial_done', params: { ticketId: t.id, actor: '班组账号' }, label: '部分完工(临时措施先行)' });
+      body = '<div class="c-fold-bd"><div class="c-sheet">' +
+        (items.length ? UI.actionPanel(items) : '') +
+        blockedMiniForm(t) + handoverMiniForm(t, crewId) + rejectMiniForm(t) +
+        '</div></div>';
+    }
+    return '<div class="c-fold">' +
+      '<div class="c-fold-hd" onclick="CREW_UI.toggle(\'' + key + '\')">' +
+      '<span>更多操作 <em>受阻 / 交接 / 拒单 / 部分完工</em></span>' + caret(key) + '</div>' + body + '</div>';
+  }
+
+  /* ---------------- 现场资料折叠(证据 + 导航示意)---------------- */
+  function evidenceFold(t, crewObj) {
+    var key = 'ev-' + t.id;
     var f = w.S.find.facility(t.facility);
     var clue = t.clueId ? w.S.find.clue(t.clueId) : null;
-    var html = '<div class="card">';
-    html += stepDots(ticketStage(t));
-    html += '<div class="objcard-id">' + esc(t.id) + ' ' + UI.badge(t.type, 'blue') + ' ' + stateBadge(t) + '</div>';
-    html += '<div class="objcard-l2">关于:' + (f ? esc(f.kind) + ' ' : '') + UI.addr(t.facility) +
-      (f && f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : '') + '</div>';
-    html += '<div class="objcard-l3">类目:' + esc(t.line || '—') +
-      (clue ? ' · 关联线索 ' + esc(clue.id) + '(' + (clue.status === 'confirmed' ? '已确认为告警' : '待复核员确认') + ')' : '') + '</div>';
-    if (t.suspended) html += '<div class="objcard-l3" style="color:var(--amberw)">已挂起:' + esc(t.suspendReason || '') + '(SLA 停表,条件解除后自动回队)</div>';
-    if (t.phase) html += '<div class="objcard-l3">处置阶段:' + esc(t.phase) + '</div>';
-    if (t.rejectNote) html += '<div class="objcard-l3" style="color:var(--red)">复验打回:' + esc(t.rejectNote) + ' —— 请核实现场后重新提交;如有异议可联系复核主管申诉</div>';
-    html += '<div class="objcard-l3">状态写回:区市政工单系统镜像 ' + esc(t.mirror) +
-      '(状态机 已派工→已接单→已到场→已完工→已验收 逐格映射;操作界面不是第二真源)</div>';
+    var body = '';
+    if (on(key)) {
+      body = '<div class="c-fold-bd"><div class="ev-grid">' +
+        UI.evidenceGrid(clue ? clue.evidence : [{ kind: 'field', label: 'AI 生成示意' }]) +
+        '<div class="ev">' + navSvg(crewObj.loc, f ? f.block : (t.facility || '—')) +
+        '<div class="ev-cap">导航示意 · 预计 ' +
+        UI.assume(sameBlock(crewObj, f) ? '3' : '6', '导航耗时按班组当前辖区与设施街区粗估,假设值') + ' 分钟</div></div>' +
+        '</div></div>';
+    }
+    return '<div class="c-fold">' +
+      '<div class="c-fold-hd" onclick="CREW_UI.toggle(\'' + key + '\')">' +
+      '<span>现场资料 <em>证据示意 · 导航</em></span>' + caret(key) + '</div>' + body + '</div>';
+  }
 
-    html += '<div class="ev-grid" style="margin-top:10px">';
-    html += UI.evidenceGrid(clue ? clue.evidence : [{ kind: 'field', label: 'AI 生成示意' }]);
-    html += '<div class="ev">' + navSvg(crewObj.loc, f ? f.block : (t.facility || '—')) +
-      '<div class="ev-cap">导航示意 · 预计 ' + UI.assume(sameBlock(crewObj, f) ? '3' : '6', '导航耗时按班组当前辖区与设施街区粗估,假设值') + ' 分钟</div></div>';
-    html += '</div>';
+  /* ---------------- 写回与状态折叠 ---------------- */
+  function mirrorFold(t) {
+    var key = 'mr-' + t.id;
+    var clue = t.clueId ? w.S.find.clue(t.clueId) : null;
+    var body = '';
+    if (on(key)) {
+      body = '<div class="c-fold-bd"><div class="c-info">' +
+        '<b>镜像写回</b>:区市政工单系统 ' + esc(t.mirror) + ';状态机 已派工 → 已接单 → 已到场 → 已完工 → 已验收 逐格映射。' +
+        '处置真源在客户系统,<b>本界面不是第二真源</b>。' +
+        (clue ? '<br><b>关联线索</b>:' + esc(clue.id) + '(' + (clue.status === 'confirmed' ? '已确认为告警' : '待复核员确认') + ')' : '') +
+        (t.phase ? '<br><b>处置阶段</b>:' + esc(t.phase) : '') +
+        '<br><b>离线</b>:无信号时本单动作本地暂存,回连后自动补传。' +
+        '</div></div>';
+    }
+    return '<div class="c-fold">' +
+      '<div class="c-fold-hd" onclick="CREW_UI.toggle(\'' + key + '\')">' +
+      '<span>写回与状态 <em>' + esc(t.mirror) + '</em></span>' + caret(key) + '</div>' + body + '</div>';
+  }
 
-    var acts = [];
-    if (t.state === '已接单') acts.push({ action: 'crew_arrive', params: { ticketId: t.id, actor: '班组账号' }, label: '到场' });
-    if (t.state === '已到场') acts.push({ action: 'crew_partial_done', params: { ticketId: t.id, actor: '班组账号' }, label: '部分完工(临时措施先行)' });
-    if (acts.length) html += UI.actionPanel(acts);
+  /* ---------------- 待接单卡 ---------------- */
+  function newJobCard(t, crewObj) {
+    var f = w.S.find.facility(t.facility);
+    var fastlane = t.source === w.S.dict().ticketSources.auto;
+    var clue = t.clueId ? w.S.find.clue(t.clueId) : null;
+    var tags = [UI.badge(t.type, isHotTicket(t) ? 'red' : 'blue')];
+    if (fastlane) tags.push(UI.badge('系统自动派单', 'amber'));
 
-    html += '<div class="col" style="gap:6px;margin-top:6px">';
-    html += rejectMiniForm(t);
-    html += blockedMiniForm(t);
-    html += handoverMiniForm(t, crewId);
-    html += '</div>';
+    return '<div class="c-job' + (isHotTicket(t) ? ' is-hot' : '') + '">' +
+      '<div class="c-job-hd"><div><div class="c-id">' + esc(t.id) + '</div>' +
+      '<div class="c-tags">' + tags.join('') + '</div></div>' +
+      '<div class="r">接单 ' + UI.sla(t.sla.accept) + '<br>到场 ' + UI.sla(t.sla.arrive) + '</div></div>' +
+      '<div class="c-meta">' +
+      '<div><i>类目</i><span>' + esc(t.line || '—') + (clue && clue.kindText ? ' · ' + esc(clue.kindText) : '') + '</span></div>' +
+      '<div><i>位置</i><span>' + UI.addr(t.facility) + (f && f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : '') + '</span></div>' +
+      '</div>' +
+      steps(t) +
+      '<div class="c-ctawrap">' + mainCta(t) + '</div>' +
+      moreSheet(t, crewObj.id) +
+      '</div>';
+  }
+
+  /* ---------------- 在办工单卡 ---------------- */
+  function ticketBlock(t, crewObj) {
+    var f = w.S.find.facility(t.facility);
+    var tags = [UI.badge(t.type, isHotTicket(t) ? 'red' : 'blue'), stateBadge(t)];
+
+    var html = '<div class="c-job' + (isHotTicket(t) ? ' is-hot' : '') + '">';
+    html += '<div class="c-job-hd"><div><div class="c-id">' + esc(t.id) + '</div>' +
+      '<div class="c-tags">' + tags.join('') + '</div></div></div>';
+    html += '<div class="c-meta">' +
+      '<div><i>关于</i><span>' + (f ? esc(f.kind) + ' ' : '') + UI.addr(t.facility) +
+      (f && f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : '') + '</span></div>' +
+      '<div><i>类目</i><span>' + esc(t.line || '—') + '</span></div>' +
+      '</div>';
+
+    if (t.suspended) {
+      html += '<div style="margin-top:10px">' + UI.banner('warn', '已挂起:' + esc(t.suspendReason || '') + '(SLA 停表,条件解除后自动回队)') + '</div>';
+    }
+    if (t.rejectNote) {
+      html += '<div style="margin-top:10px">' + UI.banner('danger', '<b>复验打回</b>:' + esc(t.rejectNote) + ' —— 请核实现场后重新提交;如有异议可联系复核主管申诉。') + '</div>';
+    }
+
+    html += steps(t);
+    var cta = mainCta(t);
+    if (cta) html += '<div class="c-ctawrap">' + cta + '</div>';
+    html += evidenceFold(t, crewObj);
+    html += moreSheet(t, crewObj.id);
+    html += mirrorFold(t);
     html += '</div>';
 
     if (['已到场', '已完工', '已验收'].indexOf(t.state) >= 0) {
@@ -196,7 +430,7 @@
     return html;
   }
 
-  /* ---------------- ③ 现场回传 ---------------- */
+  /* ---------------- 现场回传 · 修复前/后双照 ---------------- */
   function fieldReturnCard(t) {
     var phases = ['修复前', '修复后'];
     var cards = phases.map(function (ph) {
@@ -205,62 +439,89 @@
         return '<div class="ev">' + UI.evidenceSvg(existing.kind) +
           '<div class="ev-cap">' + esc(ph) + ' · ' + esc(existing.t) + ' 已回传</div></div>';
       }
-      var panel = UI.actionPanel([{ action: 'crew_photo', params: { ticketId: t.id, phase: ph, actor: '班组账号' }, label: '拍摄' }]);
-      return '<div class="ev" style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:150px;padding:10px;gap:6px">' +
-        '<span class="tiny">' + esc(ph) + '照片待拍摄</span>' + panel + '</div>';
+      return '<div class="c-shot-empty">' +
+        '<span class="tiny">' + esc(ph) + '照片待拍摄</span>' +
+        UI.actionPanel([{ action: 'crew_photo', params: { ticketId: t.id, phase: ph, actor: '班组账号' }, label: '拍摄' }]) +
+        '</div>';
     }).join('');
-    return '<div class="card"><div class="sec-title">③ 现场回传 · 修复前/后双照</div><div class="ev-grid">' + cards + '</div></div>';
-  }
-
-  /* ---------------- ④ 完工提交 ---------------- */
-  function completionCard(t) {
-    var html = '<div class="card"><div class="sec-title">④ 完工提交</div>';
-    if (t.state === '已到场') {
-      html += UI.actionPanel([{ action: 'crew_done', params: { ticketId: t.id, actor: '班组账号' }, label: '完工提交', cls: 'btn-primary' }], { showHint: true });
-    } else if (t.state === '已完工') {
-      if (!t.verify) html += UI.banner('info', '已提交完工,写回客户工单系统;已触发 AI 复验(修复前后配准判定),结果将在剧情推进后更新。');
-      else if (t.verify === '存疑待人裁') html += UI.banner('warn', 'AI 复验:配准判不出 → 存疑待人裁(永不默认打回);等待复核员在工作台人工裁定。');
-      else if (t.verify === '已打回') html += UI.banner('danger', '复验已打回,详情见上方备注;请核实后重新提交完工。');
-    } else if (t.state === '已验收') {
-      html += UI.banner('ok', '复验人裁合格,工单已验收,闭环完成——全程动作可在工作台时间线回查。');
-    }
-    return html + '</div>';
-  }
-
-  /* ---------------- 动作族(非本单绑定):安全上报 / 现场新增上报 ---------------- */
-  function safetyCard() {
-    return '<div class="card" style="border-color:var(--red);background:var(--red-soft)">' +
-      '<div class="sec-title" style="color:var(--red)">紧急 · 安全上报(置顶通道,区值班长即时通知)</div>' +
-      '<input type="text" id="sf-note" placeholder="现场情况简述,如:井口周边有车流,需交通导改">' +
-      '<div style="margin-top:8px"><button type="button" class="btn btn-danger btn-sm" onclick="CREW_ACT.safety()">安全上报</button></div>' +
+    return '<div class="c-job">' +
+      '<div class="c-sec" style="margin:0 0 10px"><b>现场回传 · 修复前/后双照</b><span>证据双写</span></div>' +
+      '<div class="c-shots">' + cards + '</div>' +
+      '<div class="c-note">提交校验当场拦不合格照;两张齐了才放行完工提交。全部为矢量示意,零真实照片。</div>' +
       '</div>';
   }
-  function reportNewSection(crewObj) {
-    var facs = w.S.get().facilities.filter(function (f) { return (crewObj.lines || []).indexOf(f.line) >= 0; });
-    var html = '<div class="card"><div class="sec-title">现场新增上报 · 产出新线索(交复核员甄别,不走视觉腿)</div>';
-    html += '<label class="fl">设施</label><select id="rn-fac">' +
-      facs.map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.id) + ' · ' + esc(f.block) + '</option>'; }).join('') + '</select>';
-    html += '<label class="fl">类目</label><select id="rn-cat">' +
-      (crewObj.lines || []).map(function (l) { return '<option value="' + esc(l) + '">' + esc(l) + '</option>'; }).join('') + '</select>';
-    html += '<label class="fl">现场情况(选填)</label><input type="text" id="rn-note" placeholder="如:相邻雨水口箅面堵塞">';
-    html += '<div style="margin-top:8px"><button type="button" class="btn btn-sm" onclick="CREW_ACT.reportNew(\'' + crewObj.id + '\')">提交上报</button></div>';
-    html += '</div>';
-    return html;
+
+  /* ---------------- 完工提交状态 ---------------- */
+  function completionCard(t) {
+    var body = '';
+    if (t.state === '已完工') {
+      if (!t.verify) body = UI.banner('info', '已提交完工,写回客户工单系统;已触发 AI 复验(修复前后配准判定),结果将在剧情推进后更新。');
+      else if (t.verify === '存疑待人裁') body = UI.banner('warn', 'AI 复验:配准判不出 → 存疑待人裁(<b>永不默认打回</b>);等待复核员在工作台人工裁定。');
+      else if (t.verify === '已打回') body = UI.banner('danger', '复验已打回,详情见上方备注;请核实后重新提交完工。');
+    } else if (t.state === '已验收') {
+      body = UI.banner('ok', '复验人裁合格,工单已验收,闭环完成——全程动作可在工作台时间线回查。');
+    }
+    if (!body) return '';
+    return '<div class="c-job">' +
+      '<div class="c-sec" style="margin:0 0 10px"><b>完工提交 · 复验回执</b></div>' + body + '</div>';
   }
 
-  /* ---------------- 顶部班组概况 ---------------- */
-  function crewHeaderCard(crewObj, all) {
-    if (!crewObj) return UI.banner('danger', '班组不存在');
+  /* ---------------- 现场新增上报 ---------------- */
+  function reportNewSection(crewObj) {
+    var facs = w.S.get().facilities.filter(function (f) { return (crewObj.lines || []).indexOf(f.line) >= 0; });
+    return '<div class="c-job c-form">' +
+      '<div class="c-sec" style="margin:0 0 4px"><b>现场新增上报</b><span>产出新线索</span></div>' +
+      '<div class="c-note" style="margin-top:0">班组肉眼发现的问题走这条:产出<b>新线索</b>交复核员甄别,不走视觉腿、不自动定性。</div>' +
+      '<label class="fl">设施</label><select id="rn-fac">' +
+      facs.map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.id) + ' · ' + esc(f.block) + '</option>'; }).join('') + '</select>' +
+      '<label class="fl">类目</label><select id="rn-cat">' +
+      (crewObj.lines || []).map(function (l) { return '<option value="' + esc(l) + '">' + esc(l) + '</option>'; }).join('') + '</select>' +
+      '<label class="fl">现场情况(选填)</label><input type="text" id="rn-note" placeholder="如:相邻雨水口箅面堵塞">' +
+      '<div style="margin-top:12px"><button type="button" class="btn btn-primary btn-block" onclick="CREW_ACT.reportNew(\'' + crewObj.id + '\')">提交上报</button></div>' +
+      '</div>';
+  }
+
+  /* ---------------- 班组资料 ---------------- */
+  function crewProfile(crewObj, all) {
     var busy = all.filter(function (t) {
       return ['已接单', '已到场', '待条件', '现场核实中', '现场收尾单'].indexOf(t.state) >= 0;
     }).length;
-    return '<div class="card card-tight">' +
-      '<div class="row" style="justify-content:space-between;align-items:flex-start">' +
-      '<div><b>' + esc(crewObj.name) + '</b>' + (crewObj.contractor ? ' <span class="tiny">(年度承包商)</span>' : '') +
-      '<div class="tiny">辖区 ' + esc(crewObj.loc) + ' · 班次 ' + esc(crewObj.shift) + '</div>' +
-      '<div class="tiny">资质:' + esc((crewObj.quals || []).join(' / ') || '—') + ' · 装备:' + esc((crewObj.gear || []).join(' / ') || '—') + '</div></div>' +
-      '<div style="text-align:right">' + crewStatusBadge(crewObj) + '<div class="tiny" style="margin-top:4px">在办 ' + busy + ' 张</div></div>' +
+    return '<div class="c-job">' +
+      '<div class="c-sec" style="margin:0 0 10px"><b>班组资料</b><span>' + esc(crewObj.id) + '</span></div>' +
+      UI.kv([
+        ['班组', esc(crewObj.name) + (crewObj.contractor ? '(年度承包商)' : ''), true],
+        ['辖区', crewObj.loc],
+        ['班次', crewObj.shift],
+        ['业务线', (crewObj.lines || []).join(' / ') || '—'],
+        ['资质', (crewObj.quals || []).join(' / ') || '—'],
+        ['装备', (crewObj.gear || []).join(' / ') || '—'],
+        ['当前状态', crewStatusBadge(crewObj), true],
+        ['在办工单', busy + ' 张']
+      ]) +
+      '</div>' +
+      '<div class="c-job"><div class="c-sec" style="margin:0 0 10px"><b>本端口径</b></div>' +
+      '<div class="c-info">' +
+      '<b>写回</b>:全部动作写回区市政工单系统,证据双写进平台证据链;操作界面不是第二真源。<br>' +
+      '<b>离线</b>:无信号时本地暂存,回连补传。<br>' +
+      '<b>身份</b>:本端所有动作以「班组账号」提交,与工作台复核员角色互不代理。<br>' +
+      '<b>合规</b>:零真实照片,证据一律矢量示意并带「AI 生成示意」角标;带虚线下划线的数字为假设值。' +
       '</div></div>';
+  }
+
+  /* ---------------- 底部 tab ---------------- */
+  function tabbar(pending) {
+    var t = M.tab;
+    return '<div class="c-tabbar">' +
+      '<button type="button" class="c-tab' + (t === 'jobs' ? ' is-on' : '') + '" onclick="CREW_UI.tab(\'jobs\')">' +
+      '<svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"></rect><path d="M8.5 9h7M8.5 13h7M8.5 17h4"></path></svg>' +
+      '<span>工单</span>' + (pending ? '<span class="c-tab-n">' + pending + '</span>' : '') + '</button>' +
+      '<button type="button" class="c-tab' + (t === 'report' ? ' is-on' : '') + '" onclick="CREW_UI.tab(\'report\')">' +
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8.2v7.6M8.2 12h7.6"></path></svg>' +
+      '<span>上报</span></button>' +
+      '<button type="button" class="c-tab' + (t === 'me' ? ' is-on' : '') + '" onclick="CREW_UI.tab(\'me\')">' +
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M5 20c.7-3.7 3.5-5.6 7-5.6s6.3 1.9 7 5.6"></path></svg>' +
+      '<span>班组</span></button>' +
+      '</div>';
   }
 
   /* ---------------- 组装 ---------------- */
@@ -270,20 +531,41 @@
     var pending = all.filter(function (t) { return t.state === '已派工'; });
     var active = all.filter(function (t) { return t.state !== '已派工' && t.state !== '已合并'; });
 
-    var html = crewHeaderCard(crewObj, all);
-    html += safetyCard();
+    var html = idCard(crewObj, all) + safetyStrip();
 
-    html += '<div class="sec-title" style="margin-top:4px">① 新工单卡</div>';
-    html += pending.length ? pending.map(newJobCard).join('') :
-      '<div class="card tiny">暂无待接单工单。可切顶部班组下拉查看其他班组在办件,或到工作台点「▶ 推进剧情」触发新派单。</div>';
+    if (M.tab === 'jobs') {
+      html += '<div class="c-stats">' +
+        '<div class="c-stat"><u>' + pending.length + '</u><span>待接单</span></div>' +
+        '<div class="c-stat"><u>' + active.length + '</u><span>在办</span></div>' +
+        '<div class="c-stat"><u>' + all.filter(function (t) { return t.state === '已验收'; }).length + '</u><span>已验收</span></div>' +
+        '</div>';
 
-    if (active.length) {
-      html += '<div class="sec-title" style="margin-top:10px">② 工单详情(含③现场回传 · ④完工提交)</div>';
-      html += active.map(function (t) { return ticketBlock(t, crewObj); }).join('');
+      if (pending.length) {
+        html += '<div class="c-sec"><b>待接单</b><span>' + pending.length + ' 张</span></div>';
+        html += pending.map(function (t) { return newJobCard(t, crewObj); }).join('');
+      }
+      if (active.length) {
+        html += '<div class="c-sec"><b>在办工单</b><span>接单 → 到场 → 回传 → 提交</span></div>';
+        html += active.map(function (t) { return ticketBlock(t, crewObj); }).join('');
+      }
+      if (!pending.length && !active.length) {
+        html += '<div class="c-empty"><b>当前没有工单</b>' +
+          '可切顶部班组下拉查看其他班组在办件,或到工作台点「▶ 推进剧情」触发新派单。</div>';
+      }
+    } else if (M.tab === 'report') {
+      html += reportNewSection(crewObj);
+    } else {
+      html += crewProfile(crewObj, all);
     }
 
-    html += reportNewSection(crewObj);
-    return html;
+    return html + tabbar(pending.length);
+  };
+
+  /* 页面局部 UI 态切换(不进 store,只重绘) */
+  w.CREW_UI = {
+    tab: function (t) { M.tab = t; w.dispatchEvent(new CustomEvent('render')); },
+    toggle: function (k) { M.open[k] = !M.open[k]; w.dispatchEvent(new CustomEvent('render')); },
+    toggleSafety: function () { M.safety = !M.safety; w.dispatchEvent(new CustomEvent('render')); }
   };
 
   /* 动作族(需读取表单当前值,不走静态 data-act) */
@@ -317,8 +599,8 @@
     }
   };
 
-  /* 语境:班组处置端全部动作以「班组账号」身份提交(施工图 §5;actor 已在每个 commit 显式给出,
-     此处仅同步 state.role 语境,不作为授权依据——不影响 app.html 复核员角色的独立判定) */
+  /* 语境:班组处置端全部动作以「班组账号」身份提交(actor 已在每个 commit 显式给出,
+     此处仅同步 state.role 语境,不作为授权依据) */
   if (w.S.get().role !== '班组账号') { w.S.setRole('班组账号'); }
 })(window, document);
 </script>
