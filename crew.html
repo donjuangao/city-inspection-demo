@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>班组处置端 · 设施智能巡检(演示原型)</title>
+<link rel="stylesheet" href="assets/tokens.css">
+</head>
+<body>
+
+<div class="mob">
+  <header class="mob-top">
+    <b>班组处置端</b>
+    <span class="top-clock" id="clock">19:00</span>
+    <span class="top-spacer" style="flex:1"></span>
+    <select id="crewSel" style="width:auto;font-size:12px"></select>
+  </header>
+
+  <main class="mob-body" id="view"></main>
+
+  <footer class="mob-foot">
+    动作写回客户系统 · 证据双写进证据链——操作界面,不是第二真源(R67)<br>
+    <span class="tiny">离线/无信号时本地暂存,回连补传(P9 浅演示)· 全站虚构演示数据,零真实照片</span>
+    <span style="float:right"><a href="#" id="btnReset">重置演示</a></span>
+  </footer>
+</div>
+
+<div class="toasts"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/ui.js"></script>
+
+<!-- ===== 页面体 · 归属 W1-C 工兵 · 开始 =====
+     规格:施工图 §7 crew.html + 设计档 §3「移动端页面细节」
+     四块流:新工单卡(类目/位置/建议时限/接单键)→ 工单详情(证据+导航示意;状态写回区市政工单系统)
+             → 现场回传(修复前/后双照)→ 完工提交(触发 AI 复验)
+     动作族(store 已就绪,直接 data-act 调用):
+       crew_accept 接单 / crew_arrive 到场 / crew_photo 现场回传(params.phase='修复前'|'修复后')
+       crew_done 完工提交 / crew_reject 拒单 / crew_blocked 受阻上报 / crew_safety 安全上报
+       crew_report_new 现场上报 / crew_partial_done 部分完工 / crew_handover 交接
+     注意:班组动作的 params 必须带 actor:'班组账号'(动作表授权角色)。
+     =============================================================== -->
+<script>
+/* W1-C 工兵填充:实现 VIEW_CREW(ctx) 返回页面 HTML,替换下面的占位实现即可。 */
+window.VIEW_CREW = function (ctx) {
+  return UI.placeholder('班组处置端', 'W1-C 工兵填充',
+    ['新工单卡', '工单详情 + 导航示意', '现场回传(修复前/后双照)', '完工提交 → 触发 AI 复验']) +
+    '<div class="card" style="margin-top:10px"><div class="sec-title">地基件自检位(W1-C 接手后可删)</div>' +
+    '<div class="tiny">当前班组:' + UI.esc(ctx.crew) + ' · 待办工单 ' + ctx.tickets.length + ' 张 · 演示时刻 ' + UI.esc(S.now()) + '</div></div>';
+};
+</script>
+<!-- ===== 页面体 · 归属 W1-C 工兵 · 结束 ===== -->
+
+<script>
+/* ============ 壳:班组上下文 + 渲染框架(W0 地基件,W1 勿改)============ */
+(function (w, d) {
+  'use strict';
+  var CREW_KEY = 'CR-01';
+
+  function tickets(crewId) {
+    return w.S.get().tickets.filter(function (t) { return t.crew === crewId; });
+  }
+  function render() {
+    var st = w.S.get();
+    d.getElementById('clock').textContent = w.S.now();
+    var sel = d.getElementById('crewSel');
+    if (!sel.options.length) {
+      sel.innerHTML = st.crews.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+    }
+    sel.value = CREW_KEY;
+    var ctx = { crew: CREW_KEY, crewObj: w.S.find.crew(CREW_KEY), tickets: tickets(CREW_KEY) };
+    var body = '';
+    try { body = w.VIEW_CREW ? w.VIEW_CREW(ctx) : ''; }
+    catch (e) { body = UI.banner('danger', '页面渲染异常:' + UI.esc(e.message)); }
+    d.getElementById('view').innerHTML = UI.banners('crew') + body;
+  }
+  d.getElementById('crewSel').addEventListener('change', function (e) { CREW_KEY = e.target.value; render(); });
+  d.getElementById('btnReset').addEventListener('click', function (e) { e.preventDefault(); w.S.reset(); });
+  w.addEventListener('render', render);
+  UI.bindActions(d);
+  render();
+})(window, document);
+</script>
+</body>
+</html>

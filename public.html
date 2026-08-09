@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公众上报 · 设施智能巡检(演示原型)</title>
+<link rel="stylesheet" href="assets/tokens.css">
+</head>
+<body>
+
+<div class="mob">
+  <header class="mob-top">
+    <b>市政设施上报</b>
+    <span class="top-spacer" style="flex:1"></span>
+    <span class="top-clock" id="clock">19:00</span>
+  </header>
+
+  <main class="mob-body" id="view"></main>
+
+  <footer class="mob-foot">
+    上报进兜底并入队列人工甄别升格,不直接进应急 · 联系方式列级脱敏<br>
+    <span class="tiny">全站虚构演示数据,零真实照片;证据图为矢量示意</span>
+    <span style="float:right"><a href="#" id="btnReset">重置演示</a></span>
+  </footer>
+</div>
+
+<div class="toasts"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/ui.js"></script>
+
+<!-- ===== 页面体 · 归属 W1-E 工兵 · 开始 =====
+     规格:施工图 §7 public.html + 设计档 §3「公众上报轻页三步」
+     三步提交:拍一张 → 自动定位(可调)+ 类目三选(路面/井盖/漏水)→ 提交
+     回执页:受理编号 + 状态(去重合并后与线索状态同步);催办计数可见
+     列级脱敏演示:联系方式显示为 05****xxxx
+     动作(store 已就绪):public_report(params: {cat, block, facility}) / public_urge(params:{reportId})
+     另:W1-E 还负责横幅机制(暴雨 / 预警广播 / 降级)——横幅数据源 = S.get().banners,
+         渲染件 = UI.banner(tone,text) / UI.banners(scope),已在 ui.js 就绪。
+     =============================================================== -->
+<script>
+/* W1-E 工兵填充:实现 VIEW_PUBLIC(ctx) 返回页面 HTML,替换下面的占位实现即可。 */
+window.VIEW_PUBLIC = function (ctx) {
+  return UI.placeholder('公众上报轻端', 'W1-E 工兵填充',
+    ['第一步 拍一张(矢量示意)', '第二步 自动定位(可调)+ 类目三选', '第三步 提交 → 回执(受理编号 + 状态)']) +
+    '<div class="card" style="margin-top:10px"><div class="sec-title">地基件自检位(W1-E 接手后可删)</div>' +
+    '<div class="tiny">已有上报 ' + ctx.reports.length + ' 条 · 演示时刻 ' + UI.esc(S.now()) + '</div></div>';
+};
+</script>
+<!-- ===== 页面体 · 归属 W1-E 工兵 · 结束 ===== -->
+
+<script>
+/* ============ 壳:渲染框架(W0 地基件,W1 勿改)============ */
+(function (w, d) {
+  'use strict';
+  function render() {
+    d.getElementById('clock').textContent = w.S.now();
+    var ctx = { reports: w.S.get().publicReports, blocks: w.DATA.dict.blocks, cats: ['路面', '井盖', '漏水'] };
+    var body = '';
+    try { body = w.VIEW_PUBLIC ? w.VIEW_PUBLIC(ctx) : ''; }
+    catch (e) { body = UI.banner('danger', '页面渲染异常:' + UI.esc(e.message)); }
+    d.getElementById('view').innerHTML = UI.banners('public') + body;
+  }
+  d.getElementById('btnReset').addEventListener('click', function (e) { e.preventDefault(); w.S.reset(); });
+  w.addEventListener('render', render);
+  UI.bindActions(d);
+  render();
+})(window, document);
+</script>
+</body>
+</html>

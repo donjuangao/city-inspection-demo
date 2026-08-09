@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Al Ain 区市政 · 设施智能巡检工作台(演示原型)</title>
+<link rel="stylesheet" href="assets/tokens.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧六模块导航(施工图 §7 / 设计档 §0.7)============ -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <b>设施智能巡检平台</b>
+      <span class="tiny">Al Ain 区市政 · 演示原型</span>
+    </div>
+    <ul class="nav-list" id="navList"></ul>
+    <div class="nav-foot">
+      <div><a href="crew.html">班组处置端 →</a></div>
+      <div><a href="public.html">公众上报端 →</a></div>
+      <div style="margin-top:6px">全站虚构演示数据 · 零真实照片</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- ============ 顶栏:演示时刻 / 推进剧情 / 重置 / 角色切换器 ============ -->
+    <header class="top">
+      <span class="top-clock">演示时刻 <span id="clock">19:00</span></span>
+      <span class="top-ctx" id="sceneCtx">暴雨前夜</span>
+      <button type="button" class="btn btn-primary" id="btnNext">▶ 推进剧情</button>
+      <span class="tiny" id="stepHint"></span>
+      <span class="top-spacer"></span>
+      <label class="tiny" for="roleSel" style="color:var(--faint)">角色</label>
+      <select id="roleSel" style="width:auto"></select>
+      <button type="button" class="btn" id="btnReset">重置演示</button>
+    </header>
+
+    <main class="view" id="view"></main>
+  </div>
+</div>
+
+<div class="toasts"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/ui.js"></script>
+
+<script>
+/* ============ 模块登记表(路由目标;新增模块必须同时登记,防死链 R70)============ */
+window.MODULES = [
+  { id:'m1', no:'1', name:'复核工作台',  owner:'W1-A 工兵',
+    spec:['三线分区 tab(井盖/路面/管网,R33 仲裁序置顶应急件)','队列表 + 详情(对象卡/证据卡/机械校验卡/动作面板/时间线)','快车道并行复核卡','调查案视图(管网线)'] },
+  { id:'m2', no:'2', name:'告警与工单',  owner:'W1-B 工兵',
+    spec:['告警列表','工单镜像(状态机五格:已派工/已接单/已到场/已完工/已验收)','对账异常队列','调度视图(班组负载卡 + 改派/合并/拆单)'] },
+  { id:'m3', no:'3', name:'设施台账',    owner:'W1-D 工兵',
+    spec:['设施列表 + 详情','点位历史与证据链回查','劣化曲线(路面线)','观测覆盖窗行','Onwani 双语字段位(空值不渲染)'] },
+  { id:'m4', no:'4', name:'兜底与质量',  owner:'W1-B 工兵',
+    spec:['抽审队列(拘审标来源)','公众上报并入清单'] },
+  { id:'m5', no:'5', name:'统计总览',    owner:'W1-D 工兵',
+    spec:['健康总览卡(数字=前面动作的下游,联动 store)','覆盖热区示意 SVG'] },
+  { id:'m6', no:'6', name:'系统管理',    owner:'W1-D 工兵',
+    spec:['角色表','参数变更(预演示意)','类目快车道开关(DMT)','值班表'] }
+];
+window.VIEWS = {};
+</script>
+
+<!-- =================================================================
+     六模块视图函数已拆为 assets/m1.js…m6.js,一文件一位工兵,文件互斥(裁定 2026-08-09)。
+     约定:VIEWS.mX(ctx) 返回 HTML 字符串;ctx = {module, rest[], hash}。
+     详情路由示例:#/m1/clue/CL-0417  →  ctx.rest = ['clue','CL-0417']
+     只写分给你的 mX.js;共享文件(tokens/store/data/ui/app.html)只读。
+     ================================================================= -->
+
+<script src="assets/m1.js"></script>  <!-- 归属 W1-A 工兵,只写自己这个文件 -->
+<script src="assets/m2.js"></script>  <!-- 归属 W1-B 工兵,只写自己这个文件 -->
+<script src="assets/m3.js"></script>  <!-- 归属 W1-D 工兵,只写自己这个文件 -->
+<script src="assets/m4.js"></script>  <!-- 归属 W1-B 工兵,只写自己这个文件 -->
+<script src="assets/m5.js"></script>  <!-- 归属 W1-D 工兵,只写自己这个文件 -->
+<script src="assets/m6.js"></script>  <!-- 归属 W1-D 工兵,只写自己这个文件 -->
+
+<script>
+/* ============ 壳:hash 路由 + 渲染框架(W0 地基件,W1 勿改)============ */
+(function (w, d) {
+  'use strict';
+  var DEF = 'm1';
+
+  function mod(id) {
+    for (var i = 0; i < w.MODULES.length; i++) if (w.MODULES[i].id === id) return w.MODULES[i];
+    return null;
+  }
+
+  /* 统一占位块:未填充的模块用它,保证有内容、无死链 */
+  VIEWS._ph = function (id, ctx) {
+    var m = mod(id) || { name: id, owner: '待分配', spec: [] };
+    var deep = (ctx.rest && ctx.rest.length) ? '<div class="tiny" style="margin-top:6px">当前深链参数:' + UI.esc(ctx.rest.join(' / ')) + '</div>' : '';
+    return UI.placeholder(m.no + ' · ' + m.name, m.owner + '填充', m.spec) + deep;
+  };
+
+  function parseHash() {
+    var h = (w.location.hash || '').replace(/^#\/?/, '');
+    var parts = h.split('/').filter(function (x) { return x !== ''; });
+    var id = parts[0] || DEF;
+    if (!mod(id)) id = DEF;
+    return { module: id, rest: parts.slice(1), hash: h };
+  }
+
+  function renderNav(cur) {
+    d.getElementById('navList').innerHTML = w.MODULES.map(function (m) {
+      return '<li><a href="#/' + m.id + '" class="' + (m.id === cur ? 'is-on' : '') + '">' +
+        '<span class="nav-no">' + m.no + '</span><span>' + UI.esc(m.name) + '</span></a></li>';
+    }).join('');
+  }
+
+  function renderTop() {
+    var st = w.S.get();
+    d.getElementById('clock').textContent = w.S.now();
+    d.getElementById('sceneCtx').textContent = st.meta.scene + (st.gov.stormMode ? ' · 暴雨模式已启动' : '');
+    var nx = w.S.step();
+    d.getElementById('stepHint').textContent = nx ? ('下一步 ' + nx.id + ' ' + nx.t + ' ' + nx.title) : '剧情已走完 T12';
+    d.getElementById('btnNext').disabled = !nx;
+    var sel = d.getElementById('roleSel');
+    if (!sel.options.length) {
+      sel.innerHTML = w.DATA.dict.roles.map(function (r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+    }
+    sel.value = st.role;
+  }
+
+  function render() {
+    var ctx = parseHash();
+    renderNav(ctx.module);
+    renderTop();
+    var fn = VIEWS[ctx.module];
+    var body = '';
+    try { body = fn ? fn(ctx) : VIEWS._ph(ctx.module, ctx); }
+    catch (e) { body = UI.banner('danger', '模块 ' + UI.esc(ctx.module) + ' 渲染异常:' + UI.esc(e.message)); }
+    d.getElementById('view').innerHTML = UI.banners(ctx.module) + body;
+  }
+
+  /* 顶栏交互 */
+  d.getElementById('btnNext').addEventListener('click', function () {
+    var r = w.S.nextStep();
+    if (!r.ok) UI.toast(r.reason, 'warn');
+  });
+  d.getElementById('btnReset').addEventListener('click', function () { w.S.reset(); });
+  d.getElementById('roleSel').addEventListener('change', function (e) { w.S.setRole(e.target.value); });
+
+  /* 事件:store 变更 → 重绘;场景步进 → 叙事 toast */
+  w.addEventListener('render', render);
+  w.addEventListener('hashchange', render);
+  w.addEventListener('scenario', function (e) {
+    var s = e.detail && e.detail.step;
+    if (s) UI.toast(s.t + ' · ' + s.narration, 'warn');
+  });
+
+  /* 按钮即动作:全局委托 → S.commit(唯一状态变更入口) */
+  UI.bindActions(d);
+
+  if (!w.location.hash) w.location.hash = '#/' + DEF;
+  render();
+  w.ROUTE = { render: render, parse: parseHash };
+})(window, document);
+</script>
+</body>
+</html>
