@@ -18,7 +18,7 @@
   // 设计档 §0.6 角色(人类五角色 + 非人三账号)
   var ROLES = ['区复核员', '复核主管', '区值班长', '区巡检管理者', '区管理员', 'DMT'];
   var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号'];
-  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '区巡检管理者': 2, 'DMT': 2 };
+  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '区巡检管理者': 2, '区管理员': 2, 'DMT': 2 };
 
   // 设计档 §0.5.1/0.5.2/0.5.3 线内分级档名(逐字)
   var LEVELS = {
@@ -340,7 +340,7 @@
       auto: [
         { action: 'auto_review_window', params: { actor: '规则引擎', clueId: 'CL-0417', mins: SLA.fastlaneReview } }
       ],
-      manual: '评审者点「确认」= 告警追认;或点「快车道撤回」走 D1 召回分支。'
+      manual: '评审者点「确认」= 告警追认;或点「快车道撤回」走召回分支。'
     },
     {
       id: 'T3', t: '19:05', figs: 'P1-P4/P8',
@@ -354,7 +354,7 @@
         { action: 'crew_photo', params: { actor: '班组账号', crew: 'CR-01', ticketId: 'WO-9001', phase: '修复后' } },
         { action: 'crew_done', params: { actor: '班组账号', crew: 'CR-01', ticketId: 'WO-9001' } }
       ],
-      manual: 'crew.html 上可自己走一遍(已自动走完的步骤不会重复记日志)。'
+      manual: '班组端上可自己走一遍(已自动走完的步骤不会重复记日志)。'
     },
     {
       id: 'T4', t: '19:24', figs: 'P5/C1',
@@ -387,7 +387,7 @@
         { action: 'auto_create_clue', params: { actor: 'AI 服务', clueId: 'CL-0588' } },
         { action: 'auto_mech_reject', params: { actor: '规则引擎', clueId: 'CL-0588' } }
       ],
-      manual: '人认可驳回码① → 「高危驳回已拘主管抽审」横幅;或点「推翻机械判定」(D4)。'
+      manual: '人认可驳回码① → 「高危驳回已拘主管抽审」横幅;或点「推翻机械判定」。'
     },
     {
       id: 'T7', t: '20:00', figs: 'L1',
@@ -427,7 +427,7 @@
         { action: 'auto_overload', params: { actor: '规则引擎', clueId: 'CL-0733' } },
         { action: 'auto_broadcast', params: { actor: '规则引擎', scope: 'Zakher', text: 'MH-0733 井盖缺失,承接池无可派 → 已进批量加急分诊,等待值班长仲裁。' } }
       ],
-      manual: '切「区值班长」角色 → m2 调度视图点「挂起 WO-8871(应急抢占)」再改派 → 挂起回补卡可见(D7)。'
+      manual: '切「区值班长」角色 → m2 调度视图点「挂起 WO-8871(应急抢占)」再改派 → 挂起回补卡可见。'
     },
     {
       id: 'T10', t: '21:10', figs: 'E3/D8',
@@ -555,8 +555,8 @@
     { fig: 'D11', name: '作业时窗与封控校验(斋月/高温禁令/活动封控/交管批文)', form: '工单详情信息行:「排到最近可作业窗,SLA 停表」' },
     { fig: 'D12', name: '跨机构联动出动(警察/民防/产权单位)', form: '应急件详情信息行 + 挂起原因码「联动处置等待」' },
     { fig: 'P6', name: '客户系统不可用/回写失败', form: '工单镜像横幅:「派工请求进重试队列,超阈值转人工电话派工并补录」' },
-    { fig: 'P9', name: '移动端离线/无信号', form: 'crew.html 页脚信息行:离线单本地暂存 + 回连补传' },
-    { fig: 'P11', name: '分阶段处置(临时措施先行)', form: 'crew.html「部分完工」动作 + 工单阶段标' }
+    { fig: 'P9', name: '移动端离线/无信号', form: '班组端页脚信息行:离线单本地暂存 + 回连补传' },
+    { fig: 'P11', name: '分阶段处置(临时措施先行)', form: '班组端「部分完工」动作 + 工单阶段标' }
   ];
 
 })(window);

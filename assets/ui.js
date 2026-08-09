@@ -41,7 +41,7 @@
 
   /* 数字假设值标注(判据 §9.5) */
   U.assume = function (text, note) {
-    return '<span class="assume" title="' + esc(note || '假设值:试点首周与客户核实后按区可配参数(R48)调整') + '">' + esc(text) + '</span>';
+    return '<span class="assume" title="' + esc(note || '假设值:试点首周与客户核实后按区可配参数调整') + '">' + esc(text) + '</span>';
   };
 
   U.sla = function (deadline) {

@@ -163,7 +163,7 @@
   };
 
   A.overrule_mech = {
-    label: '推翻机械判定', actors: ['区复核员', '复核主管'], hint: '理由码必填;线索复活进人审 + 自动触发抽审(D4)',
+    label: '推翻机械判定', actors: ['区复核员', '复核主管'], hint: '理由码必填;线索复活进人审 + 自动触发抽审',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
       if (!c.mechFail) return '本件机械校验无硬失败,无可推翻';
@@ -180,7 +180,7 @@
   };
 
   A.fastlane_recall = {
-    label: '快车道撤回', actors: ['区复核员', '复核主管'], hint: '显名 + 理由码;副作用=召回班组 + 线索转驳回流(D1)',
+    label: '快车道撤回', actors: ['区复核员', '复核主管'], hint: '显名 + 理由码;副作用=召回班组 + 线索转驳回流',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
       if (!c.fastlane) return '仅快车道自动派单件可撤回';
@@ -441,7 +441,7 @@
   };
 
   A.appeal_fastlane = {
-    label: '区申诉', actors: ['区巡检管理者', '复核主管', '区值班长'], hint: '关车道后的区申诉通道:DMT 复议并留痕(G1)',
+    label: '区申诉', actors: ['区巡检管理者', '复核主管', '区值班长'], hint: '关车道后的区申诉通道:DMT 复议并留痕',
     v: function (s, p) { if (!p.cat) return '未指定类目'; if (!p.reason) return '申诉理由必填'; return null; },
     run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」快车道关闭;理由「' + p.reason + '」→ 转 DMT 复议(留痕)'; }
   };
@@ -545,7 +545,7 @@
     }
   };
   A.crew_safety = {
-    label: '安全上报', actors: ['班组账号'], hint: '置顶通道:区值班长即时通知(P8)',
+    label: '安全上报', actors: ['班组账号'], hint: '置顶通道:区值班长即时通知',
     v: function (s, p) { if (!p.note) return '需填写现场情况'; return null; },
     run: function (s, p) {
       banner('danger', '现场安全上报(置顶通道):' + p.note + ' —— 已即时通知区值班长。', 'global');
@@ -570,7 +570,7 @@
     }
   };
   A.crew_partial_done = {
-    label: '部分完工', actors: ['班组账号'], hint: '分阶段处置:临时措施先行(围挡)→ 永久修复(P11)',
+    label: '部分完工', actors: ['班组账号'], hint: '分阶段处置:临时措施先行(围挡)→ 永久修复',
     v: function (s, p) { var t = tkOf(p.ticketId); if (!t) return '工单不存在'; if (t.state !== '已到场') return '需先到场'; return null; },
     run: function (s, p) {
       var t = tkOf(p.ticketId); t.phase = '阶段一完工(临时措施:围挡+警示)'; t.state = '已到场';
@@ -611,7 +611,7 @@
     }
   };
   A.public_urge = {
-    label: '催办', actors: ['*'], hint: '催办计数可见(E3)',
+    label: '催办', actors: ['*'], hint: '催办计数可见',
     v: function (s, p) { return byId(s.publicReports, p.reportId) ? null : '上报记录不存在'; },
     run: function (s, p) { var r = byId(s.publicReports, p.reportId); r.urges++; return '公众催办 ' + r.id + ':催办计数 ' + r.urges; }
   };

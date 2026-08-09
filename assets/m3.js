@@ -103,7 +103,7 @@
       ['分区 Zone', onwani.zone],
       ['楼栋 Bldg', onwani.bldg]
     ]);
-    var onwaniBlock = '<div class="card"><div class="sec-title">ONWANI 双语字段位(空值不渲染,设计档 §3)</div>' +
+    var onwaniBlock = '<div class="card"><div class="sec-title">ONWANI 双语字段位(空值不渲染)</div>' +
       onwaniRows + '<div class="tiny" style="margin-top:6px">市政台账以设施编号定位,街道字段不出现在界面;此处仅留字段位,待 Onwani 五要素补全。</div></div>';
 
     /* 观测覆盖窗行(设计档 §4③:区分模型漏报与覆盖缺失) */
@@ -117,7 +117,7 @@
             '<td class="tiny">' + UI.esc(s.window || '—') + '</td></tr>';
         }).join('') + '</tbody></table>';
     } else {
-      covBlock = UI.banner('warn', '本设施暂无绑定传感器/相机 —— 观测覆盖缺口:AI 无产出时,无法区分是「模型漏报」还是「覆盖缺失」(设计档 §4③ 资产族观测覆盖窗记录)。');
+      covBlock = UI.banner('warn', '本设施暂无绑定传感器/相机 —— 观测覆盖缺口:AI 无产出时,无法区分是「模型漏报」还是「覆盖缺失」。');
     }
     var covPanel = '<div class="card"><div class="sec-title">观测覆盖窗</div>' + covBlock + '</div>';
 
@@ -130,7 +130,7 @@
         '<div style="margin-top:4px">现值 ' + UI.badge(String(last), risky ? 'red' : 'blue') +
         (risky ? '<span class="tiny" style="margin-left:6px">已进入低值区间,建议纳入下一周期养护批量</span>' : '') + '</div>' +
         '<div class="tiny" style="margin-top:6px">' +
-        UI.assume('示意曲线,非实测传感读数', '演示简化生成,非真实检测数据;正式版由记账车道(设计档 §0.5)持续写入台账') +
+        UI.assume('示意曲线,非实测传感读数', '演示简化生成,非真实检测数据;正式版由记账车道持续写入台账') +
         ' —— 免人工「记账」车道自动记入,升级自动触发复报。</div></div>';
     }
 

@@ -79,7 +79,7 @@
       params: function (m, f) { return { clueId: m.id, code: f.code, note: f.note || '' }; }
     },
     overrule: {
-      title: '推翻机械判定(D4)',
+      title: '推翻机械判定',
       action: 'overrule_mech', submit: '推翻并复活线索',
       intro: function () { return '人可以推翻机械闸:理由码必填,线索复活进人审车道,同时自动触发抽审 —— 误杀样本回流规则组。'; },
       fields: [{ k: 'reason', label: '推翻理由码', opts: rcOpts('overrule') }],
@@ -87,7 +87,7 @@
       params: function (m, f) { return { clueId: m.id, reason: f.reason }; }
     },
     recall: {
-      title: '快车道撤回 · 召回班组(D1)',
+      title: '快车道撤回 · 召回班组',
       action: 'fastlane_recall', submit: '显名撤回并召回',
       cls: 'btn-danger',
       intro: function (m) {
@@ -99,7 +99,7 @@
       params: function (m, f) { return { clueId: m.id, reason: f.reason }; }
     },
     transfer: {
-      title: '转办产权单位(P10)',
+      title: '转办产权单位',
       action: 'transfer', submit: '提交转办',
       intro: function () { return '非市政资产 → 转产权单位。<b>转办码 ≠ 驳回码</b>(不计误报),台账回写产权标注。'; },
       fields: [{ k: 'owner', label: '产权判定(承接产权单位)', opts: [['私产业主', '私产业主(商业/住宅红线内)'], ['国道管理机构', '国道管理机构(归属外)'], ['产权单位待确认', '产权单位待确认(先转办后核实)']] }],
@@ -107,7 +107,7 @@
       params: function (m, f) { return { clueId: m.id, owner: f.owner }; }
     },
     verifyreject: {
-      title: '复验打回 · 须附对比证据(P5)',
+      title: '复验打回 · 须附对比证据',
       action: 'verify_reject', submit: '打回并附证据',
       intro: function () { return '<b>永不默认打回</b>:AI 判不出只转「存疑待人裁」;打回必须是复核员显名动作并附复验对比证据,班组可申诉 → 主管裁。'; },
       fields: [{ k: 'evidence', label: '复验对比证据', opts: [['修复前后配准不通过', '修复前后配准不通过(同点位不同姿态)'], ['缺口未封闭', '现场复核:井口缺口未封闭'], ['完工照点位不符', '完工照点位与工单不符']] }],
@@ -115,7 +115,7 @@
       params: function (m, f) { return { ticketId: m.id, evidence: f.evidence }; }
     },
     revoke: {
-      title: '撤销告警(C2)· 记录不删除',
+      title: '撤销告警 · 记录不删除',
       action: 'revoke', submit: '撤销(留痕)',
       intro: function () { return '确认错了怎么办:主管撤销 —— 状态置「已撤销」,<b>记录永不删除</b>;理由码 + 证据入动作日志。'; },
       fields: [
@@ -126,7 +126,7 @@
       params: function (m, f) { return { alertId: m.id, reason: f.reason, evidence: f.evidence }; }
     },
     freeze: {
-      title: '证据冻结(C5)· 法务包',
+      title: '证据冻结 · 法务包',
       action: 'freeze_evidence', submit: '冻结并锚定哈希',
       intro: function () { return '涉事故/索赔件:全证据链快照锁定 + 哈希锚定,可导出法务包(动作日志防篡改口径 = 可检测)。'; },
       fields: [{ k: 'reason', label: '冻结事由', opts: [['涉人身伤害事故', '涉人身伤害事故'], ['涉第三方索赔', '涉第三方索赔'], ['涉行政复议/调查', '涉行政复议 / 调查']] }],
@@ -134,7 +134,7 @@
       params: function (m, f) { return { targetId: m.id, reason: f.reason }; }
     },
     override: {
-      title: '紧急 override(D5)· 红色动作',
+      title: '紧急 override · 红色动作',
       action: 'override_emergency', submit: '执行 override(跳闸直接行动)',
       cls: 'btn-danger', danger: true,
       intro: function () { return '跳过闸门直接行动。代价明写:<b>红标日志 + 强制事后审计 + 双人知悉</b>。授权 = 主管以上;需红色弹层双确认。'; },
@@ -563,8 +563,8 @@
 
     if (isHigh(c)) {
       left += card('作业与联动(浅演示)',
-        '<div class="small">· <b>D11 作业时窗与封控校验</b>:斋月 / 高温禁令 / 活动封控 / 交管批文 → 排到最近可作业窗,<b>SLA 停表</b>(挂起原因码「待条件」)。</div>' +
-        '<div class="small">· <b>D12 跨机构联动出动</b>:需警察 / 民防 / 产权单位到场时,原单挂起原因码「联动处置等待」,联动到位后自动回队。</div>' +
+        '<div class="small">· <b>作业时窗与封控校验</b>:斋月 / 高温禁令 / 活动封控 / 交管批文 → 排到最近可作业窗,<b>SLA 停表</b>(挂起原因码「待条件」)。</div>' +
+        '<div class="small">· <b>跨机构联动出动</b>:需警察 / 民防 / 产权单位到场时,原单挂起原因码「联动处置等待」,联动到位后自动回队。</div>' +
         '<div class="tiny" style="margin-top:4px">本演示以信息行形态呈现(见首页「浅演示清单」),不静默缺席。</div>');
     }
 
@@ -580,8 +580,8 @@
       UI.actionPanel([{ action: 'archive_doubt', params: { clueId: c.id }, label: '存疑归档(仅批量半审车道)' }]);
 
     acts += '<div class="sep"></div><div class="sec-title">机械闸 / 快车道</div>' +
-      modalBtn('推翻机械判定(D4)', 'overrule', c.id) +
-      modalBtn('快车道撤回 · 召回班组(D1)', 'recall', c.id, 'btn-danger');
+      modalBtn('推翻机械判定', 'overrule', c.id) +
+      modalBtn('快车道撤回 · 召回班组', 'recall', c.id, 'btn-danger');
 
     if (tk) {
       acts += '<div class="sep"></div><div class="sec-title">复验人裁(永不默认打回)</div>' +
@@ -591,8 +591,8 @@
 
     acts += '<div class="sep"></div><div class="sec-title">主管以上(切顶栏角色可解锁)</div>' +
       modalBtn('紧急 override(红色动作 · 双确认)', 'override', c.id, 'btn-danger') +
-      modalBtn('证据冻结 · 导出法务包(C5)', 'freeze', c.id) +
-      (al ? modalBtn('撤销告警 ' + al.id + '(C2)', 'revoke', al.id, '', c.id)
+      modalBtn('证据冻结 · 导出法务包', 'freeze', c.id) +
+      (al ? modalBtn('撤销告警 ' + al.id, 'revoke', al.id, '', c.id)
         : '<div class="act-item"><button type="button" class="btn is-off" disabled>撤销告警</button><span class="act-why">未满足:本线索尚未确认成立,无告警可撤销</span></div>');
 
     right += card('动作面板 · 按钮即动作', acts,

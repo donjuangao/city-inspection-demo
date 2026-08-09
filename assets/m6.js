@@ -23,7 +23,7 @@
   var SVC_DESC = {
     '规则引擎': '机械校验闸 / 自动车道(记账·升格·机械驳回·设备工单)/ 预警广播 / 快车道自动派单的执行身份;机械自动化也不豁免审计,每步入动作日志。',
     'AI 服务': '仅「创建线索 / 提出建议」两动作的执行身份;无界面登录权,无定性动作。',
-    '班组账号': '仅班组移动端(crew.html);接单/工单详情/拍照回传/完工提交;处置动作经集成网关写回客户工单系统;无 Web 工作台任何模块权限。'
+    '班组账号': '仅班组移动端;接单/工单详情/拍照回传/完工提交;处置动作经集成网关写回客户工单系统;无 Web 工作台任何模块权限。'
   };
 
   function roleTable() {
@@ -50,8 +50,7 @@
   /* ---------------- 2 · 类目快车道开关(DMT;R72)---------------- */
   var CAT_NOTE = {
     '井盖缺失': '井盖线应急快车道 · 硬证据 = 位移传感器已认证设备签名报文',
-    '爆管': '管网线应急快车道 · 硬证据 = 阀事件对齐',
-    '路面急修': '路面线急修车道(默认关闭;路面线以自动升格/批量为主战场)'
+    '爆管': '管网线应急快车道 · 硬证据 = 阀事件对齐'
   };
 
   function fastlaneRow(cat) {
@@ -59,7 +58,7 @@
     var toggleBtn = on
       ? { action: 'toggle_fastlane', label: '关闭快车道', cls: 'btn-danger', params: { cat: cat, on: false, reason: '系统管理页治理演示:DMT 关闭该类目快车道' } }
       : { action: 'toggle_fastlane', label: '重开快车道', cls: 'btn-ok', params: { cat: cat, on: true, dataBasis: '近 30 天误派率回落至阈值内(演示数据)' } };
-    var appealBtn = { action: 'appeal_fastlane', label: '区申诉(G1)', params: { cat: cat, reason: '本区应急处置等不起人审,申请复议重开' } };
+    var appealBtn = { action: 'appeal_fastlane', label: '区申诉', params: { cat: cat, reason: '本区应急处置等不起人审,申请复议重开' } };
     return '<tr>' +
       '<td><b>' + UI.esc(cat) + '</b><div class="tiny">' + UI.esc(CAT_NOTE[cat] || '') + '</div></td>' +
       '<td>' + (on ? UI.badge('已开启', 'green') : UI.badge('已关闭 · 回退人审', 'red')) + '</td>' +
@@ -72,7 +71,7 @@
     var cats = Object.keys(w.S.get().gov.fastlane);
     return '<div class="card">' +
       '<div class="card-hd"><h3 style="margin:0;font-size:14px">类目快车道开关</h3>' +
-      '<span class="tiny">仅 DMT 身份可点(灰态见未满足校验);关 = 即时生效 + 强制通知横幅 + 区申诉入口(G1)</span></div>' +
+      '<span class="tiny">仅 DMT 身份可点(灰态见未满足校验);关 = 即时生效 + 强制通知横幅 + 区申诉入口</span></div>' +
       '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>类目</th><th>当前状态</th><th>DMT 操作</th><th>区申诉</th></tr></thead>' +
       '<tbody>' + cats.map(fastlaneRow).join('') + '</tbody></table></div>' +
       '</div>';
