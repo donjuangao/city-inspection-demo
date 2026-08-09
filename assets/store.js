@@ -359,6 +359,38 @@
     }
   };
 
+  /* W3 整合补(指挥官,2026-08-09):对账裁决——设计档 §2.3b④;W1-B 报缺 */
+  A.recon_rule = {
+    label: '对账裁决', actors: ['复核主管'], hint: '处置状态以客户系统为准 · 巡检定性以我方为准;24h 内主管裁定',
+    v: function (s, p) {
+      var rc = byId(s.recon, p.reconId); if (!rc) return '对账记录不存在';
+      if (rc.status === '已裁定') return '该条已裁定';
+      return null;
+    },
+    run: function (s, p) {
+      var rc = byId(s.recon, p.reconId);
+      rc.status = '已裁定'; rc.ruledT = s.now; rc.ruling = '处置状态以客户系统为准';
+      return '对账裁决 ' + rc.id + ':处置状态以客户系统为准(巡检定性以我方为准);裁定入日志';
+    }
+  };
+
+  /* W3 整合补(指挥官):公众上报人工甄别驳回——设计档 §0.9 E3 无效分支;W1-E 报缺 */
+  A.public_reject = {
+    label: '甄别驳回', actors: ['区复核员', '复核主管'], hint: '人工甄别判无效:驳回,上报人可见理由',
+    v: function (s, p) {
+      var r = byId(s.publicReports, p.reportId); if (!r) return '上报不存在';
+      if (r.status === '已并入') return '已并入件不走驳回(随线索侧流程)';
+      if (r.status === '已驳回') return '该条已驳回';
+      if (!p.reason) return '需填驳回理由(上报人可见)';
+      return null;
+    },
+    run: function (s, p) {
+      var r = byId(s.publicReports, p.reportId);
+      r.status = '已驳回'; r.rejectReason = p.reason;
+      return '公众上报 ' + r.id + ' 甄别驳回:理由「' + p.reason + '」;上报人可见,联系方式仍列级脱敏';
+    }
+  };
+
   A.freeze_evidence = {
     label: '证据冻结', actors: ['复核主管', '区值班长'], hint: '涉事故/索赔件:全证据链快照锁定 + 哈希锚定,可导出法务包',
     v: function (s, p, actor) {

@@ -219,7 +219,7 @@
   grFacs.forEach(function (g, k) {
     var fo = FACILITIES.filter(function (x) { return x.id === g; })[0];
     T0_CLUES.push(clue({
-      id: 'CL-02' + (41 + k), line: '井盖', level: '养护', conf: 0.71 + k * 0.03,
+      id: 'CL-02' + (41 + k), line: '井盖', level: '养护', conf: Math.round((0.71 + k * 0.03) * 100) / 100,
       source: '固定相机网', facility: g, block: fo.block, kindText: '雨水口堵塞(箅面)',
       checks: checks('井盖', ['pass', k === 2 ? 'na' : 'pass', 'pass', 'pass']),
       evidence: [{ kind: 'grate', label: 'AI 生成示意' }],
