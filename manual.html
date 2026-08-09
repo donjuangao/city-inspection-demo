@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>origen 巡检 demo · 演示手册</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+  /* 本文件只加最基础的页面布局,组件一律用 tokens.css 现有的 card/badge/banner/tb —— 不发明新视觉。 */
+  body{background:var(--bg)}
+  .page{max-width:900px;margin:0 auto;padding:28px 20px 80px}
+  .ttl{font-size:22px;margin-bottom:4px}
+  .lead{color:var(--mute);font-size:var(--fs-sm);line-height:1.8;margin-bottom:20px}
+  .steps{counter-reset:st}
+  .steps li{list-style:none;counter-increment:st;position:relative;padding:2px 0 2px 30px;margin-bottom:8px;font-size:var(--fs-sm);line-height:1.75}
+  .steps li:before{content:counter(st);position:absolute;left:0;top:2px;width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .quicknav{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 22px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+  .qn{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#eef0ec;color:var(--mute);border:1px solid var(--line);font-weight:600}
+  .qn:hover{background:var(--blue-soft);color:var(--blue);text-decoration:none;border-color:var(--blue-line)}
+  .scard{scroll-margin-top:52px}
+  .rows{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .rows .lbl{font-size:11px;color:var(--faint);letter-spacing:.06em;font-weight:700;text-transform:none;margin-bottom:3px}
+  .rows p{margin:0;font-size:var(--fs-sm);line-height:1.8}
+  .say b, .ask b{display:block;font-size:11px;letter-spacing:.06em;font-weight:700;margin-bottom:4px}
+  .say b{color:#1d5a73}
+  .ask b{color:var(--amberw)}
+  .say p, .ask p{margin:0;font-size:var(--fs-sm);line-height:1.8}
+  h2.sec{margin:34px 0 6px;font-size:17px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1 class="ttl">origen 巡检 demo · 演示手册</h1>
+  <p class="lead">这份手册回答三个问题:每一幕看什么、去哪个界面看、走到下一幕系统里到底变了哪个卡/横幅/数字。内容逐条取自 <span class="mono">assets/data.js</span>(场景时刻表)与 <span class="mono">Tour-B-Console.dc.html</span>(口播稿+预判追问),口播/预判追问原文引用。</p>
+
+  <!-- ============ 头部:这场演示怎么开始 ============ -->
+  <div class="card">
+    <div class="card-hd"><h2>这场演示怎么开始</h2></div>
+    <ol class="steps">
+      <li>打开哪个文件都行:<b>index.html</b> 是叙事导览页(六幕结构,内嵌真实机器截面),从头读到尾就是一遍完整讲解;<b>app.html</b> 是工作台实机本体,打开就能直接点顶栏「▶ 推进剧情」把整场戏走一遍。两者是同一份演示状态的两个入口,不冲突,挑一个顺手的开始。</li>
+      <li>认识顶栏三件东西:「演示时刻」是假时钟——初始 <b>19:00</b>,只在你点「▶ 推进剧情」时才往前跳一步,不按现实秒走;「▶ 推进剧情」按钮每点一次推进一幕(T1→T12);「重置演示」把状态清空、回到 19:00 的 T0 初态。</li>
+      <li>三端共享同一份演示状态:工作台 <b>app.html</b>、班组处置端 <b>crew.html</b>、公众上报端 <b>public.html</b>,三个页面在同一个浏览器标签页里共享同一份剧情进度;任一处点「重置演示」,三端一起回到 T0 · 19:00。</li>
+    </ol>
+    <div class="banner banner-info" style="margin-top:14px;margin-bottom:0">
+      <span class="banner-ico">i</span>
+      <span><b>Tour-B-Console.dc.html</b> 是本手册的舞台化版本——左边一份场景时刻表(点哪一步就跳到哪一步)、中间实机镜像、右边逐步口播稿 + 预判追问,本手册下面的内容跟它逐句对应,可以对照着开。</span>
+    </div>
+  </div>
+
+  <!-- ============ 快速跳转 ============ -->
+  <div class="quicknav">
+    <a class="qn" href="#t0">T0 开场</a>
+    <a class="qn" href="#t1">T1 19:02</a>
+    <a class="qn" href="#t2">T2 19:03</a>
+    <a class="qn" href="#t3">T3 19:05</a>
+    <a class="qn" href="#t4">T4 19:24</a>
+    <a class="qn" href="#t5">T5 19:30</a>
+    <a class="qn" href="#t6">T6 19:40</a>
+    <a class="qn" href="#t7">T7 20:00</a>
+    <a class="qn" href="#t8">T8 20:30</a>
+    <a class="qn" href="#t9">T9 21:00</a>
+    <a class="qn" href="#t10">T10 21:10</a>
+    <a class="qn" href="#t11">T11 21:20</a>
+    <a class="qn" href="#t12">T12 21:30</a>
+    <a class="qn" href="#shallow">浅演示清单</a>
+  </div>
+
+  <!-- ============ T0 ============ -->
+  <div class="card scard" id="t0">
+    <div class="card-hd">
+      <h3><span class="mono">T0</span> · 19:00 · 开场静置(帷幕拉开前的存量)</h3>
+      <span class="badge badge-grey">开场</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:00,帷幕拉开前的静态起点。队列里已经躺着入夜前留下的存量:路面线批量待核 12 条(其中 CL-0311 置信度只有 0.58)、雨水口养护待核 5 条;主管的抽审队列已经排了 3 条待抽审。还有两张背景工单在跑:MH-0289 的高危线索 CL-0198 已经被人确认成告警 AL-0771、派了急修工单 WO-8871(东区养护班已接单在途),GR-1147 液位计读数异常那单 WO-8863 班组已经到场。这些都是入夜前发生的存量,不是这场戏要演给你看的内容。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span>,默认打开就是 <span class="mono">#/m1</span>(井盖 tab);想看抽审队列 3 条,去「4 兜底」模块(<span class="mono">#/m4</span>)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>还没有变化——这是基线。后面每一幕的"焦点在哪"都是相对这份 T0 存量说的。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>切三线 tab(井盖/路面/管网)看队列构成有什么不一样;然后点顶栏「▶ 推进剧情」,正式进入 T1。</p></div>
+      <div class="say"><b>口播</b><p>这一步 Tour-B-Console 的口播稿还没开始——它从 T1「先看这一条」起头,见下一张卡。</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「这些存量是哪来的?」→ 入夜前的历史动作(有各自的动作日志记录),不是这场戏专门设计要演的内容,不必展开;真要细看,m2 工单镜像和线索详情页都能查到来龙去脉。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T1 ============ -->
+  <div class="card scard" id="t1">
+    <div class="card-hd">
+      <h3><span class="mono">T1</span> · 19:02 · 主演开场 · MH-0417 位移传感器报警</h3>
+      <span class="badge badge-grey">设计图 L2/E1</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:02,MH-0417(Al Jimi)的位移传感器自己触发报警:井盖缺失,两道关口的硬证据都收齐(传感器信号 + 规则校验四项全过)→ 系统两秒内自动派单给排水一班,人还在复核中,还没有定性。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span>,默认打开就是 <span class="mono">#/m1</span>(井盖 tab)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>井盖 tab 顶部新出现一张紧急派单卡(MH-0417 · Al Jimi),界面上标注为「快车道(即方案文档所说的紧急直派)」——手册下文直接简称快车道;卡上带横幅「机器派单,人复核中」。m2 告警与工单页的工单镜像多一张紧急工单(来源标「① 快车道自动派」)。CL-0417 详情页的时间线一次性新增五条记录(自检✓/作业窗✓/规则校验✓/派单/预警广播),执行者全部是「规则引擎」。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「页面横幅「机器派单,人复核中」;m1 快车道并行复核卡可见。」</p></div>
+      <div class="say"><b>口播</b><p>「先看这一条。19 点 02 分,没有人在现场,是 MH-0417 的位移传感器自己触发的。系统两秒内自动派了排水一班——但请看队列顶上这行字:机器派单,人复核中。派单是调度动作,定性还没发生。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「传感器误报怎么办?」→ 硬证据只是准入条件不是结论:自检失败的传感器走设备工单(T8),误派 15 分钟内可撤回召回,快车道件全量抽审。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T2 ============ -->
+  <div class="card scard" id="t2">
+    <div class="card-hd">
+      <h3><span class="mono">T2</span> · 19:03 · 并行复核窗开启 · 15 分钟倒计时</h3>
+      <span class="badge badge-grey">设计图 D1</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:03,快车道并行复核窗打开:15 分钟倒计时开始跑,「确认」「快车道撤回」两个按钮同时出现——确认 = 把派单追认成告警,撤回 = 召回已经派出去的班组。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/clue/CL-0417</span>(点开 T1 那张快车道卡进详情页)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>CL-0417 详情页里冒出一个 15 分钟倒计时和两颗按钮——「确认」「快车道撤回」。点确认后,m2 的告警列表会多出这一条(从"派单"升成"告警")。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「评审者点「确认」= 告警追认;或点「快车道撤回」走召回分支。」</p></div>
+      <div class="say"><b>口播</b><p>「这是整个方案的立场:自动化没有拿走定性权,它只是换了闸门的位置。人还是那个签字的人,只是签在派单之后的 15 分钟内。撤回是显名动作,按班组当前状态分三个分支召回。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「15 分钟谁定的?」→ 界面上带虚线下划线的数字都是假设值,悬停有注解:试点首周与客户核实后按区可配。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T3 ============ -->
+  <div class="card scard" id="t3">
+    <div class="card-hd">
+      <h3><span class="mono">T3</span> · 19:05 · 班组端 · 接单→到场→前后双照→完工提交</h3>
+      <span class="badge badge-grey">设计图 P1-P4/P8</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:05,排水一班在班组端走完接单→导航到场→修复前/后双照回传→完工提交这一条链路;拒单/受阻/安全上报/现场上报几个按钮和它同屏,但这一步没被点。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>班组处置端 <span class="mono">crew.html</span>(Tour-B 里以手机镜像形式嵌在右侧;自己开一个标签页也一样)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>crew.html 上那张工单卡的状态一路从「已派工」滚到「已到场」再到「已完工」;卡上会出现「修复前」「修复后」两张缩略图证据。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「班组端上可自己走一遍(已自动走完的步骤不会重复记日志)。」</p></div>
+      <div class="say"><b>口播</b><p>「班组端我只强调两件事:处置真源是客户的工单系统,我们的动作全部写回去;红色那张卡是安全上报,置顶直达值班长——现场的人身安全不排队。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「现场没信号呢?」→ 离线单本地暂存、回连补传,页脚有信息行;这一条是浅演示,不假装是完整流程。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T4 ============ -->
+  <div class="card scard" id="t4">
+    <div class="card-hd">
+      <h3><span class="mono">T4</span> · 19:24 · AI 复验 · 配准判不出 → 存疑待人裁</h3>
+      <span class="badge badge-grey">设计图 P5/C1</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:24,AI 复验修复前后照片,配准判不出好坏 → 系统不默认打回,转成「存疑待人裁」,等复核员肉眼裁定(人裁合格即闭环)。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/clue/CL-0417</span>(还是那张详情页,往下滚到复验区)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>CL-0417/WO-9001 详情页多出一张「复验:存疑待人裁」的判定卡;点「复验人裁」之后,该线索的时间线整条标绿收口。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「m1 详情点「复验人裁」= 闭环;点「复验打回」需附对比证据(班组可申诉→主管裁)。」</p></div>
+      <div class="say"><b>口播</b><p>「完工照进来,AI 复验判不出配准——注意它没有默认打回,而是转『存疑待人裁』。打回必须是复核员显名动作并附对比证据,班组还能申诉到主管。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「AI 判不出默认走哪边?」→ 永不默认打回。判不出只转存疑待人裁;打回须附复验对比证据。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T5 ============ -->
+  <div class="card scard" id="t5">
+    <div class="card-hd">
+      <h3><span class="mono">T5</span> · 19:30 · 对照例 · MH-0562 纯视觉 0.31 无硬证据</h3>
+      <span class="badge badge-grey">设计图 D2</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:30,对照例上线:MH-0562(Hili)同样报井盖缺失,但只有纯视觉识别、置信度 0.31、没有传感器硬证据 → 不给快车道资格,进应急人审档,30 分钟倒计时另起一份(非理想态①:低置信高危仍强制人核,配三级升级)。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/line/mh</span>(井盖 tab 队列视图——这时能看到三条线索三种结局并排)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>井盖 tab 队列里多一张 CL-0562 卡,带「应急人审档」标签和独立的 30 分钟倒计时,卡上专门有一行「为什么不走快车道」——这行在 CL-0417 卡上是没有的,专门用来对照。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「非理想态①:低置信高危仍强制人核,30min SLA + 三级升级。」</p></div>
+      <div class="say"><b>口播</b><p>「同样是井盖、同样高危,这条 0.31 没有传感器硬证据,它就没有资格进快车道,老老实实排 30 分钟人审。低置信高危不是放行,是强制人核。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「为什么不干脆调低阈值全放行?」→ 因为快车道的入场券不是置信度,是硬证据;没有硬证据的高危件宁可排队也不先派。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T6 ============ -->
+  <div class="card scard" id="t6">
+    <div class="card-hd">
+      <h3><span class="mono">T6</span> · 19:40 · 树影误报件 · 机械驳回不自动归档</h3>
+      <span class="badge badge-grey">设计图 D3/D4/P10</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>19:40,树影误报件:规则校验硬失败,但高危件的规矩是零自动归档——证据卡置顶,必须由人按原因码驳回或者推翻这次判定。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/line/mh</span>(井盖 tab,这时机械驳回件置顶)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>井盖 tab 队列顶部多一张证据卡置顶的 CL-0588(机械驳回),旁边就是「推翻机械判定」按钮;人一旦按驳回码①确认,会跳出「高危驳回已拘主管抽审」横幅。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「人认可驳回码① → 「高危驳回已拘主管抽审」横幅;或点「推翻机械判定」。」</p></div>
+      <div class="say"><b>口播</b><p>「树影这条机械闸硬失败,但高危件零自动归档——必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。人也可以反过来推翻机械判定,误杀样本回流规则组。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「机器错杀了谁来救?」→ 人。推翻机械判定按钮就在同屏,线索复活进人审并自动触发抽审。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T7 ============ -->
+  <div class="card scard" id="t7">
+    <div class="card-hd">
+      <h3><span class="mono">T7</span> · 20:00 · 路面线 · 五项校验卡 → 自动升格 → 周批工单</h3>
+      <span class="badge badge-grey">设计图 L1</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>20:00,路面车载批次进池:CL-0705 五项规则校验逐项打钩,养护级 × 高置信 × 规则校验全过 = 自动升格(免人工)→ 直接并入本周批量养护工单;CL-0706 是观察级,直接记台账。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/line/rd</span>(路面 tab)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>路面 tab 新出现 CL-0705(自动升格)和 CL-0706(记账)两张卡;CL-0705 卡上有横幅「本条未经人工,抽审兜底」和一个抽审入口链接。批量半审列表里那条 0.58 的 CL-0311 卡上多了一个「存疑归档」按钮。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「横幅「本条未经人工,抽审兜底」+ 抽审入口可点;CL-0311(0.58)可演「存疑归档」。」</p></div>
+      <div class="say"><b>口播</b><p>「路面线是养护流:五项规则校验全过、养护级、高置信,直接免人工升格并入周批。页面上明示『本条未经人工,抽审兜底』——我们不藏这件事。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「免人工不怕出事?」→ 只对养护级开放,且按批入抽审队列(批量确认件 15%,假设值);高危级永远没有免人工这条路。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T8 ============ -->
+  <div class="card scard" id="t8">
+    <div class="card-hd">
+      <h3><span class="mono">T8</span> · 20:30 · 管网线 · 水量平衡越限 → 自动开调查案</h3>
+      <span class="badge badge-grey">设计图 L3</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>20:30,DMA-07 灌溉分区的实配水量对不上计划配水量(水量平衡越限)→ 水力学规则先报警,AI 时序判型给出「渗漏嫌疑」→ 系统自动开一个调查案,等人在立案和结案两个点上拍板。同时另一枚流量计 SN-FM03 自检失败,单独开一张设备维护工单,不进这条业务队列(非理想态④:先排设备故障再报业务异常)。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m1/line/pl</span>(管网 tab)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>管网 tab 出现一张全新的调查案卡 IV-0071(状态「观察中」),带「立案」按钮;设备维护工单 WO-9008 单独挂在设备档下,不出现在管网业务队列里——这是它和普通业务异常唯一的区别。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「非理想态④:先排设备故障再报业务异常;人点「立案」→ 核查工单。」</p></div>
+      <div class="say"><b>口播</b><p>「管网线连线索池都没有。水力学规则先行、AI 判型、自动开调查案,人只在立案和结案两个点上拍板。连『置信度』三个字在三条线上的含义都不一样。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「传感器坏了会不会误报成业务异常?」→ 先排设备故障:SN-FM03 自检失败走设备维护工单,不惊动业务队列。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T9 ============ -->
+  <div class="card scard" id="t9">
+    <div class="card-hd">
+      <h3><span class="mono">T9</span> · 21:00 · 过载三步 · 第二井盖件(Zakher)无空闲班组</h3>
+      <span class="badge badge-grey">设计图 D6/D7</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>21:00,Zakher 又报了一起井盖缺失(MH-0733),等级应急,但承接池此刻没有空闲班组 → 系统按预设的过载三步走:①只读预警先喊现场 ②超额件显名降级进批量加急分诊 ③把仲裁权交给值班长(要不要抢占某个在途的养护班组)。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m2/dispatch</span>(告警与工单 → 调度视图);要点得动「抢占」,得先把顶栏角色切成「区值班长」。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>调度视图新增一张「过载三步」提示卡(围绕 CL-0733);切到「区值班长」角色后可以点「挂起 WO-8871」,点完 WO-8871 状态变「已挂起」,旁边出现回补说明卡。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「切「区值班长」角色 → m2 调度视图点「挂起 WO-8871(应急抢占)」再改派 → 挂起回补卡可见。」</p></div>
+      <div class="say"><b>口播</b><p>「资源不够的时候,系统不装作够:超额件显名降级,写清楚为什么没被立刻派出去,然后把仲裁权交给值班长。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「过载时谁来决定牺牲哪一单?」→ 值班长。系统只做到显名降级 + 广播先喊现场,抢占动作必须有人按。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T10 ============ -->
+  <div class="card scard" id="t10">
+    <div class="card-hd">
+      <h3><span class="mono">T10</span> · 21:10 · 公众上报同点位 → 回执编号 → 去重合并</h3>
+      <span class="badge badge-grey">设计图 E3/D8</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>21:10,同一口井盖(Zakher/MH-0733),公众端也报了一次:系统生成一个受理编号回执给上报人,同时把这条公众线索和已有的传感器线索去重合并,证据叠加成一条,催办计数可见。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>公众上报端 <span class="mono">public.html</span>(Tour-B 里以手机镜像形式嵌在右侧)。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>public.html 提交完之后弹出受理编号 RC-PR-0301 的回执页;回到工作台,CL-0733 卡上多一个「合并」标签(证据叠加),再报一次同一口井盖,催办计数会 +1。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「public.html 可自己走三步提交;回执页显示受理编号与状态。」</p></div>
+      <div class="say"><b>口播</b><p>「同一口井盖,公众也报了。去重合并进既有线索、证据叠加,上报人拿到回执编号——不重复开单,但也不让他觉得石沉大海。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「公众乱报怎么办?」→ 防滥用三件:同点位去重合并、单设备限频、重复无效上报降权;后两件在静态前端只作机制说明。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T11 ============ -->
+  <div class="card scard" id="t11">
+    <div class="card-hd">
+      <h3><span class="mono">T11</span> · 21:20 · 调度视图 + 对账队列 1 条不一致;管网流量回归</h3>
+      <span class="badge badge-grey">设计图 D9/P7</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>21:20,调度视图里出现 1 条对账不一致(WO-8863 我方记录「已到场」,客户系统记录「已完工」);同时 DMA-07 的流量已经回归基线,系统主动建议把 T8 那个调查案结案。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m2</span>(告警与工单,看对账异常队列);要点改派/合并/拆单,得先把角色切成「复核主管」。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>#/m2 页新增一条对账异常记录 RC-0011(我方「已到场」vs 客户系统「已完工」,状态「待裁定」);IV-0071 那张调查案卡上多一行「系统建议结案」提示。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「切「复核主管」→ 改派/合并/拆单(理由码必填);对账不一致 24h 内人工裁定。」</p></div>
+      <div class="say"><b>口播</b><p>「两套系统并行一定会有不一致。对账队列把它显式列出来,给一条裁决口径和 24 小时人工裁定窗,而不是让它安静地漂着。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「以谁的数据为准?」→ 处置状态以客户系统为准,巡检定性以我方为准;异常 24 小时内人工裁定。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ T12 ============ -->
+  <div class="card scard" id="t12">
+    <div class="card-hd">
+      <h3><span class="mono">T12</span> · 21:30 · 暴雨模式启动 · 全线升档 + 雨前清掏任务包</h3>
+      <span class="badge badge-grey">设计图 G4/D10/G1/D5</span>
+    </div>
+    <div class="rows">
+      <div><div class="lbl">① 现在发生了什么</div>
+        <p>21:30,暴雨模式正式启动:井盖线整体升一档,一张雨前清掏任务包工单被派出去;DMT 这时候多了一个动作——可以直接关掉「井盖缺失」这个类目的快车道;主管详情页里也多了一个紧急 override 的红色动作。</p></div>
+      <div><div class="lbl">② 去哪看</div>
+        <p>工作台 <span class="mono">app.html</span> <span class="mono">#/m6</span>(系统管理);快车道开关要切「DMT」角色才点得动,紧急 override 要切「复核主管」角色。</p></div>
+      <div><div class="lbl">③ 变化焦点</div>
+        <p>全站顶栏下方出现「暴雨模式已启动」横幅,井盖线整体升一档;#/m6 系统管理页里「井盖缺失」这个类目的快车道开关被关掉后,会弹出强制通知横幅和一个区申诉入口;工单列表新增一张「雨前清掏任务包」卡 WO-9012。</p></div>
+      <div><div class="lbl">④ 你可以亲手点</div>
+        <p>「切「DMT」→ m6 关「井盖缺失」快车道(强制通知横幅 + 区申诉入口);切「复核主管」→ m1 详情紧急 override(双确认)。」</p></div>
+      <div class="say"><b>口播</b><p>「最后是治理侧那把刀:DMT 能关掉整个类目的快车道,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个能收回的把手。」</p></div>
+      <div class="ask"><b>评审者可能问</b><p>「上线后发现某类目不靠谱怎么办?」→ 不用改代码也不用停系统:关掉那个类目的快车道即可,区可申诉,全程留痕。</p></div>
+    </div>
+  </div>
+
+  <!-- ============ 尾部:浅演示清单 ============ -->
+  <h2 class="sec" id="shallow">浅演示清单</h2>
+  <p class="lead" style="margin-bottom:12px">下面这五处不是完整流程,只以信息行/横幅这类轻量形态出现在界面里,不要在主线走查里找一整条闭环——这是预期,不是遗漏。</p>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:64px">图号</th><th>场景</th><th>呈现形式</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">D11</td><td>作业时窗与封控校验(斋月/高温禁令/活动封控/交管批文)</td><td>工单详情信息行:「排到最近可作业窗,SLA 停表」</td></tr>
+        <tr><td class="mono">D12</td><td>跨机构联动出动(警察/民防/产权单位)</td><td>应急件详情信息行 + 挂起原因码「联动处置等待」</td></tr>
+        <tr><td class="mono">P6</td><td>客户系统不可用/回写失败</td><td>工单镜像横幅:「派工请求进重试队列,超阈值转人工电话派工并补录」</td></tr>
+        <tr><td class="mono">P9</td><td>移动端离线/无信号</td><td>班组端页脚信息行:离线单本地暂存 + 回连补传</td></tr>
+        <tr><td class="mono">P11</td><td>分阶段处置(临时措施先行)</td><td>班组端「部分完工」动作 + 工单阶段标</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
