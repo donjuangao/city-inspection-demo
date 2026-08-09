@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="assets/vendor/react.production.min.js"></script>
+<script src="assets/vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{margin:0;background:#f2f3f0;color:#1b231f;-webkit-font-smoothing:antialiased;
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:#17a05e;text-decoration:none}
+  a:hover{text-decoration:underline}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f2f3f0">
+
+  <div style="position:sticky;top:0;z-index:50;background:rgba(14,18,16,.94);backdrop-filter:blur(10px);border-bottom:1px solid #252d28">
+    <div style="max-width:1360px;margin:0 auto;padding:9px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:14px;font-weight:700;color:#ffffff;white-space:nowrap;letter-spacing:-.01em">设施智能巡检平台 · 评审导览</span>
+      <span style="width:1px;height:18px;background:#252d28"></span>
+      <span style="font-size:13px;font-weight:700;color:#ffffff;font-variant-numeric:tabular-nums;white-space:nowrap">演示时刻 {{ clock }}</span>
+      <span style="font-size:12px;color:#c9c57e;background:rgba(201,197,126,.10);border:1px solid rgba(201,197,126,.30);padding:2px 10px;border-radius:20px;white-space:nowrap;font-weight:600">{{ sceneCtx }}</span>
+      <button type="button" onClick="{{ onNext }}" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #17a05e;background:#17a05e;color:#fff;font-size:12.5px;font-family:inherit;line-height:1.7;cursor:pointer" style-hover="background:#10804a">▶ 推进剧情</button>
+      <span style="font-size:11.5px;color:#8e968f;white-space:nowrap">{{ stepHint }}</span>
+      <span style="flex:1"></span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <a href="#a1" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">① 自动派单</a>
+        <a href="#a2" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">② 并行复核</a>
+        <a href="#a3" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">③ 班组端</a>
+        <a href="#a4" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">④ 闭环</a>
+        <a href="#a5" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">⑤ 另两条线</a>
+        <a href="#a6" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">⑥ 过载</a>
+        <a href="#a7" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">⑦ 对账回查</a>
+        <a href="#a8" style="font-size:12px;color:#98a29b;padding:5px 10px;border-radius:20px;font-weight:600" style-hover="background:#17a05e;color:#ffffff;text-decoration:none">⑧ 兜底总览</a>
+      </div>
+      <button type="button" onClick="{{ onReset }}" style="padding:5px 12px;border-radius:8px;border:1px solid #252d28;background:#161b18;color:#c3ccc6;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600" style-hover="background:#1d2420;color:#ffffff">重置</button>
+    </div>
+  </div>
+
+  <div style="max-width:1360px;margin:0 auto;padding:0 28px 96px">
+
+    <header style="margin:0 -28px;padding:56px 28px 46px;background:#0e1210;border-bottom:1px solid #252d28">
+      <div style="font-size:11px;letter-spacing:.1em;color:#c9c57e;font-weight:700">产品原型演示 · 一个暴雨前夜的故事 · 全部界面可直接点</div>
+      <h1 style="margin:16px 0 0;font-size:40px;line-height:1.18;letter-spacing:-.025em;color:#ffffff;font-weight:700">一座绿洲城市,和它的<br><span style="color:#c9c57e">城市设施智能巡检平台</span></h1>
+      <p style="margin:18px 0 0;font-size:15px;line-height:1.85;color:#b6c0b9;max-width:760px;text-wrap:pretty">Al Ain 的道路、井盖、灌溉管网从此自己会说话:全域传感网持续监测,AI 识别+机械证据校验双闸筛出真问题,人只在拍板点签字;应急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个暴雨前夜,把整个平台走一遍。</p>
+
+      <div style="display:flex;gap:12px;margin-top:22px;flex-wrap:wrap">
+        <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
+          <div style="font-size:14.5px;font-weight:700;color:#ffffff">区复核员</div>
+          <div style="font-size:11px;color:#17a05e;letter-spacing:.03em;margin-top:2px">Web 工作台 · 坐席</div>
+          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">定性签字的人:线索变告警,由他拍。</div>
+        </div>
+        <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
+          <div style="font-size:14.5px;font-weight:700;color:#ffffff">市政班组</div>
+          <div style="font-size:11px;color:#17a05e;letter-spacing:.03em;margin-top:2px">手机 · 现场</div>
+          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">接单、处置、拍照回传;动作写回客户工单系统。</div>
+        </div>
+        <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
+          <div style="font-size:14.5px;font-weight:700;color:#ffffff">管理者与 DMT</div>
+          <div style="font-size:11px;color:#17a05e;letter-spacing:.03em;margin-top:2px">桌面 · 治理</div>
+          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">看总览、抽审、握快车道开关。</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px">
+        <div style="background:rgba(23,160,94,.10);border:1px solid rgba(23,160,94,.28);border-radius:14px;padding:15px 17px">
+          <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 线索 vs 告警</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">AI 只产「线索」,人签字确认后才叫「告警」——定性权永远在人。</p>
+        </div>
+        <div style="background:rgba(23,160,94,.10);border:1px solid rgba(23,160,94,.28);border-radius:14px;padding:15px 17px">
+          <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 双闸</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走快车道。</p>
+        </div>
+        <div style="background:rgba(23,160,94,.10);border:1px solid rgba(23,160,94,.28);border-radius:14px;padding:15px 17px">
+          <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 快车道「先派后审」</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">人身安全等不起人审——硬证据应急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border-radius:6px;border:1px solid rgba(201,197,126,.28);background:rgba(201,197,126,.08);color:#ded9ab;margin-top:26px;max-width:900px;font-size:12.5px;line-height:1.75">
+        <span style="flex:none;font-weight:700">i</span>
+        <div>本页左栏是<b>讲稿</b>(口播词 / 台上动作 / 预判追问),右栏是<b>实机镜像</b>——同一份 sessionStorage 演示状态。顶栏「▶ 推进剧情」会推进假时钟并刷新页面上所有实机框;讲一幕、点一幕,12 步从 19:02 走到 21:30。</div>
+      </div>
+    </header>
+
+    <section id="a1" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">①</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">19:02 · T1 · 图 L2/E1</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">井盖缺失,城市自己报的警</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「Al Jimi Mall 东侧,MH-0417 位移传感器触发——井盖开合异常。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">没有人巡逻到这里,是井盖自己说话了。自检通过、不在合法作业窗、传感器硬证据成立——双闸过,系统在两秒内做了三件事:开紧急工单、把最近的排水一班派出去、给值班圈发只读预警。注意页面上那行字:「机器派单,人复核中」——派单是处置调度,不是定性。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 50 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「先看这一条。19 点 02 分,没有人在现场,是 MH-0417 的位移传感器自己触发的。系统在两秒内自动派了排水一班——但请注意队列顶上这行字:<b>机器派单,人复核中</b>。派单是调度动作,定性还没发生。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">点顶栏「▶ 推进剧情」到 19:02 → 指队列顶部的快车道并行复核卡 → 展开机械校验四项。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「传感器误报怎么办?」→ 硬证据只是<b>准入</b>条件,不是结论:自检失败的传感器走设备工单(T8 演示),误派由 15 分钟窗内撤回召回,快车道件<b>全量抽审</b>。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">传感器硬证据</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">自动派单零等待</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">预警广播不定性</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 复核工作台 m1</span>
+        <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+          <iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线快车道)" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="a2" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">②</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">19:03 · T2 · 图 D1</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">十五分钟,人追上机器</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「我看下证据——嗯,是真的。确认。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">复核员屏幕上快车道件置顶:证据卡、机械校验四项打钩、15 分钟倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。右侧原型可操作:试试确认,或者试试撤回。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 60 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「这是整个方案的立场所在:自动化没有拿走定性权,它只是<b>换了闸门的位置</b>。人还是那个签字的人,只是签在派单之后 15 分钟内。撤回是显名动作,按班组当前状态分三个分支召回——在途返程、已到场转现场核实、已开井转收尾单。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 19:03 → 点「查看证据卡」(高危确认的前置)→ 点「快车道撤回」看分支文案,再关掉弹层 → 回到「确认」。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「15 分钟谁定的?」→ 界面上带虚线下划线的数字都是<b>假设值</b>,鼠标悬停有注解:试点首周与客户核实后按区可配。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">并行复核 15min</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">撤回可召回</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">快车道件全量抽审</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 线索详情 CL-0417</span>
+        <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+          <iframe data-src="app.html#/m1/clue/CL-0417" title="工作台 · 快车道并行复核卡与动作面板" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="a3" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">③</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">19:05 · T3 · 图 P1-P4/P8</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">班组的手机</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「接单。导航 6 分钟。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">排水一班的手机响了。接单、到场、前后双照回传、完工提交——全程写回区市政工单系统(它才是处置真源),证据同时双写进平台证据链。这个端还有五个不起眼但真实的按钮:拒单、受阻上报、安全上报、现场新增上报、交接——现场会发生的事,系统都接得住。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 45 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「班组这一端我只强调两件事。第一,<b>处置真源是客户的工单系统</b>,我们的动作全部写回去,不另起一套流程;第二,红色那张卡是安全上报,置顶通道直达值班长——现场的人身安全不排队。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 19:05(自动走完接单→到场→双照→完工)→ 在手机框里下滑,指四点进度条与「部分完工(临时措施先行)」。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「现场没信号呢?」→ 离线单本地暂存、回连补传,页脚有信息行;这一条是<b>浅演示</b>,不假装是完整流程(见页尾演示范围)。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">写回客户系统</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">证据双写</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">现场动作族齐</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 班组处置端</span>
+        <div style="overflow:hidden;border-radius:26px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:390px;height:760px;flex:none">
+          <iframe data-src="crew.html" title="班组处置端(排水一班)" style="width:100%;height:100%;border:0;display:block"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="a4" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">④</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">19:24–19:40 · T4/T5/T6 · 图 P5/C1/D2/D3</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">闭环,和它的两个影子</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「复验配准判不出?那就人裁。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">完工照进来,提交校验先当场拦不合格照;AI 复验判得出就闭环,判不出=存疑待人裁——永不默认打回。同一时刻另外两条线索走向不同结局:0.31 低置信件没有硬证据,老老实实排 30 分钟人审档;树影误报被机械闸置顶后由人驳回,原因码①回流模型,横幅写着「高危驳回已拘主管抽审」。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 70 秒(本页信息量最大的一幕)</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「一条主线走完了,我用两条对照线索说明这套设计不是只为顺境写的。<b>0.31 那条</b>——同样是井盖、同样高危,但没有传感器硬证据,它就没有资格进快车道,老老实实排 30 分钟人审。<b>树影那条</b>——机械闸硬失败,但高危件<b>零自动归档</b>,必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 19:24 → 详情页点「复验人裁 · 合格」看闭环 → 再推到 19:30 / 19:40,指队列里三条线索三个结局 → 点「推翻机械判定」展示人可以反向覆盖机器。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「AI 判不出的时候默认怎么走?」→ <b>永不默认打回</b>。判不出只转「存疑待人裁」;打回必须是复核员显名动作并附复验对比证据,班组可申诉到主管。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">永不默认打回</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">低置信不走快车道</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">驳回拘抽审</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 井盖线队列三结局</span>
+        <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+          <iframe data-src="app.html#/m1/line/mh" title="工作台 · 闭环与两条对照线索" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="a5" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">⑤</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">20:00–20:30 · T7/T8 · 图 L1/L3</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">两条安静的线</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「路面批量 12 条,3 条免人工升格;DMA-07 水量平衡越限。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">路面线是养护流:车载识别、五项机械校验、高置信养护件自动并入周批养护计划——页面明示「本条未经人工,抽审兜底」。管网线是另一种形态:水力学规则先行,AI 判型渗漏嫌疑,自动开调查案,人只在立案与结案两点拍板;传感器自检失败那条走设备工单,不惊动业务队列。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 60 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「三条线不是一个流程的三次复制,它们的<b>形态根本不同</b>。井盖线是应急流,路面线是养护流——养护级、高置信、机械全过的件<b>不经人工</b>直接升格并批;管网线连线索池都没有,它是『预警→调查案』,人只在立案和结案两个点上拍板。连『置信度』这三个字在三条线上的含义都不一样:管网线的置信是规则持续时长 × 多源一致度,不是图像置信度。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 20:00 → 指「自动升格(免人工)」卡与横幅「本条未经人工,抽审兜底」→ 切「管网」tab,推进到 20:30 看调查案 IV-0071 与设备工单 WO-9008。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「免人工不怕出事?」→ 只对<b>养护级</b>开放,且按批入抽审队列(批量确认件抽审率 15%,假设值);高危级永远没有免人工这条路。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">自动升格免人工</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">调查案两点拍板</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">先排设备故障</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 路面线(养护流)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m1/line/rd" title="工作台 · 路面线" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 管网线(预警调查流)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m1/line/pl" title="工作台 · 管网线调查案" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="a6" style="padding:56px 0 0;scroll-margin-top:70px">
+      <div style="max-width:760px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">⑥</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">21:00–21:30 · T9/T10/T12 · 图 D6/D7/E3/G4</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">压力测试:调度、公众与治理</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「Zakher 又一口井盖——没有空闲班组了。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:760px;text-wrap:pretty">过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;DMT 顺手演示了那把安全侧的刀——关掉一个类目的快车道,该类目立刻回退人审,区可申诉。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06)">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 75 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「最后一段是压力测试。资源不够的时候,系统不装作够——<b>超额件显名降级</b>,写清楚它为什么没被立刻派出去,然后把仲裁权交给值班长。治理侧同理:DMT 手上这把开关能<b>关掉整个类目的快车道</b>,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个可以收回的把手。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:00 → 顶栏角色切「区值班长」→ 调度视图点「挂起 WO-8871(应急抢占)」→ 21:10 看公众端回执与去重合并 → 21:30 角色切「DMT」→ 系统管理里关掉「井盖缺失」快车道。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「公众乱报怎么办?」→ 防滥用三件:同点位去重合并、单设备限频、重复无效上报降权;后两件在静态前端只作机制说明,页面里写明了。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">过载三步</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">多源合并回执</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">DMT 关车道</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:22px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 调度视图 m2</span>
+            <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:560px;height:394px">
+              <iframe data-src="app.html#/m2/dispatch" title="工作台 · 调度视图" style="width:1280px;height:900px;border:0;display:block;transform:scale(.4375);transform-origin:top left"></iframe>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 系统管理 m6(快车道开关)</span>
+            <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:560px;height:394px">
+              <iframe data-src="app.html#/m6" title="工作台 · 系统管理" style="width:1280px;height:900px;border:0;display:block;transform:scale(.4375);transform-origin:top left"></iframe>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 公众上报端</span>
+          <div style="overflow:hidden;border-radius:26px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:390px;height:802px;flex:none">
+            <iframe data-src="public.html" title="公众上报端(去重合并/回执)" style="width:100%;height:100%;border:0;display:block"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="a7" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">⑦</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">21:20 · T11 · 图 D9/P7</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">对账,和一年后的回查</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「处置状态以客户系统为准,巡检定性以我方为准。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">两套系统并行就一定会有不一致。对账队列把它显式列出来,给一条裁决规则和 24 小时人工裁定窗,而不是让它安静地漂着。台账这一侧回答的是另一个问题:一年后有人来查这口井盖,点开设施详情,证据链、点位历史、观测覆盖窗、劣化曲线都在原地——事故回查时能区分「模型漏报」和「压根没有覆盖」。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 45 秒</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「这一幕是给运维和审计看的。<b>对账队列</b>承认了一件很多方案不肯承认的事:我们不是唯一的记录系统,冲突会发生,所以给它一条明确的裁决口径和时限。<b>台账</b>这边是回查面:观测覆盖窗那一行,是事后区分『模型漏报』和『覆盖缺失』的唯一依据。」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:20 → m2 对账异常队列看那条不一致 → 切 m3 台账,点开 MH-0417 详情,指「证据链回查」表格里的线索号,点进去能跳回复核工作台详情。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「地址怎么定位?」→ 市政台账以<b>设施编号 + 街区</b>定位,界面不显示街道字段;Onwani 双语字段位已留,空值不渲染。</p>
+          </div>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">对账 24h 裁定</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">证据链回查</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">覆盖缺口正面答</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 告警与工单 m2(对账队列)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m2" title="工作台 · 告警与工单 / 对账异常队列" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 设施台账 m3(证据链回查)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m3" title="工作台 · 设施台账" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="a8" style="display:grid;grid-template-columns:minmax(360px,1fr) auto;gap:34px;align-items:start;padding:56px 0 0;scroll-margin-top:70px">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">⑧</span>
+          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">收尾 · 模块 4 / 模块 5</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">兜底的那张网,和管理者的三个问题</h2>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「凡是绕过人的,后面都有一张抽审的网接着。」</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">抽审队列是这套自动化的对价:免人工升格件、机械驳回件、快车道件、复验通过件,各有各的抽审率和 48 小时时限,来源标写明它是被谁拘进来的。统计总览只回答管理者的三个问题——哪片最差、趋势如何、覆盖哪里有洞;每个数字都实算自动作日志,不是另编一套报表口径。</p>
+        <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
+          <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 50 秒 · 收尾</div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「整晚我讲的所有自动化,代价都记在这一页上:<b>凡是绕过人的,都进抽审队列</b>。最后请看总览页——这些数字没有独立的数据源,全部实算自你们刚才看着它一条条长出来的动作日志。这就是我想让这套系统具备的性质:<b>每一个数,都能追回到某一次具体的按钮点击。</b>」</p>
+          </div>
+          <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">m4 抽审队列指「来源标 / 拘审理由」两列 → 切 m5,指「规则引擎自动步」计数,回顾它在整晚里从 0 长到 25+。</p>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「抽审率怎么定?」→ 全是假设值,且冷启动期 × 2;界面上每个都带虚线下划线可悬停,试点首周与客户核实后按区可配。</p>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 兜底与质量 m4(抽审队列)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m4" title="工作台 · 兜底与质量" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 统计总览 m5(管理者三问)</span>
+          <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
+            <iframe data-src="app.html#/m5" title="工作台 · 统计总览" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:80px;padding-top:28px;border-top:1px solid #e4e7e2">
+      <h2 style="margin:0;font-size:19px;color:#0b1a12;font-weight:700">本原型演示范围</h2>
+      <p style="margin:10px 0 0;font-size:13px;line-height:1.75;color:#5c6660;max-width:820px;text-wrap:pretty">本原型按建造顺序覆盖井盖线、路面线、管网线全流程与外围页深度;时间与展示深度有限的以下 5 类场景不做静默缺席,以详情页信息行或横幅形态呈现,不作为完整可点流程——按设计文档《全场景流程图集》图号逐条列出:</p>
+      <ul style="list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;max-width:900px">
+        <sc-for list="{{ shallow }}" as="it" hint-placeholder-count="5">
+          <li style="background:#fff;border:1px solid #e4e7e2;border-radius:6px;padding:9px 12px;font-size:12.5px;line-height:1.65;color:#1b231f">
+            <b style="color:#0b1a12;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-right:6px">{{ it.fig }}</b>{{ it.name }} <span style="color:#5c6660">—— {{ it.form }}</span>
+          </li>
+        </sc-for>
+      </ul>
+      <div style="display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border-radius:6px;border:1px solid #e6ddb0;background:#faf5e0;color:#8a7420;margin-top:16px;max-width:900px;font-size:12.5px;line-height:1.7">
+        <span style="flex:none;font-weight:700">!</span>
+        <div>诚实边界三条:<b>时间是假时钟</b>,只在「推进剧情」时步进;<b>没有后端</b>,全部 mock 在前端 store(sessionStorage),不发出任何网络请求;<b>零真实照片</b>,所有证据图都是代码现场生成的矢量示意,统一带「AI 生成示意」角标。</div>
+      </div>
+    </section>
+
+    <div style="margin-top:64px;padding-top:30px;border-top:1px solid #e4e7e2">
+      <h2 style="margin:0;font-size:19px;color:#0b1a12;font-weight:700">亲自上手</h2>
+      <p style="margin:10px 0 0;font-size:13px;color:#5c6660;max-width:700px;line-height:1.75">三套端到端原型都可全屏打开自由操作;打开就是同一份假时钟场景状态,与你在本页里点过的每一步共享同一份 sessionStorage。</p>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <a href="app.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #17a05e;background:#17a05e;color:#fff;font-size:12.5px;line-height:1.7" style-hover="background:#10804a;text-decoration:none">工作台(app.html) →</a>
+        <a href="crew.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #e4e7e2;background:#fff;color:#1b231f;font-size:12.5px;line-height:1.7" style-hover="border-color:#17a05e;color:#17a05e;text-decoration:none">班组处置端(crew.html) →</a>
+        <a href="public.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #e4e7e2;background:#fff;color:#1b231f;font-size:12.5px;line-height:1.7" style-hover="border-color:#17a05e;color:#17a05e;text-decoration:none">公众上报端(public.html) →</a>
+      </div>
+    </div>
+
+    <footer style="margin-top:56px;text-align:center;font-size:11.5px;color:#8e968f">全站虚构演示数据 · 零真实照片 · 仅供评审</footer>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showScript&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;演示&quot;}}">
+class Component extends DCLogic {
+  state = { clock: '19:00', sceneCtx: '暴雨前夜', stepHint: '', shallow: [] };
+
+  frames() { return Array.prototype.slice.call(document.querySelectorAll('iframe[data-src]')); }
+
+  live() {
+    let out = [];
+    this.frames().forEach(f => {
+      try { if (f.contentWindow && f.contentWindow.S) out.push(f); } catch (e) {}
+    });
+    return out;
+  }
+
+  lazy() {
+    if (!this.io) {
+      this.io = new IntersectionObserver(es => {
+        es.forEach(e => {
+          if (e.isIntersecting) {
+            const f = e.target;
+            if (!f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src'));
+            this.io.unobserve(f);
+          }
+        });
+      }, { rootMargin: '900px 0px' });
+    }
+    this.frames().forEach(f => { if (!f.getAttribute('src')) this.io.observe(f); });
+  }
+
+  sync = () => {
+    const f = this.live()[0];
+    if (!f) return;
+    try {
+      const W = f.contentWindow, st = W.S.get(), nx = W.S.step();
+      this.setState({
+        clock: W.S.now(),
+        sceneCtx: st.meta.scene + (st.gov.stormMode ? ' · 暴雨模式已启动' : ''),
+        stepHint: nx ? ('下一步 ' + nx.id + ' ' + nx.t + ' ' + nx.title) : '剧情已走完 T12',
+        shallow: (W.SHALLOW_SCENES || []).slice()
+      });
+    } catch (e) {}
+  };
+
+  onNext = () => {
+    const fs = this.live();
+    if (!fs.length) return;
+    try { fs[0].contentWindow.S.nextStep(); } catch (e) { return; }
+    fs.slice(1).forEach(f => { try { f.contentWindow.location.reload(); } catch (e) {} });
+    setTimeout(this.sync, 260);
+  };
+
+  onReset = () => {
+    const fs = this.live();
+    if (!fs.length) return;
+    try { fs[0].contentWindow.S.reset(); } catch (e) {}
+    fs.slice(1).forEach(f => { try { f.contentWindow.location.reload(); } catch (e) {} });
+    setTimeout(this.sync, 400);
+  };
+
+  componentDidMount() {
+    this.lazy();
+    this.scanT = setInterval(() => this.lazy(), 1500);
+    this.tickT = setInterval(this.sync, 900);
+  }
+
+  componentWillUnmount() { clearInterval(this.scanT); clearInterval(this.tickT); if (this.io) this.io.disconnect(); }
+
+  renderVals() {
+    return {
+      clock: this.state.clock,
+      sceneCtx: this.state.sceneCtx,
+      stepHint: this.state.stepHint,
+      shallow: this.state.shallow,
+      showScript: this.props.showScript !== false,
+      onNext: this.onNext,
+      onReset: this.onReset
+    };
+  }
+}
+
+</script>
+</body>
+</html>

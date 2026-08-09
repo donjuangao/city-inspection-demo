@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="assets/vendor/react.production.min.js"></script>
+<script src="assets/vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{margin:0;background:#f2f4f7;color:#243342;-webkit-font-smoothing:antialiased;overflow:hidden;
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:#1a5fb4;text-decoration:none}
+  a:hover{text-decoration:underline}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:#cfd6de;border-radius:4px}
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;background:#f2f4f7;overflow:hidden">
+
+  <header style="flex:none;height:52px;background:#fff;border-bottom:1px solid #d8dee6;display:flex;align-items:center;gap:12px;padding:0 16px;overflow-x:auto;white-space:nowrap">
+    <span style="font-size:14px;font-weight:700;color:#12233a;white-space:nowrap">设施智能巡检平台</span>
+    <span style="font-size:11.5px;color:#7b8794;white-space:nowrap">评审演示控制台 · Al Ain 区市政</span>
+    <span style="width:1px;height:20px;background:#d8dee6"></span>
+    <span style="font-size:15px;font-weight:700;color:#12233a;font-variant-numeric:tabular-nums;white-space:nowrap">{{ clock }}</span>
+    <span style="font-size:12px;color:#9a6b00;background:#fdf6e3;border:1px solid #ecdcb0;padding:1px 8px;border-radius:20px;white-space:nowrap">{{ sceneCtx }}</span>
+    <span style="flex:1"></span>
+    <span style="font-size:11.5px;color:#7b8794;white-space:nowrap">跳转</span>
+    <div style="display:flex;gap:4px">
+      <button type="button" onClick="{{ goM1 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">1 复核</button>
+      <button type="button" onClick="{{ goM2 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">2 告警工单</button>
+      <button type="button" onClick="{{ goM3 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">3 台账</button>
+      <button type="button" onClick="{{ goM4 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">4 兜底</button>
+      <button type="button" onClick="{{ goM5 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">5 总览</button>
+      <button type="button" onClick="{{ goM6 }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">6 系统</button>
+    </div>
+    <span style="width:1px;height:20px;background:#d8dee6"></span>
+    <button type="button" onClick="{{ onCrew }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">班组端</button>
+    <button type="button" onClick="{{ onPublic }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">公众端</button>
+    <button type="button" onClick="{{ onReset }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#5b6b7c;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#c0392b;color:#c0392b">重置演示</button>
+  </header>
+
+  <div style="flex:1;min-height:0;display:flex;gap:0">
+
+    <aside style="flex:none;width:268px;background:#fff;border-right:1px solid #d8dee6;display:flex;flex-direction:column;min-height:0">
+      <div style="flex:none;padding:10px 14px 8px;border-bottom:1px solid #d8dee6">
+        <div style="font-size:12px;color:#7b8794;letter-spacing:.06em;font-weight:600">场景时刻表 · 暴雨前夜</div>
+        <div style="font-size:11.5px;color:#7b8794;margin-top:3px">点任意一步 = 推进到该步并切到该看的界面</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:6px 0">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="12">
+          <div>
+            <sc-if value="{{ s.isCur }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ s.onGo }}" style="display:block;width:100%;text-align:left;border:0;border-left:3px solid #1a5fb4;background:#eef3fa;padding:8px 13px;font-family:inherit;cursor:pointer">
+                <div style="display:flex;align-items:baseline;gap:7px">
+                  <span style="font-size:11.5px;font-weight:700;color:#1a5fb4;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">{{ s.id }}</span>
+                  <span style="font-size:12px;color:#1a5fb4;font-variant-numeric:tabular-nums">{{ s.t }}</span>
+                  <span style="flex:1"></span>
+                  <span style="font-size:10.5px;color:#1a5fb4">{{ s.mark }}</span>
+                </div>
+                <div style="font-size:12.5px;color:#12233a;font-weight:600;line-height:1.5;margin-top:2px;text-wrap:pretty">{{ s.title }}</div>
+              </button>
+            </sc-if>
+            <sc-if value="{{ s.notCur }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ s.onGo }}" style="display:block;width:100%;text-align:left;border:0;border-left:3px solid transparent;background:#fff;padding:8px 13px;font-family:inherit;cursor:pointer" style-hover="background:#f7f9fb">
+                <div style="display:flex;align-items:baseline;gap:7px">
+                  <span style="font-size:11.5px;font-weight:700;color:#7b8794;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">{{ s.id }}</span>
+                  <span style="font-size:12px;color:#7b8794;font-variant-numeric:tabular-nums">{{ s.t }}</span>
+                  <span style="flex:1"></span>
+                  <span style="font-size:10.5px;color:#2e7d32">{{ s.mark }}</span>
+                </div>
+                <div style="font-size:12.5px;color:#243342;line-height:1.5;margin-top:2px;text-wrap:pretty">{{ s.title }}</div>
+              </button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex:none;border-top:1px solid #d8dee6;padding:9px 13px;font-size:11px;color:#7b8794;line-height:1.6">
+        假时钟:时间只在推进时步进,不按现实秒走。全站虚构演示数据 · 零真实照片。
+      </div>
+    </aside>
+
+    <main style="flex:1;min-width:440px;display:flex;flex-direction:column;padding:10px 12px;gap:8px">
+      <div style="flex:none;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#eef3fa;color:#1a5fb4;border:1px solid #cfdff2">LIVE · 实机可操作</span>
+        <span style="font-size:12px;color:#5b6b7c">{{ frameLabel }}</span>
+        <span style="flex:1"></span>
+        <a href="app.html" target="_blank" rel="noopener" style="font-size:11.5px;color:#5b6b7c">全屏打开工作台 →</a>
+      </div>
+      <div ref="{{ boxRef }}" style="flex:1;min-height:0;position:relative;overflow:hidden;border-radius:10px;border:1px solid #d8dee6;background:#fff;box-shadow:0 6px 20px rgba(18,35,58,.10)">
+        <iframe ref="{{ deskRef }}" src="app.html#/m1" title="工作台实机镜像" style="width:1280px;height:900px;border:0;display:block;transform-origin:top left"></iframe>
+      </div>
+    </main>
+
+    <aside style="flex:none;width:344px;background:#fff;border-left:1px solid #d8dee6;display:flex;flex-direction:column;min-height:0">
+      <div style="flex:none;padding:10px 14px 9px;border-bottom:1px solid #d8dee6">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:11.5px;font-weight:700;color:#1a5fb4;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">{{ curId }}</span>
+          <span style="font-size:12.5px;color:#7b8794;font-variant-numeric:tabular-nums">{{ curT }}</span>
+          <span style="font-size:11px;color:#7b8794">图 {{ curFigs }}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:#12233a;line-height:1.5;margin-top:4px;text-wrap:pretty">{{ curTitle }}</div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="font-size:11px;color:#7b8794;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播 · 你要说的话</div>
+          <p style="margin:0;font-size:13px;line-height:1.85;color:#243342;text-wrap:pretty">{{ curSay }}</p>
+        </div>
+
+        <div style="border:1px solid #d8dee6;border-radius:6px;overflow:hidden">
+          <div style="background:#f7f9fb;border-bottom:1px solid #d8dee6;padding:5px 10px;font-size:11.5px;color:#5b6b7c">系统这一步自动做了什么</div>
+          <p style="margin:0;padding:9px 10px;font-size:12.5px;line-height:1.75;color:#243342;text-wrap:pretty">{{ curNarration }}</p>
+        </div>
+
+        <div>
+          <div style="font-size:11px;color:#7b8794;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作 · 评审者可自己点</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.75;color:#243342;text-wrap:pretty">{{ curManual }}</p>
+        </div>
+
+        <div style="background:#fdf6e3;border:1px solid #ecdcb0;border-radius:6px;padding:9px 11px">
+          <div style="font-size:11px;color:#9a6b00;letter-spacing:.06em;font-weight:600;margin-bottom:4px">预判追问</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.75;color:#9a6b00;text-wrap:pretty">{{ curAsk }}</p>
+        </div>
+
+        <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px;color:#7b8794;letter-spacing:.06em;font-weight:600;margin-bottom:6px">{{ phoneLabel }}</div>
+            <div style="overflow:hidden;border-radius:16px;border:1px solid #d8dee6;background:#fff;box-shadow:0 6px 20px rgba(18,35,58,.12);width:312px;height:600px">
+              <iframe ref="{{ phoneRef }}" title="移动端实机镜像" style="width:390px;height:750px;border:0;display:block;transform:scale(.8);transform-origin:top left"></iframe>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="border-top:1px solid #d8dee6;padding-top:10px">
+          <div style="font-size:11px;color:#7b8794;letter-spacing:.06em;font-weight:600;margin-bottom:5px">动作日志累计</div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:24px;font-weight:700;color:#12233a;font-variant-numeric:tabular-nums">{{ logCount }}</span>
+            <span style="font-size:12px;color:#5b6b7c">条 · 其中规则引擎自动步 {{ autoCount }} 条</span>
+          </div>
+          <div style="font-size:11.5px;color:#7b8794;line-height:1.6;margin-top:4px">机械自动化不豁免审计:每一次自动处置也记一条动作日志。</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="flex:none;height:56px;background:#fff;border-top:1px solid #d8dee6;display:flex;align-items:center;gap:14px;padding:0 16px">
+    <button type="button" onClick="{{ onNext }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:6px;border:1px solid #1a5fb4;background:#1a5fb4;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer" style-hover="background:#164e94">▶ 推进剧情</button>
+    <span style="font-size:12px;color:#5b6b7c;white-space:nowrap">{{ stepHint }}</span>
+    <span style="flex:1"></span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <sc-for list="{{ dots }}" as="d" hint-placeholder-count="12">
+        <span>
+          <sc-if value="{{ d.on }}" hint-placeholder-val="{{ false }}">
+            <span style="display:block;width:22px;height:6px;border-radius:3px;background:#1a5fb4"></span>
+          </sc-if>
+          <sc-if value="{{ d.off }}" hint-placeholder-val="{{ true }}">
+            <span style="display:block;width:22px;height:6px;border-radius:3px;background:#e2e7ed"></span>
+          </sc-if>
+        </span>
+      </sc-for>
+    </div>
+    <span style="font-size:12px;color:#7b8794;font-variant-numeric:tabular-nums;white-space:nowrap">{{ progress }}</span>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { idx: 0, sel: 0, clock: '19:00', sceneCtx: '暴雨前夜', stepHint: '', scen: [], logCount: 0, autoCount: 0, frameLabel: '复核工作台 · 井盖线队列' };
+
+  boxRef = React.createRef();
+  deskRef = React.createRef();
+  phoneRef = React.createRef();
+
+  ROUTES = ['#/m1', '#/m1/clue/CL-0417', 'crew', '#/m1/clue/CL-0417', '#/m1/line/mh', '#/m1/line/mh', '#/m1/line/rd', '#/m1/line/pl', '#/m2/dispatch', 'public', '#/m2', '#/m6'];
+
+  LABELS = ['复核工作台 · 井盖线队列(快车道件置顶)', '线索详情 CL-0417 · 并行复核与动作面板', '班组处置端 · 排水一班', '线索详情 CL-0417 · 复验人裁', '井盖线队列 · 三条线索三个结局', '井盖线队列 · 机械驳回件置顶', '路面线 · 自动升格与批量半审', '管网线 · 调查案 IV-0071', '告警与工单 · 调度视图', '公众上报端 · 回执与去重合并', '告警与工单 · 对账异常队列', '系统管理 · 类目快车道开关'];
+
+  SAY = [
+    '「先看这一条。19 点 02 分,没有人在现场,是 MH-0417 的位移传感器自己触发的。系统两秒内自动派了排水一班——但请看队列顶上这行字:机器派单,人复核中。派单是调度动作,定性还没发生。」',
+    '「这是整个方案的立场:自动化没有拿走定性权,它只是换了闸门的位置。人还是那个签字的人,只是签在派单之后的 15 分钟内。撤回是显名动作,按班组当前状态分三个分支召回。」',
+    '「班组端我只强调两件事:处置真源是客户的工单系统,我们的动作全部写回去;红色那张卡是安全上报,置顶直达值班长——现场的人身安全不排队。」',
+    '「完工照进来,AI 复验判不出配准——注意它没有默认打回,而是转『存疑待人裁』。打回必须是复核员显名动作并附对比证据,班组还能申诉到主管。」',
+    '「同样是井盖、同样高危,这条 0.31 没有传感器硬证据,它就没有资格进快车道,老老实实排 30 分钟人审。低置信高危不是放行,是强制人核。」',
+    '「树影这条机械闸硬失败,但高危件零自动归档——必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。人也可以反过来推翻机械判定,误杀样本回流规则组。」',
+    '「路面线是养护流:五项机械校验全过、养护级、高置信,直接免人工升格并入周批。页面上明示『本条未经人工,抽审兜底』——我们不藏这件事。」',
+    '「管网线连线索池都没有。水力学规则先行、AI 判型、自动开调查案,人只在立案和结案两个点上拍板。连『置信度』三个字在三条线上的含义都不一样。」',
+    '「资源不够的时候,系统不装作够:超额件显名降级,写清楚为什么没被立刻派出去,然后把仲裁权交给值班长。」',
+    '「同一口井盖,公众也报了。去重合并进既有线索、证据叠加,上报人拿到回执编号——不重复开单,但也不让他觉得石沉大海。」',
+    '「两套系统并行一定会有不一致。对账队列把它显式列出来,给一条裁决口径和 24 小时人工裁定窗,而不是让它安静地漂着。」',
+    '「最后是治理侧那把刀:DMT 能关掉整个类目的快车道,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个能收回的把手。」'
+  ];
+
+  ASK = [
+    '「传感器误报怎么办?」→ 硬证据只是准入条件不是结论:自检失败的传感器走设备工单(T8),误派 15 分钟内可撤回召回,快车道件全量抽审。',
+    '「15 分钟谁定的?」→ 界面上带虚线下划线的数字都是假设值,悬停有注解:试点首周与客户核实后按区可配。',
+    '「现场没信号呢?」→ 离线单本地暂存、回连补传,页脚有信息行;这一条是浅演示,不假装是完整流程。',
+    '「AI 判不出默认走哪边?」→ 永不默认打回。判不出只转存疑待人裁;打回须附复验对比证据。',
+    '「为什么不干脆调低阈值全放行?」→ 因为快车道的入场券不是置信度,是硬证据;没有硬证据的高危件宁可排队也不先派。',
+    '「机器错杀了谁来救?」→ 人。推翻机械判定按钮就在同屏,线索复活进人审并自动触发抽审。',
+    '「免人工不怕出事?」→ 只对养护级开放,且按批入抽审队列(批量确认件 15%,假设值);高危级永远没有免人工这条路。',
+    '「传感器坏了会不会误报成业务异常?」→ 先排设备故障:SN-FM03 自检失败走设备维护工单,不惊动业务队列。',
+    '「过载时谁来决定牺牲哪一单?」→ 值班长。系统只做到显名降级 + 广播先喊现场,抢占动作必须有人按。',
+    '「公众乱报怎么办?」→ 防滥用三件:同点位去重合并、单设备限频、重复无效上报降权;后两件在静态前端只作机制说明。',
+    '「以谁的数据为准?」→ 处置状态以客户系统为准,巡检定性以我方为准;异常 24 小时内人工裁定。',
+    '「上线后发现某类目不靠谱怎么办?」→ 不用改代码也不用停系统:关掉那个类目的快车道即可,区可申诉,全程留痕。'
+  ];
+
+  frames() {
+    return [this.deskRef.current, this.phoneRef.current].filter(f => {
+      try { return f && f.contentWindow && f.contentWindow.S; } catch (e) { return false; }
+    });
+  }
+
+  fit = () => {
+    const box = this.boxRef.current, f = this.deskRef.current;
+    if (!box || !f) return;
+    const k = Math.min(box.clientWidth / 1280, box.clientHeight / 900);
+    f.style.transform = 'scale(' + (Math.round(k * 1000) / 1000) + ')';
+  };
+
+  sync = () => {
+    const f = this.deskRef.current;
+    if (!f) return;
+    try {
+      const W = f.contentWindow, st = W.S.get(), nx = W.S.step();
+      const logs = st.actionLog || [];
+      this.setState({
+        idx: st.stepIdx,
+        clock: W.S.now(),
+        sceneCtx: st.meta.scene + (st.gov.stormMode ? ' · 暴雨模式已启动' : ''),
+        stepHint: nx ? ('下一步 ' + nx.id + ' ' + nx.t + ' ' + nx.title) : '剧情已走完 T12',
+        scen: (W.SCENARIO || []).map(s => ({ id: s.id, t: s.t, title: s.title, narration: s.narration, figs: s.figs, manual: s.manual })),
+        logCount: logs.length,
+        autoCount: logs.filter(l => /引擎|AI 服务|自动/.test(l.actor || '')).length
+      });
+    } catch (e) {}
+  };
+
+  route(i) {
+    const r = this.ROUTES[i] || '#/m1';
+    const desk = this.deskRef.current;
+    if (r === 'crew' || r === 'public') {
+      this.setState({ phone: r }, () => {
+        const p = this.phoneRef.current;
+        if (p) p.setAttribute('src', r + '.html');
+      });
+    } else if (desk) {
+      try { desk.contentWindow.location.hash = r; } catch (e) { desk.setAttribute('src', 'app.html' + r); }
+    }
+    this.setState({ sel: i, frameLabel: this.LABELS[i] || '' });
+  }
+
+  go = i => {
+    const desk = this.deskRef.current;
+    try {
+      const W = desk.contentWindow;
+      let guard = 0;
+      while (W.S.get().stepIdx < i + 1 && guard++ < 20) { if (!W.S.nextStep().ok) break; }
+    } catch (e) {}
+    this.route(i);
+    setTimeout(() => { this.sync(); this.reloadPhone(); }, 220);
+  };
+
+  reloadPhone() { const p = this.phoneRef.current; try { if (p && p.getAttribute('src')) p.contentWindow.location.reload(); } catch (e) {} }
+
+  onNext = () => {
+    const desk = this.deskRef.current;
+    let n = this.state.idx;
+    try { const r = desk.contentWindow.S.nextStep(); if (!r.ok) return; n = desk.contentWindow.S.get().stepIdx; } catch (e) { return; }
+    this.route(n - 1);
+    setTimeout(() => { this.sync(); this.reloadPhone(); }, 220);
+  };
+
+  onReset = () => {
+    try { this.deskRef.current.contentWindow.S.reset(); } catch (e) {}
+    this.setState({ phone: null, sel: 0 });
+    setTimeout(this.sync, 500);
+  };
+
+  hop = h => () => {
+    const desk = this.deskRef.current;
+    try { desk.contentWindow.location.hash = h; } catch (e) {}
+    this.setState({ frameLabel: '手动跳转 ' + h });
+  };
+
+  onCrew = () => { this.setState({ phone: 'crew' }, () => { const p = this.phoneRef.current; if (p) p.setAttribute('src', 'crew.html'); }); };
+  onPublic = () => { this.setState({ phone: 'public' }, () => { const p = this.phoneRef.current; if (p) p.setAttribute('src', 'public.html'); }); };
+
+  componentDidMount() {
+    this.fitT = setInterval(this.fit, 500);
+    this.tickT = setInterval(this.sync, 900);
+    setTimeout(this.fit, 200);
+  }
+
+  componentDidUpdate() { this.fit(); }
+
+  componentWillUnmount() { clearInterval(this.fitT); clearInterval(this.tickT); }
+
+  renderVals() {
+    const { idx, sel, scen } = this.state;
+    const cur = scen[sel] || {};
+    const steps = (scen.length ? scen : Array.from({ length: 12 }, (_, i) => ({ id: 'T' + (i + 1), t: '', title: '' }))).map((s, i) => ({
+      id: s.id, t: s.t, title: s.title,
+      isCur: i === sel, notCur: i !== sel,
+      mark: i < idx ? '✓ 已走' : (i === sel ? '当前' : ''),
+      onGo: () => this.go(i)
+    }));
+    return {
+      steps,
+      dots: Array.from({ length: 12 }, (_, i) => ({ on: i < idx, off: i >= idx })),
+      progress: idx + ' / 12 步',
+      clock: this.state.clock,
+      sceneCtx: this.state.sceneCtx,
+      stepHint: this.state.stepHint,
+      frameLabel: this.state.frameLabel,
+      curId: cur.id || 'T1',
+      curT: cur.t || '19:02',
+      curFigs: cur.figs || '—',
+      curTitle: cur.title || '主演开场 · MH-0417 位移传感器报警',
+      curNarration: cur.narration || '推进剧情后,这里显示该步系统自动执行的动作。',
+      curManual: cur.manual || '—',
+      curSay: this.SAY[sel] || '',
+      curAsk: this.ASK[sel] || '',
+      logCount: this.state.logCount,
+      autoCount: this.state.autoCount,
+      showPhone: !!this.state.phone,
+      phoneLabel: this.state.phone === 'public' ? '公众上报端 · 实机' : '班组处置端 · 实机',
+      boxRef: this.boxRef,
+      deskRef: this.deskRef,
+      phoneRef: this.phoneRef,
+      onNext: this.onNext,
+      onReset: this.onReset,
+      onCrew: this.onCrew,
+      onPublic: this.onPublic,
+      goM1: this.hop('#/m1'), goM2: this.hop('#/m2'), goM3: this.hop('#/m3'),
+      goM4: this.hop('#/m4'), goM5: this.hop('#/m5'), goM6: this.hop('#/m6')
+    };
+  }
+}
+
+</script>
+</body>
+</html>
