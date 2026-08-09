@@ -82,7 +82,9 @@ check("⑩ 每页 ≥1 处「假设」标注", not lack, "缺失页 %r" % (lack,
 
 # 11 术语纪律(2026-08-10 走查 R83-1/-3:砍术语对照表,全文说人话)
 #    正向:首页有「线索/告警」这对唯一保留术语的定义句;反向:黑话族零残留
-jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html)
+# R83 E4 桥接豁免:术语定义行里「演示界面快车道=本文紧急直派」是唯一许可的交叉命名点,扫描时剔除该行
+html_scan = re.sub(r'<p class="tt">全文只需要记一对词.*?</p>', '', html, flags=re.S)
+jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html_scan)
 has_pair = ("线索" in per_page[0]) and ("告警" in per_page[0]) and ("不再定义新词" in per_page[0])
 check("⑪ 术语纪律:线索/告警定义句在 + 黑话族零残留", has_pair and not jargon,
       "定义句 %s;黑话命中 %r" % ("在" if has_pair else "缺", jargon[:8]))
