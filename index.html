@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设施智能巡检平台 · 产品原型导览(演示原型)</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+  /* index.html(W2 导航页)· 施工图 §7-index/§11、设计档 §3「user story 导航介绍页」
+     颜色一律取 assets/tokens.css 变量,本文件只加布局类,不新造颜色、不用金色。 */
+
+  .page{max-width:1220px;margin:0 auto;padding:0 32px 90px}
+  @media (max-width:600px){ .page{padding:0 16px 60px} }
+
+  /* ---------- sticky 幕次锚点导航 ---------- */
+  .topnav{
+    position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+    padding:10px 32px;margin:0 -32px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line)
+  }
+  @media (max-width:600px){ .topnav{padding:10px 16px;margin:0 -16px} }
+  .topnav .wm{font-size:14px;font-weight:700;color:var(--ink-hi);margin-right:10px;white-space:nowrap}
+  .topnav a{font-size:12px;color:var(--mute);padding:5px 9px;border-radius:var(--radius-sm);white-space:nowrap}
+  .topnav a:hover{background:var(--blue-soft);color:var(--blue);text-decoration:none}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 4px}
+  .kicker{font-size:11px;letter-spacing:.08em;color:var(--blue);font-weight:600}
+  h1{margin:14px 0 0;font-size:34px;line-height:1.24;letter-spacing:-.01em;color:var(--ink-hi);font-weight:700}
+  h1 .hi{color:var(--blue)}
+  .hero .what{margin:16px 0 0;font-size:14.5px;line-height:1.85;color:var(--ink);max-width:760px}
+  .roles{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .role{flex:1;min-width:210px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px}
+  .role .r1{font-size:14.5px;font-weight:700;color:var(--ink-hi)}
+  .role .r2{font-size:11px;color:var(--blue);letter-spacing:.03em;margin-top:2px}
+  .role .r3{font-size:12.5px;color:var(--mute);line-height:1.6;margin-top:6px}
+  .explain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .ex{background:var(--blue-soft);border:1px solid #cfdff2;border-radius:var(--radius);padding:13px 15px}
+  .ex .t{font-size:11px;letter-spacing:.04em;color:var(--blue);font-weight:700;margin-bottom:6px}
+  .ex p{margin:0;font-size:12.5px;line-height:1.65;color:var(--ink)}
+  @media (max-width:980px){ .explain{grid-template-columns:1fr} }
+
+  .tip{max-width:820px;margin:22px 0 0}
+
+  /* ---------- 幕(act) ---------- */
+  .act{display:grid;grid-template-columns:minmax(300px,1fr) auto;gap:36px;align-items:start;padding:58px 0 0}
+  .act.rev{grid-template-columns:auto minmax(300px,1fr)}
+  .act.rev .act-body{order:2}
+  .act-head{display:flex;align-items:baseline;gap:10px}
+  .act-no{flex:none;width:30px;height:30px;border-radius:50%;background:var(--blue-soft);color:var(--blue);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .act-time{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--faint)}
+  .act h2{margin:10px 0 0;font-size:22px;letter-spacing:-.005em;color:var(--ink-hi);font-weight:700}
+  .act .quote{margin:14px 0 0;font-size:15px;line-height:1.65;color:var(--ink-hi);font-style:italic;
+    border-left:3px solid var(--blue);padding-left:14px}
+  .act .story{margin:14px 0 0;font-size:13.5px;line-height:1.85;color:var(--ink);max-width:520px}
+  .act .story b{color:var(--ink-hi)}
+  .points{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:520px}
+  .pt{font-size:11.5px;letter-spacing:.01em}
+  @media (max-width:980px){ .act,.act.rev{grid-template-columns:1fr} .act.rev .act-body{order:0} }
+
+  /* ---------- 内嵌实机 iframe:桌面缩放框 / 手机框 ---------- */
+  /* LIVE 徽标放框外上方(不盖在实机内容上——里面是真按钮,盖住会挡点击视觉认知) */
+  .frame-wrap{display:flex;flex-direction:column;gap:7px}
+  .frame-label{align-self:flex-start}
+  .desk,.desk-sm{position:relative;overflow:hidden;border-radius:var(--radius);border:1px solid var(--line);
+    background:#fff;box-shadow:0 10px 28px rgba(18,35,58,.14)}
+  .desk{width:760px;height:534px}
+  .desk iframe{width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left}
+  .desk-sm{width:420px;height:295px}
+  .desk-sm iframe{width:1280px;height:900px;border:0;display:block;transform:scale(.328125);transform-origin:top left}
+  .phone{overflow:hidden;border-radius:20px;border:1px solid var(--line);background:#fff;
+    box-shadow:0 10px 28px rgba(18,35,58,.14);width:390px;max-width:100%;height:760px;flex:none}
+  .phone iframe{width:100%;height:100%;border:0;display:block}
+  @media (max-width:980px){
+    .desk{width:100%;max-width:538px;height:378px}
+    .desk-sm{width:100%;max-width:390px;height:274px}
+  }
+  @media (max-width:600px){
+    .desk{max-width:100%;height:calc((100vw - 32px) * .703)}
+    .desk-sm{max-width:100%;height:calc((100vw - 32px) * .703)}
+  }
+
+  .stage-multi{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:20px}
+  .stage-col{display:flex;flex-direction:column;gap:14px}
+  .act.wide{grid-template-columns:1fr}
+  .act.wide .story{max-width:760px}
+  .act.wide .points{max-width:760px}
+
+  /* ---------- 演示范围声明区 ---------- */
+  .scope{margin-top:80px;padding-top:28px;border-top:1px solid var(--line)}
+  .scope h2{margin:0;font-size:19px;color:var(--ink-hi)}
+  .scope .lead{margin:10px 0 0;font-size:13px;line-height:1.75;color:var(--mute);max-width:820px}
+  .scope-list{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;max-width:900px}
+  .scope-list li{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:9px 12px;font-size:12.5px;line-height:1.65;color:var(--ink)}
+  .scope-list b{color:var(--ink-hi);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-right:6px}
+  .scope-list .form{color:var(--mute)}
+
+  /* ---------- outro ---------- */
+  .outro{margin-top:64px;padding-top:30px;border-top:1px solid var(--line)}
+  .outro h2{margin:0;font-size:19px;color:var(--ink-hi)}
+  .outro .lead{margin:10px 0 0;font-size:13px;color:var(--mute);max-width:700px;line-height:1.75}
+  .links{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+  .foot{margin-top:56px;text-align:center;font-size:11.5px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="topnav">
+    <span class="wm">设施智能巡检平台 · 原型导览</span>
+    <a href="#act1">① 自动派单</a><a href="#act2">② 人追上机器</a><a href="#act3">③ 班组手机</a>
+    <a href="#act4">④ 闭环两影子</a><a href="#act5">⑤ 安静的线</a><a href="#act6">⑥ 压力测试</a>
+  </nav>
+
+  <header class="hero">
+    <div class="kicker">产品原型演示 · 一个暴雨前夜的故事 · 全部界面可直接点</div>
+    <h1>一座绿洲城市,和它的<br><span class="hi">城市设施智能巡检平台</span></h1>
+    <p class="what">
+      Al Ain 的道路、井盖、灌溉管网从此自己会说话:全域传感网持续监测,AI 识别+机械证据校验双闸筛出真问题,
+      人只在拍板点签字;应急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个暴雨前夜,把整个平台走一遍。
+    </p>
+
+    <div class="roles">
+      <div class="role">
+        <div class="r1">区复核员</div>
+        <div class="r2">Web 工作台 · 坐席</div>
+        <div class="r3">定性签字的人:线索变告警,由他拍。</div>
+      </div>
+      <div class="role">
+        <div class="r1">市政班组</div>
+        <div class="r2">手机 · 现场</div>
+        <div class="r3">接单、处置、拍照回传;动作写回客户工单系统。</div>
+      </div>
+      <div class="role">
+        <div class="r1">管理者与 DMT</div>
+        <div class="r2">桌面 · 治理</div>
+        <div class="r3">看总览、抽审、握快车道开关。</div>
+      </div>
+    </div>
+
+    <div class="explain">
+      <div class="ex">
+        <div class="t">看懂 · 线索 vs 告警</div>
+        <p>AI 只产「线索」,人签字确认后才叫「告警」——定性权永远在人。</p>
+      </div>
+      <div class="ex">
+        <div class="t">看懂 · 双闸</div>
+        <p>AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走快车道。</p>
+      </div>
+      <div class="ex">
+        <div class="t">看懂 · 快车道「先派后审」</div>
+        <p>人身安全等不起人审——硬证据应急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
+      </div>
+    </div>
+
+    <div class="tip banner banner-info">
+      <span class="banner-ico">i</span>
+      <div>
+        下面每一幕内嵌的都是同一套系统的实机镜像——先点框内顶栏「▶ 推进剧情」,把假时钟从 19:00 走到 19:02,
+        看那一次自动派单;工作台 / 班组端 / 公众端共享同一份 sessionStorage 演示状态,这里点开的框与全屏打开的页面状态互通,
+        继续点按可以把剧情一路推进到 21:30。
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ 幕① ============ -->
+  <section class="act" id="act1">
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">①</span><span class="act-time">19:02</span></div>
+      <h2>井盖缺失,城市自己报的警</h2>
+      <p class="quote">「Al Jimi Mall 东侧,MH-0417 位移传感器触发——井盖开合异常。」</p>
+      <p class="story">
+        没有人巡逻到这里,是井盖自己说话了。自检通过、不在合法作业窗、传感器硬证据成立——双闸过,系统在两秒内做了三件事:
+        开紧急工单、把最近的排水一班派出去、给值班圈发只读预警。注意页面上那行字:「机器派单,人复核中」——派单是处置调度,不是定性。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">传感器硬证据</span>
+        <span class="pt badge badge-blue">自动派单零等待</span>
+        <span class="pt badge badge-blue">预警广播不定性</span>
+      </div>
+    </div>
+    <div class="frame-wrap">
+      <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线快车道)"></iframe></div>
+    </div>
+  </section>
+
+  <!-- ============ 幕② ============ -->
+  <section class="act rev" id="act2">
+    <div class="frame-wrap">
+      <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 快车道并行复核卡"></iframe></div>
+    </div>
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">②</span><span class="act-time">19:03</span></div>
+      <h2>十五分钟,人追上机器</h2>
+      <p class="quote">「我看下证据——嗯,是真的。确认。」</p>
+      <p class="story">
+        复核员屏幕上快车道件置顶:证据卡、机械校验四项打钩、
+        <span class="assume" title="假设值:快车道并行复核窗 15 分钟,区可配(R48)">15 分钟</span>
+        倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。
+        右侧原型可操作:试试确认,或者试试撤回。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">并行复核 15min</span>
+        <span class="pt badge badge-blue">撤回可召回</span>
+        <span class="pt badge badge-blue">快车道件全量抽审</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 幕③ ============ -->
+  <section class="act" id="act3">
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">③</span><span class="act-time">19:05</span></div>
+      <h2>班组的手机</h2>
+      <p class="quote">「接单。导航 6 分钟。」</p>
+      <p class="story">
+        排水一班的手机响了。接单、到场、前后双照回传、完工提交——全程写回区市政工单系统(它才是处置真源),
+        证据同时双写进平台证据链。这个端还有五个不起眼但真实的按钮:拒单、受阻上报、安全上报、现场新增上报、交接——
+        现场会发生的事,系统都接得住。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">写回客户系统</span>
+        <span class="pt badge badge-blue">证据双写</span>
+        <span class="pt badge badge-blue">现场动作族齐</span>
+      </div>
+    </div>
+    <div class="frame-wrap">
+      <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+      <div class="phone"><iframe data-src="crew.html" title="班组处置端(排水一班)"></iframe></div>
+    </div>
+  </section>
+
+  <!-- ============ 幕④ ============ -->
+  <section class="act rev" id="act4">
+    <div class="frame-wrap">
+      <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 闭环与两条对照线索"></iframe></div>
+    </div>
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">④</span><span class="act-time">19:24</span></div>
+      <h2>闭环,和它的两个影子</h2>
+      <p class="quote">「复验配准判不出?那就人裁。」</p>
+      <p class="story">
+        完工照进来,提交校验先当场拦不合格照;AI 复验判得出就闭环,判不出=存疑待人裁——永不默认打回。
+        同一时刻另外两条线索走向不同结局:0.31 低置信件没有硬证据,老老实实排
+        <span class="assume" title="假设值:应急人审档 SLA 30 分钟,区可配(R44)">30 分钟</span>
+        人审档;树影误报被机械闸置顶后由人驳回,原因码①回流模型,横幅写着「高危驳回已拘主管抽审」。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">永不默认打回</span>
+        <span class="pt badge badge-blue">低置信不走快车道</span>
+        <span class="pt badge badge-blue">驳回拘抽审</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 幕⑤ ============ -->
+  <section class="act" id="act5">
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">⑤</span><span class="act-time">20:00</span></div>
+      <h2>两条安静的线</h2>
+      <p class="quote">「路面批量 12 条,3 条免人工升格;DMA-07 水量平衡越限。」</p>
+      <p class="story">
+        路面线是养护流:车载识别、五项机械校验、高置信养护件自动并入周批养护计划——页面明示「本条未经人工,抽审兜底」。
+        管网线是另一种形态:水力学规则先行,AI 判型渗漏嫌疑,自动开调查案,人只在立案与结案两点拍板;
+        传感器自检失败那条走设备工单,不惊动业务队列。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">自动升格免人工</span>
+        <span class="pt badge badge-blue">调查案两点拍板</span>
+        <span class="pt badge badge-blue">先排设备故障</span>
+      </div>
+    </div>
+    <div class="frame-wrap">
+      <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+      <div class="desk"><iframe data-src="app.html#/m1/line/rd" title="工作台 · 路面线(可切到管网线调查案)"></iframe></div>
+    </div>
+  </section>
+
+  <!-- ============ 幕⑥ ============ -->
+  <section class="act wide" id="act6">
+    <div class="act-body">
+      <div class="act-head"><span class="act-no">⑥</span><span class="act-time">21:00</span></div>
+      <h2>压力测试:调度、公众与治理</h2>
+      <p class="quote">「Zakher 又一口井盖——没有空闲班组了。」</p>
+      <p class="story">
+        过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。
+        公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;
+        DMT 顺手演示了那把安全侧的刀——关掉一个类目的快车道,该类目立刻回退人审,区可申诉。
+      </p>
+      <div class="points">
+        <span class="pt badge badge-blue">过载三步</span>
+        <span class="pt badge badge-blue">多源合并回执</span>
+        <span class="pt badge badge-blue">DMT 关车道</span>
+      </div>
+    </div>
+    <div class="stage-multi">
+      <div class="stage-col">
+        <div class="frame-wrap">
+          <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+          <div class="desk-sm"><iframe data-src="app.html#/m2/dispatch" title="工作台 · 调度视图(过载三步/改派)"></iframe></div>
+        </div>
+        <div class="frame-wrap">
+          <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+          <div class="desk-sm"><iframe data-src="app.html#/m6" title="工作台 · 系统管理(类目快车道开关)"></iframe></div>
+        </div>
+      </div>
+      <div class="frame-wrap">
+        <span class="frame-label badge badge-blue">LIVE · 可操作</span>
+        <div class="phone"><iframe data-src="public.html" title="公众上报端(去重合并/回执)"></iframe></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 演示范围声明区 ============ -->
+  <section class="scope">
+    <h2>本原型演示范围</h2>
+    <p class="lead">
+      本原型按建造顺序覆盖井盖线、路面线、管网线全流程与外围页深度;时间与展示深度有限的以下 5 类场景不做静默缺席,
+      以详情页信息行或横幅形态呈现,不作为完整可点流程——按 §0.9 场景图集图号逐条列出:
+    </p>
+    <ul class="scope-list" id="scopeList"></ul>
+  </section>
+
+  <!-- ============ outro ============ -->
+  <div class="outro">
+    <h2>亲自上手</h2>
+    <p class="lead">
+      三套端到端原型都可全屏打开自由操作;打开就是同一份假时钟场景状态,与你在本页里点过的每一步共享同一份 sessionStorage。
+    </p>
+    <div class="links">
+      <a class="btn btn-primary" href="app.html" target="_blank" rel="noopener">工作台(app.html) →</a>
+      <a class="btn" href="crew.html" target="_blank" rel="noopener">班组处置端(crew.html) →</a>
+      <a class="btn" href="public.html" target="_blank" rel="noopener">公众上报端(public.html) →</a>
+      <button type="button" class="btn btn-danger" id="btnResetDemo">重置演示</button>
+    </div>
+  </div>
+
+  <footer class="foot">全站虚构演示数据 · 零真实照片 · 仅供评审</footer>
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------- 演示范围声明区:直接读 assets/data.js 的 SHALLOW_SCENES(单一口径,不重复造数据) ---------- */
+  var scopeList = document.getElementById('scopeList');
+  var scenes = window.SHALLOW_SCENES || [];
+  if (scopeList && scenes.length) {
+    scopeList.innerHTML = scenes.map(function (it) {
+      return '<li><b>' + esc(it.fig) + '</b>' + esc(it.name) +
+        ' <span class="form">—— ' + esc(it.form) + '</span></li>';
+    }).join('');
+  } else if (scopeList) {
+    scopeList.innerHTML = '<li>浅演示清单数据未载入(assets/data.js 未就绪)。</li>';
+  }
+
+  /* ---------- iframe 懒加载:进视口才赋 src(借 the PEAT 面试演示包4 index.html 机制)---------- */
+  var frames = Array.prototype.slice.call(document.querySelectorAll('iframe[data-src]'));
+  function load(f) { if (!f.getAttribute('src')) f.src = f.getAttribute('data-src'); }
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { load(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: '600px 0px' });
+    frames.forEach(function (f) { io.observe(f); });
+    setTimeout(function () { frames.forEach(load); }, 3000); /* 保险:3s 后仍未触发的全部加载 */
+  } else {
+    frames.forEach(load);
+  }
+
+  /* ---------- 重置演示:清 sessionStorage 后提示刷新(不强制跳转,避免打断评审者正在看的页) ---------- */
+  var btnReset = document.getElementById('btnResetDemo');
+  if (btnReset) {
+    btnReset.addEventListener('click', function () {
+      try { window.sessionStorage.removeItem('origen-demo-v1'); } catch (e) { /* 内存兜底态,忽略 */ }
+      window.alert('演示状态已清空。刷新本页,或已打开的工作台 / 班组端 / 公众端页面,即可从 19:00 重新开始。');
+    });
+  }
+})();
+</script>
+</body>
+</html>

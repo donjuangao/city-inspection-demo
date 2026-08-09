@@ -147,7 +147,7 @@
     var alerts = S.get().alerts.slice().reverse();
     var note = '<div class="tiny" style="margin-bottom:6px">仅展示复核员「确认」后成立的告警——确认前只是「线索」,不在此列(术语分权,R32)。</div>';
     var table = alerts.length
-      ? '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>告警#</th><th>设施</th><th>业务线</th><th>状态</th><th>确认</th><th>关联工单</th></tr></thead><tbody>' +
+      ? '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>告警号</th><th>设施</th><th>业务线</th><th>状态</th><th>确认</th><th>关联工单</th></tr></thead><tbody>' +
         alerts.map(function (al) { return alertRow(al, curId); }).join('') + '</tbody></table></div>'
       : '<div class="tiny">暂无成立告警。</div>';
     var detail = '';
