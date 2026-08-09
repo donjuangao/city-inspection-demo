@@ -29,17 +29,20 @@ h2{ font-size:10.5pt; margin:2.2mm 0 1.2mm; color:var(--ink-hi); padding-left:2.
 h2:first-of-type{ margin-top:1.2mm; }
 h3{ font-size:9.5pt; margin:1.8mm 0 .9mm; color:var(--blue); }
 p{ margin:0 0 1.1mm; }
-ul{ margin:0 0 1.4mm; padding-left:4.4mm; }
+ul{ margin:0 0 1mm; padding-left:4.4mm; }
 li{ margin:0 0 .5mm; }
+td ul{ margin:0; padding-left:3.6mm; }
+td li{ margin:0 0 .3mm; }
 b,strong{ color:var(--ink-hi); font-weight:600; }
 .hd{ border-bottom:1pt solid var(--blue); padding-bottom:1.6mm; margin-bottom:1.8mm; }
 .kicker{ font-size:9pt; color:var(--blue); letter-spacing:.6pt; margin:0 0 1mm; }
 .lead{ background:var(--blue-soft); border:.5pt solid #cfe0f2; border-radius:2mm; padding:1.6mm 2mm; font-size:9pt; color:var(--ink-hi); }
 
-table{ width:100%; border-collapse:collapse; font-size:9pt; line-height:1.18; margin:0 0 1.1mm; }
-th,td{ border:.5pt solid var(--line); padding:.6mm 1.1mm; vertical-align:top; text-align:left; }
+table{ width:100%; border-collapse:collapse; font-size:9pt; line-height:1.22; margin:0 0 1.4mm; }
+th,td{ border:.5pt solid var(--line); padding:.7mm 1.2mm; vertical-align:top; text-align:left; }
 th{ background:var(--blue-soft); color:var(--ink-hi); font-weight:600; }
 td.k{ background:#f7f9fb; color:var(--ink-hi); font-weight:600; white-space:nowrap; }
+tr.hl td{ background:#fdf6e3; }
 .tt{ font-size:9pt; color:var(--faint); margin:-0.4mm 0 1.4mm; line-height:1.24; }
 
 .cols2{ display:flex; gap:3mm; }
@@ -59,40 +62,32 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
 </head>
 <body>
 
-<!-- ═══════════════ 页 1 · 两根柱子:能力分层 + 本体概览 ═══════════════ -->
+<!-- ═══════════════ 页 1 · ①-1:定位 / 能力分层 / 本体(为什么建) ═══════════════ -->
 <section class="page">
   <div class="hd">
     <p class="kicker">交付① 平台规划 · 页 1 / 3</p>
     <h1>城市设施智能巡检平台 —— 让城市自己说话,让责任有名有姓</h1>
-    <p class="sub">面向假定客户(某绿洲城市的上级市政与交通主管层 + 三个区市政机构)的平台方案与最小可用产品需求文档。全文所涉客户业务流程、组织结构与全部数字均为假定/假设值,试点首周核实标定。</p>
-    <div class="lead"><b>一句话定位:</b>全域传感网让每个设施持续报出自己的状态,AI 识别与机械证据校验两道闸筛出真问题,人只在拍板点签字;人身安全类应急件由系统秒级自动派单、人 15 分钟(假设值)并行复核可撤回——<b>定性权永远在人,动的是闸门位置。</b></div>
+    <p class="sub">面向假定客户(某绿洲城市的上级市政主管部门 + 三个区市政机构)的平台方案与最小可用产品需求文档。全文所涉客户业务流程、组织结构与全部数字均为假定/假设值,试点首周核实标定。</p>
+    <div class="lead"><b>一句话定位:</b>全域传感网让每个设施持续报出自己的状态;AI 识别与规则校验两道关口筛出真问题;人只在拍板点签字。人身安全类紧急事件由系统直接派人处置、复核员 15 分钟内(假设值)并行核实、可撤回——<b>定性权永远在人。</b></div>
   </div>
 
-  <h2>术语对照(本文档全篇按此口径)</h2>
-  <table>
-    <tr><td class="k">线索</td><td>AI 或规则产出的未定性事项,不具备定性效力</td><td class="k">动作日志</td><td>一等公民对象;人工与自动处置各留一条,可导出</td></tr>
-    <tr><td class="k">告警</td><td>线索经人确认后升格的定性结论</td><td class="k">覆盖窗</td><td>某点位被哪些数据源、在哪些时间窗扫过的记录</td></tr>
-    <tr><td class="k">双闸</td><td>一闸=AI 识别;二闸=机械证据校验,逐项留痕</td><td class="k">影子池</td><td>未入人工复核池线索的抽样集合,供误报率估计</td></tr>
-    <tr><td class="k">快车道</td><td>应急件先自动派单、人并行复核追认或撤回</td><td class="k">调查案</td><td>管网线过程对象,人在立案/结案两点拍板</td></tr>
-    <tr><td class="k">机械校验</td><td>规则引擎执行的硬编码可执行判据集(按线 5/4/3 项)</td><td class="k">DMT</td><td>上级市政与交通主管层(假定的客户组织层级)</td></tr>
-  </table>
+  <p class="tt">全文只需要记一对词:<b>AI 或规则报出来、还没经人确认的事项叫「线索」;经人确认后才叫「告警」</b>。除此之外不再定义新词,一律白话直述。</p>
 
   <h2>两根柱子(全案的承重结构)</h2>
   <div class="cols2">
     <div class="pillar">
       <h4>柱一 · 数字孪生感知网(全域传感化)</h4>
-      <p>所有登记设施一期就铺传感器,不分高危普通;高危点位与路口加固定相机网。数字孪生 = 每个设施有数字身份 + 实时传感状态,线索、告警、工单全部落在孪生对象上。<b>路面是唯一例外</b>(不可逐米埋传感):感知 = 固定相机网 + 城市移动传感网(环卫/公交/出租)+ 公众上报。覆盖率是一等公民指标。</p>
+      <p>所有登记设施一期就铺传感器,不分高危普通;高危点位与路口加固定相机网。数字孪生 = 每个设施有数字身份 + 实时传感状态,线索、告警、工单全部落在这个数字身份上。<b>路面是唯一例外</b>(不可逐米埋传感):感知 = 固定相机网 + 城市移动传感网(环卫/公交/出租车载相机)+ 公众上报。覆盖率是一等公民指标。</p>
     </div>
     <div class="pillar p2">
       <h4>柱二 · 责任边界产品化</h4>
-      <p>一切从「AI 判断错了谁担责」倒推:命名分权(线索→人确认→告警)、动作权限表(AI 仅两个动作)、机械证据校验闸、动作日志与抽审、双方签署的责任情形表。责任边界不是 AI 的绊脚石,它就是围绕 AI 失效模式重新设计流程的那部分。</p>
+      <p>一切从「AI 判断错了谁担责」倒推:命名分权(线索→人确认→告警)、动作权限表(AI 只有两个动作)、规则校验关口、动作日志与抽查、双方签署的责任情形表。责任边界不是 AI 的绊脚石,它就是围绕 AI 失效模式重新设计流程的那部分。</p>
     </div>
   </div>
 
   <h2>能力分层(端层 / 场景应用层 / 平台底座层)</h2>
   <svg viewBox="0 0 560 244" role="img" aria-label="能力分层图">
     <rect x="0" y="0" width="560" height="244" fill="#ffffff"/>
-    <!-- 端层 -->
     <rect x="0" y="4" width="58" height="40" rx="4" fill="#eef3fa" stroke="#cfe0f2" stroke-width="1"/>
     <text x="29" y="21" font-size="11" fill="#12233a" text-anchor="middle">端层</text>
     <text x="29" y="35" font-size="10" fill="#5b6b7c" text-anchor="middle">谁在用</text>
@@ -105,21 +100,19 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <rect x="398" y="4" width="158" height="40" rx="4" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="477" y="20" font-size="11" fill="#12233a" text-anchor="middle">公众上报轻端</text>
     <text x="477" y="34" font-size="10" fill="#5b6b7c" text-anchor="middle">拍照 + 定位 + 类目,三步提交</text>
-    <!-- 场景层 -->
     <rect x="0" y="54" width="58" height="46" rx="4" fill="#eef3fa" stroke="#cfe0f2" stroke-width="1"/>
     <text x="29" y="72" font-size="11" fill="#12233a" text-anchor="middle">场景</text>
     <text x="29" y="86" font-size="11" fill="#12233a" text-anchor="middle">应用层</text>
     <rect x="66" y="54" width="490" height="46" rx="4" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="76" y="70" font-size="11" fill="#12233a">巡检场景专属 = 本体扩展包(只有巡检用的东西住这里)</text>
+    <text x="76" y="70" font-size="11" fill="#12233a">巡检场景专属(只有巡检用的东西住这里)</text>
     <rect x="76" y="76" width="112" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="132" y="88" font-size="10" fill="#5b6b7c" text-anchor="middle">三条线的线卡参数集</text>
+    <text x="132" y="88" font-size="10" fill="#5b6b7c" text-anchor="middle">三条线的参数集</text>
     <rect x="194" y="76" width="112" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="250" y="88" font-size="10" fill="#5b6b7c" text-anchor="middle">三类目识别模型</text>
     <rect x="312" y="76" width="112" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="368" y="88" font-size="10" fill="#5b6b7c" text-anchor="middle">派工映射</text>
     <rect x="430" y="76" width="116" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="488" y="88" font-size="10" fill="#5b6b7c" text-anchor="middle">六模块视图 · 总览视图</text>
-    <!-- 底座 -->
     <rect x="0" y="110" width="58" height="130" rx="4" fill="#eef3fa" stroke="#cfe0f2" stroke-width="1"/>
     <text x="29" y="168" font-size="11" fill="#12233a" text-anchor="middle">平台</text>
     <text x="29" y="182" font-size="11" fill="#12233a" text-anchor="middle">底座层</text>
@@ -132,13 +125,13 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <rect x="236" y="118" width="152" height="52" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="312" y="132" font-size="11" fill="#12233a" text-anchor="middle">AI 平台</text>
     <text x="312" y="145" font-size="10" fill="#5b6b7c" text-anchor="middle">模型库 · 专网内推理</text>
-    <text x="312" y="157" font-size="10" fill="#5b6b7c" text-anchor="middle">标注-训练-评估闭环 · 影子池</text>
+    <text x="312" y="157" font-size="10" fill="#5b6b7c" text-anchor="middle">标注-训练-评估闭环</text>
     <text x="312" y="166" font-size="10" fill="#5b6b7c" text-anchor="middle">(出网的只有聚合指标)</text>
     <rect x="396" y="118" width="150" height="52" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="471" y="132" font-size="11" fill="#12233a" text-anchor="middle">运营平台</text>
-    <text x="471" y="145" font-size="10" fill="#5b6b7c" text-anchor="middle">流程引擎 · 三级升级消息</text>
-    <text x="471" y="157" font-size="10" fill="#5b6b7c" text-anchor="middle">权限与多租户 · 工单适配</text>
-    <text x="471" y="166" font-size="10" fill="#5b6b7c" text-anchor="middle">(框架锁死 · 参数自治)</text>
+    <text x="471" y="145" font-size="10" fill="#5b6b7c" text-anchor="middle">流程引擎 · 逐级上报消息</text>
+    <text x="471" y="157" font-size="10" fill="#5b6b7c" text-anchor="middle">权限与多租户 · 工单对接</text>
+    <text x="471" y="166" font-size="10" fill="#5b6b7c" text-anchor="middle">(标准统一 · 阈值各区可调)</text>
     <text x="76" y="186" font-size="10" fill="#1a5fb4">本体工程四件 —— 最小可用版本期全量建,不做分期:</text>
     <rect x="76" y="192" width="114" height="18" rx="3" fill="#eef3fa" stroke="#cfe0f2" stroke-width="1"/>
     <text x="133" y="204" font-size="10" fill="#12233a" text-anchor="middle">本体注册表</text>
@@ -153,24 +146,23 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <rect x="236" y="214" width="152" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
     <text x="312" y="226" font-size="10" fill="#5b6b7c" text-anchor="middle">权限中枢 · 审计</text>
     <rect x="396" y="214" width="150" height="18" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="471" y="226" font-size="10" fill="#5b6b7c" text-anchor="middle">消息通道(预警/升级)</text>
+    <text x="471" y="226" font-size="10" fill="#5b6b7c" text-anchor="middle">消息通道(预警/上报)</text>
   </svg>
 
-  <div class="quote"><b>分层判据(一句话定分家):</b>第二个场景 / 第二个区县还会用的 → 底座;只有巡检用的 → 场景专属。<br>
-  <b>工作台为什么归底座:</b>底座的定义是「各场景共用」——数字孪生工作台是跨场景共用的呈现层(城市底图一张,场景挂图层包),按同一判据归底座。<br>
-  <b>沉淀答案:</b>做完巡检,平台多出来的是<b>本体类型与动作面</b>;第二个场景(违建、绿化)只需注册新对象类型 + 接数据源,路由、复核、工单、审计全部复用。抽检任务、公众上报、动作日志是平台级对象类型,场景里只有它们的视图。</div>
+  <div class="quote"><b>分层判据(一句话定分家):</b>第二个场景 / 第二个区县还会用的 → 底座;只有巡检用的 → 场景专属。<b>沉淀答案:</b>做完巡检,平台多出来的是对象类型与动作面;第二个场景(违建、绿化)只需注册新对象类型 + 接数据源,路由、复核、工单、审计全部复用。</div>
 
-  <h3>本体概览(系统建构其上的三类类型)</h3>
+  <h2>平台本体(对象 · 链接 · 动作)—— 建它是为了什么</h2>
+  <p><b>建本体不是为了建模好看,是为了两件事:拓展性,和给 AI 留接口。</b>对象和链接把城市设施世界描述成机器读得懂的结构——每个设施是什么、连着谁、归谁管;动作把系统里所有操作收敛成带权限、带校验、带日志的接口。这样做的远期价值是:<b>条件合适时,可以把一部分操作本体的权限逐步开放给 AI——AI 先通过对象与链接理解现状,再通过动作去操作,把整个平台当作一个系统来用</b>,而它的每一步都天然落在权限表、提交校验和动作日志的约束里。今天 AI 只有「创建线索」「提出建议」两个动作;明天开放到哪一步,由每类动作的可靠性数据说话,拍板的始终是人。</p>
   <table>
-    <tr><td class="k">对象</td><td>设施 · 传感器点位 · 数据源点位(带观测覆盖窗)· 线索 · 告警 · 工单镜像 · 调查案 · 机械校验记录(变长判据项)· 动作日志 · 抽检任务 · 公众上报</td></tr>
-    <tr><td class="k">链接</td><td>设施→归属→市政区(租户行级隔离由此链过滤)· 线索→关于→设施 · 告警→派生→工单镜像 · 处置后复检 = 新线索关联旧告警,不改写历史</td></tr>
-    <tr><td class="k">动作</td><td>每个动作 = 授权角色 + 提交校验 + 副作用 + 一条动作日志。<b>AI 服务账号仅有「创建线索」「提出建议」两个动作,无定性动作;规则引擎服务账号执行机械校验与自动车道,机械自动化同样不豁免审计。</b></td></tr>
+    <tr><td class="k" style="width:9%">对象</td><td>设施 · 传感器点位 · 数据源点位(带观测记录)· 线索 · 告警 · 工单镜像 · 调查案 · 规则校验记录 · 动作日志 · 抽检任务 · 公众上报</td><td style="width:30%"><b>对 AI 的意义:</b>AI 眼中的世界模型——它读的不是裸数据,是带类型和状态的对象</td></tr>
+    <tr><td class="k">链接</td><td>设施→归属→市政区(分区数据隔离由此链过滤)· 线索→关于→设施 · 告警→派生→工单镜像 · 处置后复检 = 新线索关联旧告警,不改写历史</td><td><b>对 AI 的意义:</b>让 AI 理解对象之间的因果与归属,才谈得上让它「操作系统」</td></tr>
+    <tr><td class="k">动作</td><td>每个动作 = 授权角色 + 提交校验 + 副作用 + 一条动作日志。<b>AI 服务账号仅有「创建线索」「提出建议」两个动作,无定性动作;规则引擎服务账号执行规则校验与自动处理,自动化同样不豁免审计。</b></td><td><b>对 AI 的意义:</b>未来给 AI 开权限,开的就是动作——一次开一个,有数据背书,可随时收回</td></tr>
   </table>
 
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>1 / 6</span></div>
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>1 / 10</span></div>
 </section>
 
-<!-- ═══════════════ 页 2 · 12 个月路线图 ═══════════════ -->
+<!-- ═══════════════ 页 2 · ①-2:路线图 / 净人力 / 合作边界 / 数据条款 ═══════════════ -->
 <section class="page">
   <div class="hd">
     <p class="kicker">交付① 平台规划 · 页 2 / 3</p>
@@ -189,11 +181,11 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="0" y="38" font-size="10" fill="#12233a">第 1-3 月</text>
     <rect x="86" y="26" width="115" height="18" rx="3" fill="#1a5fb4"/>
     <text x="143" y="39" font-size="10" fill="#ffffff" text-anchor="middle">试点立信</text>
-    <text x="207" y="39" font-size="10" fill="#5b6b7c">三线闭环真实跑通 · 快车道上线 · 全域传感网一期铺设</text>
+    <text x="207" y="39" font-size="10" fill="#5b6b7c">三条线闭环真实跑通 · 紧急自动派单上线 · 传感网一期铺设</text>
     <text x="0" y="62" font-size="10" fill="#12233a">第 4-6 月</text>
     <rect x="204" y="50" width="115" height="18" rx="3" fill="#2e7d32"/>
     <text x="261" y="63" font-size="10" fill="#ffffff" text-anchor="middle">把人解放</text>
-    <text x="325" y="63" font-size="10" fill="#5b6b7c">自动车道逐类目开启 · 影子池与原因码回流</text>
+    <text x="325" y="63" font-size="10" fill="#5b6b7c">可靠类目逐个转自动处理 · 误报留样抽查回流</text>
     <text x="0" y="86" font-size="10" fill="#12233a">第 7-9 月</text>
     <rect x="322" y="74" width="115" height="18" rx="3" fill="#9a6b00"/>
     <text x="379" y="87" font-size="10" fill="#ffffff" text-anchor="middle">区县复制</text>
@@ -201,175 +193,239 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="0" y="110" font-size="10" fill="#12233a">第 10-12 月</text>
     <rect x="440" y="98" width="116" height="18" rx="3" fill="#5b6b7c"/>
     <text x="498" y="111" font-size="10" fill="#ffffff" text-anchor="middle">平台沉淀</text>
-    <text x="86" y="126" font-size="10" fill="#7b8794">贯穿全程:动作日志 · 抽审 · 覆盖窗与覆盖热区图 · 误报率月报(数据源=入池驳回 + 影子池分层抽样)</text>
+    <text x="86" y="126" font-size="10" fill="#7b8794">贯穿全程:动作日志 · 抽查 · 观测覆盖记录与热区图 · 误报率月报</text>
   </svg>
 
   <table>
-    <tr><th style="width:14%">段</th><th style="width:31%">交付</th><th style="width:30%">客户侧前置依赖 / 交付卡点</th><th style="width:25%">验收(带推导)</th></tr>
+    <tr><th style="width:13%">段</th><th style="width:32%">交付什么</th><th style="width:30%">客户侧前置依赖 / 卡点</th><th style="width:25%">怎么算验收</th></tr>
     <tr>
       <td class="k">第 1-3 月<br>试点立信</td>
-      <td>单个试点区(假定:某绿洲城市一个市政区)三类目 · <b>全域传感网一期铺设</b>(全部登记井盖/雨水口/管段传感器 + 路口固定相机)· 机械校验闸与管网水力学规则腿代码首日即可用(首次可信报警需基线期 X 天,假设值)· <b>紧急快车道上线</b>(传感器硬证据即自动派单)· 其余定性人工 · 工单派发与班组端回传(起步允许人工回填)</td>
-      <td><b>全域传感器采购与安装(一期最大采购项 = 设施量 × 单价,假设值,依赖首位)</b> · 专网环境与数据接入授权 · 存量视频点位与台账移交 · 区市政工单系统接口开放 · 复核员到岗 · <b>7×24 高危值班人力</b></td>
-      <td>三线闭环真实跑通;复核留痕 100%;<b>覆盖率布尔</b>:传感器在线率 ≥ 阈值(假设值)且覆盖热区图可导出;<b>快车道布尔</b>:硬证据应急件 X 秒内(假设值)自动派单;闭环量目标 = 试点两高频类目日均线索量 × 90 天(假设值)</td>
+      <td><ul>
+        <li>单个试点区,三个类目(路面 / 井盖排水 / 灌溉管网)</li>
+        <li><b>传感网一期铺设</b>:全部登记井盖、雨水口、管段装传感器 + 路口固定相机</li>
+        <li>规则校验关口与管网水力学规则首日可用(首次可信报警需基线期 X 天,假设值)</li>
+        <li><b>紧急自动派单上线</b>(传感器硬证据即直接派人)</li>
+        <li>其余定性全走人工;工单派发与班组端回传(起步允许人工回填)</li>
+      </ul></td>
+      <td><ul>
+        <li><b>传感器采购安装</b>(一期最大采购项,依赖首位)</li>
+        <li>专网环境与数据接入授权</li>
+        <li>存量视频点位与台账移交</li>
+        <li>区市政工单系统接口开放</li>
+        <li>复核员到岗 + <b>7×24 高危值班人力</b></li>
+      </ul></td>
+      <td><ul>
+        <li>三条线闭环真实跑通;复核留痕 100%</li>
+        <li>传感器在线率 ≥ 阈值(假设值),覆盖热区图可导出</li>
+        <li>硬证据紧急件 X 秒内(假设值)自动派单</li>
+        <li>闭环量 = 两个高频类目日均线索量 × 90 天(假设值)</li>
+      </ul></td>
     </tr>
     <tr>
       <td class="k">第 4-6 月<br>把人解放</td>
-      <td>分线车道复核(线卡路由)· <b>自动车道逐类目开启</b>(按数据判据,路面记账道/升格道先行)· 影子池 + 抽样标注台 · 驳回原因码回流 · 设施状态总览首版</td>
-      <td>驳回原因码口径与客户共评审 · 标注人力(假设 = 区业务专家兼任)· <b>传感网运维与二期补盲</b>(在线率运营)</td>
-      <td>单条线索平均复核耗时较第 1-3 月基线下降;误报率月报机制建立;快车道误派率月报建立</td>
+      <td><ul>
+        <li>三条线各走各的处理通道(按业务线路由)</li>
+        <li><b>可靠类目逐个转自动处理</b>(按数据门槛开,路面记台账类先行)</li>
+        <li>误报样本留存抽查 + 驳回原因回流改模型</li>
+        <li>设施状态总览首版</li>
+      </ul></td>
+      <td><ul>
+        <li>驳回原因口径与客户共同评审</li>
+        <li>标注人力(假设 = 区业务专家兼任)</li>
+        <li>传感网运维与二期补盲</li>
+      </ul></td>
+      <td><ul>
+        <li>单条线索平均复核耗时较试点期基线下降</li>
+        <li>误报率月报、误派率月报机制建立</li>
+      </ul></td>
     </tr>
     <tr>
       <td class="k">第 7-9 月<br>区县复制</td>
-      <td>租户化配置(框架锁死 · 参数自治)· 第 2、3 市政区上线 · 专项无人机与机器狗腿</td>
-      <td>新区行政协调与账号体系 · 各区工单系统差异适配</td>
-      <td>第 2、3 区上线周期显著短于首区——推导:类目模型/复核流程/动作面是复用项,重付的只有数据接入与联调</td>
+      <td><ul>
+        <li>多区配置化(标准全市统一,阈值各区可调)</li>
+        <li>第 2、3 市政区上线;专项无人机与机器狗巡查</li>
+      </ul></td>
+      <td><ul>
+        <li>新区行政协调与账号体系</li>
+        <li>各区工单系统差异适配</li>
+      </ul></td>
+      <td><ul>
+        <li>第 2、3 区上线周期显著短于首区——识别模型、复核流程、动作面是复用项,重付的只有数据接入与联调</li>
+      </ul></td>
     </tr>
     <tr>
       <td class="k">第 10-12 月<br>平台沉淀</td>
-      <td>场景模板化(本体扩展包机制)· 接入规范开放 · 卫星低频广覆盖腿 · 覆盖率运营</td>
-      <td>新场景业务方立项与数据源盘点</td>
-      <td>新场景从立项到上线的周期有实测基线;纳管设施覆盖率进管理者视图——回应「覆盖不全」不能只报效率数</td>
+      <td><ul>
+        <li>新场景模板化(注册新对象类型 + 接数据源即成新场景)</li>
+        <li>接入规范开放;卫星低频广覆盖;覆盖率运营</li>
+      </ul></td>
+      <td><ul>
+        <li>新场景业务方立项与数据源盘点</li>
+      </ul></td>
+      <td><ul>
+        <li>新场景从立项到上线的周期有实测基线</li>
+        <li>纳管设施覆盖率进管理者视图</li>
+      </ul></td>
     </tr>
   </table>
 
-  <h2>净人力账(「把人解放」这句话的诚实版,全假设值)</h2>
-  <table>
-    <tr><td class="k">第 1-3 月</td><td><b>客户侧净增</b>:7×24 高危值班 + 复核坐席 + 台账移交人力。值班按排班或外包成本注明——市政编制里这不是「加个班」的事,是一笔要立项的人力。</td></tr>
-    <tr><td class="k">第 4-6 月</td><td>自动车道开启后单条复核耗时下降、批量车道吃掉养护级大头,复核人力<b>开始净减</b>。</td></tr>
-    <tr><td class="k">第 7-9 月</td><td>复制期人效数按首区经验折算。</td></tr>
-    <tr><td class="k">第 10-12 月</td><td>稳态——人只守拍板点、抽审与调查案;一线巡查人力转为现场核查与处置。</td></tr>
-  </table>
-
-  <div class="cols2">
-    <div class="note"><b>我方工程前置(认工程量,不藏工程量):</b>底座四件(本体注册表 / 动作引擎 / 规则引擎 / 集成网关)在最小可用版本期<b>全量建,不做分期</b>;人月刻度 = 底座四件约 X 人月 / 三类目识别接入 Y 人月 / 双端 Z 人月(全为假设值)。立场:场景一自己就在吃这些能力——动作权限表与提交校验=动作引擎,机械闸与自动车道=规则引擎,工单契约=集成网关,审计链=本体注册表的对象化,不是为第二个场景攒的屠龙技。</div>
-    <div>
-      <div class="ok"><b>试运行与培训:</b>班组端在第 1-3 月内先由一支班组灰度试运行(双语培训包 / 离线缓存提交回连同步 / 大字高对比模式),全员切换在试运行验收之后。</div>
-      <div class="warn" style="margin-top:1.6mm"><b>台账门槛:</b>第 1-3 月依赖列的「台账移交」带完整率与坐标精度验收门槛(假设值 90% / 亚米级);不达门槛期间,机械校验闸的台账匹配项<b>只标注不驳回</b>。</div>
-    </div>
-  </div>
-
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>2 / 6</span></div>
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>2 / 10</span></div>
 </section>
 
-<!-- ═══════════════ 页 3 · 关键立场与不做清单 ═══════════════ -->
+<!-- ═══════════════ 页 3 · ①-3:净人力 / 合作边界 / 数据条款 ═══════════════ -->
 <section class="page">
   <div class="hd">
     <p class="kicker">交付① 平台规划 · 页 3 / 3</p>
-    <h1>关键立场与不做清单 —— 写清边界外的东西,比事后解释为什么没做便宜</h1>
+    <h1>人力的诚实账 · 合作边界 · 数据与责任条款</h1>
   </div>
 
-  <h2>三个立场(各指回一个痛点)</h2>
+  <h2>净人力账(「把人解放」这句话的诚实版,全假设值)</h2>
   <table>
-    <tr><td class="k" style="width:24%">做适配层,不做替换</td><td>不替换客户已有的区市政工单系统。处置的真源在客户侧,我方只持工单镜像并做每日对账;班组移动轻端是客户系统的<b>移动化操作界面,不是第二个真源</b>——处置动作全部经集成网关写回客户系统,证据照片同时双写进我方证据链。痛点对位:发现与派工两张皮。</td></tr>
-    <tr><td class="k">单区试点,分阶段复制</td><td>先在一个市政区把三条业务线的闭环跑通并立信,再向第 2、3 区复制。复制靠<b>框架锁死 · 参数自治</b>:框架件(误报率阈值、类目入池开关)归上级主管层,区级阈值与 SLA 归区自治,区可发起参数变更建议。痛点对位:三区各一套。</td></tr>
-    <tr><td class="k">推理下沉专网<br>模型进场,数据不动,指标出场</td><td>识别推理在客户专网内完成,原始视频不出专网;标注-训练-评估闭环也在网内,出网的只有聚合评估指标。<b>代价诚实写明</b>:迭代慢、跨区模型共享需逐个审批。痛点对位:台账分散、视频敏感。</td></tr>
+    <tr><td class="k" style="width:13%">第 1-3 月</td><td><b>客户侧净增</b>:7×24 高危值班 + 复核坐席 + 台账移交人力。值班按排班或外包成本注明——市政编制里这不是「加个班」的事,是一笔要立项的人力。</td></tr>
+    <tr><td class="k">第 4-6 月</td><td>自动处理开启后单条复核耗时下降、批量确认吃掉养护级大头,复核人力<b>开始净减</b>。</td></tr>
+    <tr><td class="k">第 7-9 月</td><td>复制期人效数按首区经验折算。</td></tr>
+    <tr><td class="k">第 10-12 月</td><td>稳态——人只守拍板点、抽查与调查案;一线巡查人力转为现场核查与处置。</td></tr>
   </table>
 
-  <h2>这套东西为什么算「AI 原生」</h2>
-  <div class="quote">AI 原生的巡检不是给旧流程加一个 AI 按钮,也不是让 AI 替人拍板——而是<b>整个流程围绕「AI 的产出与失效模式」重新设计</b>:置信度路由、抽检审计、证据链留痕,全是为 AI 而生的流程件。责任边界不是 AI 原生的绊脚石,它就是 AI 原生设计的一部分。</div>
-
-  <h2>不做清单</h2>
+  <h2>合作方式与边界(把丑话写在方案里)</h2>
   <table>
-    <tr><td class="k" style="width:32%">不替换客户工单系统</td><td>只做适配层与镜像;客户系统不可用时走重试队列,超阈值转人工电话派工并补录。</td></tr>
-    <tr><td class="k">不承诺零漏报</td><td>改为承诺「每一次定性可追溯」+ 该点位观测覆盖窗可查,把「模型漏报」与「覆盖缺失」分开。</td></tr>
-    <tr><td class="k">AI 没有定性动作</td><td>AI 服务账号只有「创建线索」「提出建议」两个动作,无界面登录权。</td></tr>
-    <tr><td class="k">卫星与无人机不进最小可用版本</td><td>作为第 7-12 月的专项腿与广覆盖腿排入路线图后段。</td></tr>
-    <tr><td class="k">冷启动期不自动分级</td><td>自动车道按数据判据(分层样本量达标 + 双指标达标 + 抽检零漏报)逐类目开启,冷启动一律关闭。</td></tr>
-    <tr><td class="k">数据不出专网</td><td>代价如实写在方案里:迭代慢、跨区模型共享逐个审批。</td></tr>
-    <tr><td class="k">交付物零厂商专名</td><td>全部交付物以通用能力名表述,不写任何产品或厂商名称。</td></tr>
+    <tr><td class="k" style="width:22%">不替换客户工单系统</td><td>处置的真源在客户已有的区工单系统,我方只做对接与镜像、每日对账;班组移动端是客户系统的移动化操作界面,不是第二个真源。客户系统不可用时走重试队列,超时转人工电话派工并补录。</td></tr>
+    <tr><td class="k">数据不出专网</td><td>识别推理在客户专网内完成,原始视频不出网;出网的只有聚合统计指标。<b>代价如实写明:模型迭代慢、跨区模型共享需逐个审批。</b></td></tr>
+    <tr><td class="k">不承诺零漏报</td><td>承诺的是:每一次定性可追溯 + 每个点位「被哪些数据源、什么时间扫过」的观测记录可查——把「模型漏了」与「根本没拍到」分开,各自有各自的治理。</td></tr>
+    <tr><td class="k">AI 没有定性动作</td><td>AI 服务账号只有「创建线索」「提出建议」两个动作,无界面登录权;冷启动期一切自动处理关闭,按数据门槛逐类目放开。</td></tr>
   </table>
-
-  <h2>两处显式取舍</h2>
-  <div class="cols2">
-    <div class="note"><b>护栏只加在高危档:</b>SLA 可配域的护栏只覆盖高危档(15-60 分钟区间,假设值);中低危 SLA 交给区自治。理由——<b>护栏跟着人身安全走,不跟着一致性洁癖走。</b></div>
-    <div class="note"><b>延误成本 ≫ 误派成本:</b>应急件走「先处置调度、后定性追认」的快车道,是因为延误成本(人身安全)远高于误派成本(班组白跑一趟);误派由双闸准入 + 全量抽审 + 误派率月报控住,且撤回件不计班组考核。</div>
-  </div>
 
   <h2>数据与模型条款(甲方必问三条;作业语境下为方案承诺,数值与形式均为假设)</h2>
   <table>
-    <tr><td class="k" style="width:16%">数据归属</td><td>动作日志、证据链、标注数据全部归客户,可全量导出为开放格式。</td></tr>
+    <tr><td class="k" style="width:13%">数据归属</td><td>动作日志、证据链、标注数据全部归客户,可全量导出为开放格式。</td></tr>
     <tr><td class="k">模型归属</td><td>场景模型 = 客户数据训练所得;<b>跨区共享需数据来源区批准,否决权在区。</b></td></tr>
-    <tr><td class="k">退出条款</td><td>合同终止时全量导出 + 我方侧销毁并出具销毁证明;保管责任 = 客户专网内客户数据库管理员,我方提供迁移工具。</td></tr>
+    <tr><td class="k">退出条款</td><td>合同终止时全量导出 + 我方侧销毁并出具销毁证明;我方提供迁移工具。</td></tr>
   </table>
+  <p><b>出了事怎么分责:</b>四种责任情形与配套承诺列在 mini-PRD「AI 边界与兜底」机制⑨,<b>该表由甲乙双方签署,签署本身是一条验收项</b>。其中模型漏报(且观测记录证明数据源正常)与规则误判两格<b>明确列为乙方责任</b>。金句:审计链是<b>分责</b>工具,不是甩责工具;问责靠审计链,不靠审批层数。</p>
 
-  <h2>主轴的正面回答:出了事怎么分责</h2>
-  <p>四种责任情形与配套承诺列在 mini-PRD「AI 边界与兜底机制」机制⑨,<b>该表由甲乙双方签署,签署本身是一条验收布尔</b>。其中模型漏报(且覆盖窗证明数据源正常)与机械规则误判两格<b>明确列为乙方责任</b>,承诺免费重训 / 该类目退出自动车道 / 不计入本期验收。</p>
-  <div class="quote"><b>金句:</b>审计链是<b>分责</b>工具,不是甩责工具。<br><b>金句:</b>问责靠审计链,不靠审批层数——所以我们敢用单人确认 + 事后抽审,而不是叠三级审批。</div>
-
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>3 / 6</span></div>
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>3 / 10</span></div>
 </section>
 
-<!-- ═══════════════ 页 4 · PRD 1:框定 / 用户 / 流程 ═══════════════ -->
+<!-- ═══════════════ 页 3 · ②-1:框定 / 目标用户 / 主流程图 ═══════════════ -->
 <section class="page">
   <div class="hd">
-    <p class="kicker">交付② mini-PRD · 页 1 / 3</p>
+    <p class="kicker">交付② mini-PRD · 页 1 / 7</p>
     <h1>mini-PRD:告警复核与处置工作流</h1>
     <p class="sub">七节必答:功能框定 · 目标用户 · 用户流程 · 功能清单 · AI 边界与兜底 · 非功能 · 验收。</p>
   </div>
 
-  <h2>一 · 功能框定与术语立场</h2>
+  <h2>一 · 功能框定</h2>
   <ul>
-    <li><b>选定功能 = 告警复核与处置工作流。</b>AI 异常识别作为上游输入,只定义接口契约:输出 = 线索对象(类目 / 置信度 / 证据快照 / 点位),模型细节不展开。</li>
-    <li><b>深度声明:</b>三张业务线卡 = 该接口契约的具体化(输出规格与判定口径),在本文档内定位为「附录 · 识别接口契约」。<b>工作流是选定功能的全深度,线卡是它的输入规格——两级深度不摊薄成「选了几个功能」。</b></li>
-    <li><b>术语分权声明(命名即责任边界的第一道机制):</b>题面把 AI 的输出称为「告警」;本方案<b>刻意把未经人确认的 AI 输出降级命名为「线索」,人确认后才升格为「告警」</b>。整套系统的界面、对象、日志一律按此口径。</li>
+    <li><b>选定功能 = 告警复核与处置工作流。</b>AI 异常识别作为上游输入,只定义接口:输出 = 线索(类目 / 置信度 / 证据快照 / 点位),模型细节不展开。</li>
+    <li><b>命名即责任边界的第一道机制:</b>题面把 AI 的输出称为「告警」;本方案刻意把未经人确认的 AI 输出降级命名为「线索」,<b>人确认后才升格为「告警」</b>。整套系统的界面、对象、日志一律按此口径。</li>
+    <li>三条业务线的判定口径与输出规格,作为本工作流的输入规格在第三节与分线路由表内展开——工作流是选定功能的全深度,业务线是它的输入规格。</li>
   </ul>
 
-  <h2>二 · 目标用户与使用场景</h2>
+  <h2>二 · 目标用户:谁在用这个系统</h2>
   <table>
-    <tr><td class="k" style="width:19%">主用户</td><td><b>区复核员</b>(坐席;主用户,也就是「谁担责」的那个谁)· <b>复核主管</b>(抽审 / 撤销确认 / 升级二级)· <b>区巡检管理者</b>(总览消费者 / 发起参数变更)</td></tr>
-    <tr><td class="k">辅助角色</td><td>区值班长(升级三级,电话与短信)· 市政班组(处置执行,动作写回客户工单系统)· 上级主管层 DMT(框架标准与类目入池开关)· 公众(上报轻端)</td></tr>
-    <tr><td class="k">组织背景(假定)</td><td>上级主管层 + 三个区市政机构的两层结构;设施归属含「非市政资产」出口(市政道路不含国道),该出口对应转办动作。</td></tr>
+    <tr><th style="width:17%">角色</th><th style="width:14%">人数(每区,假设)</th><th>在系统里干什么</th></tr>
+    <tr class="hl"><td class="k">区复核员 ★主用户</td><td>6–10 坐席</td><td>整套工作流围着他转:看线索、定真假、签字确认或驳回——「谁担责」里的那个谁。日常 90% 的人机交互发生在他的复核工作台上。</td></tr>
+    <tr><td class="k">复核主管</td><td>1–2</td><td>抽查已确认/已驳回件、撤销错误确认、处理复核员上报的疑难件。</td></tr>
+    <tr><td class="k">区巡检管理者</td><td>1</td><td>看总览与月报,发起参数调整(走审批)。</td></tr>
+    <tr><td class="k">区值班长</td><td>每班 1</td><td>接逐级上报的超时件与紧急越权处置(电话与短信兜底)。</td></tr>
+    <tr><td class="k">市政班组</td><td>15–20 个班组</td><td>移动端接单、到场处置、拍照回传、完工提交;动作写回客户工单系统。</td></tr>
+    <tr><td class="k">上级主管部门</td><td>若干</td><td>定全市统一标准、开关各类目的自动处理;不做区内个案判定。</td></tr>
+    <tr><td class="k">公众</td><td>不限</td><td>轻端三步上报(拍照 + 定位 + 类目),查自己上报的处理进度。</td></tr>
   </table>
+  <p class="tt">组织背景(假定):上级主管部门 + 三个区市政机构两层结构;设施归属含「非市政资产」出口(市政道路不含国道),对应转办动作。</p>
 
-  <h2>三 · 用户流程:一条线索的一生(含双闸与快车道)</h2>
-  <svg viewBox="0 0 560 206" role="img" aria-label="一条线索的一生:双闸与快车道流程示意">
-    <rect x="0" y="0" width="560" height="206" fill="#ffffff"/>
-    <rect x="0" y="8" width="104" height="34" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="52" y="22" font-size="10" fill="#12233a" text-anchor="middle">数据源</text>
-    <text x="52" y="34" font-size="10" fill="#5b6b7c" text-anchor="middle">传感网 · 视觉网 · 公众</text>
-    <path d="M104 25 L122 25" stroke="#5b6b7c" stroke-width="1"/><path d="M122 25 l-5 -3 l0 6 z" fill="#5b6b7c"/>
-    <rect x="124" y="8" width="128" height="34" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
-    <text x="188" y="22" font-size="10" fill="#12233a" text-anchor="middle">第一闸 · AI 识别 / 规则报警</text>
-    <text x="188" y="34" font-size="10" fill="#1a5fb4" text-anchor="middle">产出「线索」(未定性)</text>
-    <path d="M252 25 L270 25" stroke="#5b6b7c" stroke-width="1"/><path d="M270 25 l-5 -3 l0 6 z" fill="#5b6b7c"/>
-    <rect x="272" y="8" width="128" height="34" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
-    <text x="336" y="22" font-size="10" fill="#12233a" text-anchor="middle">第二闸 · 机械证据校验</text>
-    <text x="336" y="34" font-size="10" fill="#1a5fb4" text-anchor="middle">按线 5 / 4 / 3 项,逐项留痕</text>
-    <path d="M400 25 L418 25" stroke="#5b6b7c" stroke-width="1"/><path d="M418 25 l-5 -3 l0 6 z" fill="#5b6b7c"/>
-    <rect x="420" y="8" width="136" height="34" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="488" y="22" font-size="10" fill="#12233a" text-anchor="middle">线卡路由</text>
-    <text x="488" y="34" font-size="10" fill="#5b6b7c" text-anchor="middle">按业务线各走各的车道</text>
-    <path d="M488 42 L488 52 L170 52 L170 62" stroke="#5b6b7c" stroke-width="1" fill="none"/><path d="M170 62 l-3 -5 l6 0 z" fill="#5b6b7c"/>
-    <path d="M488 52 L420 52 L420 62" stroke="#5b6b7c" stroke-width="1" fill="none"/><path d="M420 62 l-3 -5 l6 0 z" fill="#5b6b7c"/>
-    <rect x="0" y="64" width="266" height="52" rx="3" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
-    <text x="8" y="78" font-size="10" fill="#c0392b">快车道:应急/紧急级 × 双闸硬条件 × 类目开关开</text>
-    <text x="8" y="91" font-size="10" fill="#243342">自动派单(秒级,零人工等待)+ 只读预警广播</text>
-    <text x="8" y="103" font-size="10" fill="#243342">→ 人 15 分钟(假设值)并行复核</text>
-    <text x="8" y="113" font-size="10" fill="#5b6b7c">确认 = 告警追认 / 撤回 = 显名召回班组,线索转驳回流</text>
-    <rect x="278" y="64" width="278" height="52" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
-    <text x="286" y="78" font-size="10" fill="#1a5fb4">其余车道:记账 / 自动升格 / 批量半审 / 单条必审 / 机械驳回</text>
-    <text x="286" y="91" font-size="10" fill="#243342">人在拍板点定性 → 线索升格为「告警」</text>
-    <text x="286" y="103" font-size="10" fill="#243342">→ 派工是「确认」动作的副作用</text>
-    <text x="286" y="113" font-size="10" fill="#5b6b7c">免人工车道(记账/升格)页面明示「未经人工,抽审兜底」</text>
-    <path d="M133 116 L133 128" stroke="#5b6b7c" stroke-width="1"/><path d="M133 128 l-3 -5 l6 0 z" fill="#5b6b7c"/>
-    <path d="M417 116 L417 128" stroke="#5b6b7c" stroke-width="1"/><path d="M417 128 l-3 -5 l6 0 z" fill="#5b6b7c"/>
-    <rect x="0" y="130" width="176" height="32" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="88" y="144" font-size="10" fill="#12233a" text-anchor="middle">班组移动端处置回传</text>
-    <text x="88" y="156" font-size="10" fill="#5b6b7c" text-anchor="middle">动作写回客户工单系统</text>
-    <path d="M176 146 L192 146" stroke="#5b6b7c" stroke-width="1"/><path d="M192 146 l-5 -3 l0 6 z" fill="#5b6b7c"/>
-    <rect x="194" y="130" width="182" height="32" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="285" y="144" font-size="10" fill="#12233a" text-anchor="middle">AI 复验(引导拍摄 + 配准判定)</text>
-    <text x="285" y="156" font-size="10" fill="#5b6b7c" text-anchor="middle">判不出 = 存疑待人裁,永不默认打回</text>
-    <path d="M376 146 L392 146" stroke="#5b6b7c" stroke-width="1"/><path d="M392 146 l-5 -3 l0 6 z" fill="#5b6b7c"/>
-    <rect x="394" y="130" width="162" height="32" rx="3" fill="#eaf4ea" stroke="#2e7d32" stroke-width="1"/>
-    <text x="475" y="144" font-size="10" fill="#2e7d32" text-anchor="middle">复核闭环 → 归档</text>
-    <text x="475" y="156" font-size="10" fill="#5b6b7c" text-anchor="middle">管网线复验 = 流量回归基线</text>
-    <rect x="0" y="170" width="556" height="32" rx="3" fill="#f7f9fb" stroke="#d8dee6" stroke-width="1"/>
-    <text x="8" y="184" font-size="10" fill="#12233a">全程贯穿:<tspan fill="#1a5fb4">动作日志</tspan>(每一次人工与自动处置各一条,含执行人 · 参数 · 世界状态快照)· 抽审 · 观测覆盖窗</text>
-    <text x="8" y="196" font-size="10" fill="#5b6b7c">世界状态快照 = 四版本冻结:规则包版本 + 区级参数集版本 + 模型版本 + 参考数据快照(路网 / 台账 / 灌溉计划)</text>
+  <h2>三 · 用户流程:一条线索的一生</h2>
+  <svg viewBox="0 0 560 332" role="img" aria-label="主流程:发现-定性-处置-闭环">
+    <rect x="0" y="0" width="560" height="332" fill="#ffffff"/>
+    <!-- 发现层 -->
+    <rect x="0" y="18" width="92" height="64" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="46" y="34" font-size="10" fill="#12233a" text-anchor="middle">数据源</text>
+    <text x="46" y="48" font-size="10" fill="#5b6b7c" text-anchor="middle">传感网 · 相机网</text>
+    <text x="46" y="60" font-size="10" fill="#5b6b7c" text-anchor="middle">移动车载 · 公众</text>
+    <text x="46" y="72" font-size="10" fill="#5b6b7c" text-anchor="middle">服务热线</text>
+    <path d="M92 36 L110 26" stroke="#5b6b7c" stroke-width="1"/><path d="M110 26 l-6 -1 l2 5 z" fill="#5b6b7c"/>
+    <path d="M92 64 L110 74" stroke="#5b6b7c" stroke-width="1"/><path d="M110 74 l-4 -4 l-2 5 z" fill="#5b6b7c"/>
+    <rect x="112" y="4" width="212" height="42" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="120" y="18" font-size="10" fill="#12233a"><tspan font-weight="bold">规则报警(机械触发,不依赖 AI)</tspan></text>
+    <text x="120" y="30" font-size="10" fill="#243342">传感器阈值 · 周期规程到期 · 台账比对</text>
+    <text x="120" y="42" font-size="10" fill="#5b6b7c">规则来源=行业规程+客户标准,带版本号</text>
+    <rect x="112" y="56" width="212" height="42" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="120" y="70" font-size="10" fill="#12233a"><tspan font-weight="bold">AI 识别</tspan></text>
+    <text x="120" y="82" font-size="10" fill="#243342">照片/视频里找病害与异常,给置信度</text>
+    <text x="120" y="94" font-size="10" fill="#5b6b7c">置信度只影响排序,不定生死</text>
+    <path d="M324 25 L342 44" stroke="#5b6b7c" stroke-width="1"/><path d="M342 44 l-2 -6 l-4 4 z" fill="#5b6b7c"/>
+    <path d="M324 77 L342 58" stroke="#5b6b7c" stroke-width="1"/><path d="M342 58 l-6 2 l4 4 z" fill="#5b6b7c"/>
+    <rect x="344" y="30" width="88" height="42" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="388" y="48" font-size="10" fill="#12233a" text-anchor="middle">线索</text>
+    <text x="388" y="62" font-size="10" fill="#5b6b7c" text-anchor="middle">(未定性)</text>
+    <path d="M432 51 L450 51" stroke="#5b6b7c" stroke-width="1"/><path d="M450 51 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="452" y="18" width="104" height="66" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="504" y="32" font-size="10" fill="#12233a" text-anchor="middle">规则校验</text>
+    <text x="504" y="44" font-size="10" fill="#5b6b7c" text-anchor="middle">(第二道关口)</text>
+    <text x="504" y="57" font-size="10" fill="#5b6b7c" text-anchor="middle">定位在路网吗 · 台账</text>
+    <text x="504" y="68" font-size="10" fill="#5b6b7c" text-anchor="middle">对得上吗 · 多帧复现</text>
+    <text x="504" y="79" font-size="10" fill="#5b6b7c" text-anchor="middle">吗 · 重复吗(逐项留痕)</text>
+    <!-- 校验不过 → 驳回 -->
+    <path d="M504 84 L504 100 L452 100" stroke="#9a6b00" stroke-width="1" stroke-dasharray="4 3" fill="none"/><path d="M452 100 l5 -3 l0 6 z" fill="#9a6b00"/>
+    <rect x="336" y="90" width="114" height="22" rx="3" fill="#fdf6e3" stroke="#e8dcb8" stroke-width="1"/>
+    <text x="393" y="100" font-size="10" fill="#9a6b00" text-anchor="middle">硬性不过 → 驳回留样</text>
+    <text x="393" y="110" font-size="10" fill="#9a6b00" text-anchor="middle">高危件不自动归档,转人工</text>
+    <!-- 路由分叉 -->
+    <path d="M504 84 L504 122 L268 122 L134 130" stroke="#c0392b" stroke-width="1" fill="none"/><path d="M134 130 l6 -3 l-1 5 z" fill="#c0392b"/>
+    <path d="M504 84 L504 122 L424 122 L424 130" stroke="#1a5fb4" stroke-width="1" fill="none"/><path d="M424 130 l-3 -5 l6 0 z" fill="#1a5fb4"/>
+    <!-- 紧急 lane -->
+    <rect x="0" y="132" width="268" height="66" rx="3" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+    <text x="8" y="146" font-size="10" fill="#c0392b" font-weight="bold">紧急件(如井盖缺失,人身安全类)</text>
+    <text x="8" y="159" font-size="10" fill="#243342">硬证据成立 → 系统直接派单班组(秒级)+ 预警通报</text>
+    <text x="8" y="171" font-size="10" fill="#243342">复核员 15 分钟内(假设值)并行核实:</text>
+    <text x="8" y="183" font-size="10" fill="#243342">确认 = 追认为告警 / 撤回 = 显名召回班组、记原因</text>
+    <text x="8" y="195" font-size="10" fill="#5b6b7c">复核超时 → 逐级上报(主管 → 区值班长,电话短信)</text>
+    <!-- 非紧急 lane -->
+    <rect x="292" y="132" width="264" height="66" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="300" y="146" font-size="10" fill="#1a5fb4" font-weight="bold">非紧急件(急修 / 养护 / 观察级)</text>
+    <text x="300" y="159" font-size="10" fill="#243342">人工确认(单条或批量)→ 确认 = 升格告警、开工单</text>
+    <text x="300" y="171" font-size="10" fill="#243342">观察级 = 自动记台账追踪劣化,不派单</text>
+    <text x="300" y="183" font-size="10" fill="#243342">误报 = 驳回,必选原因(回模型 / 回规则 / 回台账)</text>
+    <text x="300" y="195" font-size="10" fill="#5b6b7c">可靠类目经数据门槛核准后可免人工自动并入养护计划</text>
+    <!-- 升级 cross arrow -->
+    <path d="M292 210 L268 210" stroke="#c0392b" stroke-width="1.4" fill="none"/><path d="M268 210 l6 -3 l0 6 z" fill="#c0392b"/>
+    <path d="M380 198 L380 210 L292 210" stroke="#c0392b" stroke-width="1.4" fill="none"/>
+    <text x="286" y="222" font-size="10" fill="#c0392b" text-anchor="middle">复核中发现实际危急 → 随时升级转紧急,反向亦可降级(留痕)</text>
+    <!-- 处置层 -->
+    <path d="M100 198 L100 236" stroke="#5b6b7c" stroke-width="1"/><path d="M100 236 l-3 -5 l6 0 z" fill="#5b6b7c"/>
+    <path d="M448 198 L448 228 L196 250" stroke="#5b6b7c" stroke-width="1" fill="none"/><path d="M196 250 l6 -3 l-1 6 z" fill="#5b6b7c"/>
+    <text x="452" y="222" font-size="10" fill="#5b6b7c">确认开出的工单</text>
+    <rect x="0" y="238" width="196" height="48" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="8" y="252" font-size="10" fill="#12233a" font-weight="bold">班组移动端现场处置</text>
+    <text x="8" y="264" font-size="10" fill="#243342">接单 · 导航到场 · 处置前后拍照 · 完工提交</text>
+    <text x="8" y="276" font-size="10" fill="#5b6b7c">动作写回客户工单系统;拒单/受阻/安全上报各有出口</text>
+    <path d="M196 262 L214 262" stroke="#5b6b7c" stroke-width="1"/><path d="M214 262 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="216" y="238" width="180" height="48" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="224" y="252" font-size="10" fill="#12233a" font-weight="bold">AI 复验完工照片</text>
+    <text x="224" y="264" font-size="10" fill="#243342">引导拍摄 + 前后对比判定</text>
+    <text x="224" y="276" font-size="10" fill="#5b6b7c">判不出 = 存疑待人裁,永不默认打回</text>
+    <path d="M396 262 L414 262" stroke="#5b6b7c" stroke-width="1"/><path d="M414 262 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="416" y="238" width="140" height="48" rx="3" fill="#eaf4ea" stroke="#2e7d32" stroke-width="1"/>
+    <text x="486" y="256" font-size="10" fill="#2e7d32" text-anchor="middle">人确认闭环 → 归档</text>
+    <text x="486" y="270" font-size="10" fill="#5b6b7c" text-anchor="middle">管网件 = 流量回归正常才算完</text>
+    <!-- 贯穿 strip -->
+    <rect x="0" y="298" width="556" height="30" rx="3" fill="#f7f9fb" stroke="#d8dee6" stroke-width="1"/>
+    <text x="8" y="311" font-size="10" fill="#12233a">全程贯穿:<tspan fill="#1a5fb4">动作日志</tspan>(人工与自动各留一条:执行人 · 参数 · 版本快照)· 高危件抽查 · 每点位观测记录</text>
+    <text x="8" y="323" font-size="10" fill="#5b6b7c">怕漏报三重保险:机械规则保底(阈值必报,不靠 AI)+ 公众上报与定检交叉 + 观测记录可查(没拍到≠没病害)</text>
   </svg>
 
-  <svg viewBox="0 0 560 70" role="img" aria-label="快车道时序示意">
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>4 / 10</span></div>
+</section>
+
+<!-- ═══════════════ 页 4 · ②-2:紧急直派时序 + 三条线三张流水线 ═══════════════ -->
+<section class="page">
+  <div class="hd">
+    <p class="kicker">交付② mini-PRD · 页 2 / 7</p>
+    <h1>三(续)· 紧急直派怎么跑 + 三条业务线,三条流水线</h1>
+  </div>
+
+  <h2>紧急直派(先派人、后补认定)的时间线</h2>
+  <svg viewBox="0 0 560 70" role="img" aria-label="紧急直派时序示意">
     <rect x="0" y="0" width="560" height="70" fill="#ffffff"/>
     <line x1="10" y1="30" x2="550" y2="30" stroke="#d8dee6" stroke-width="2"/>
     <circle cx="46" cy="30" r="5" fill="#c0392b"/><circle cx="186" cy="30" r="5" fill="#c0392b"/><circle cx="352" cy="30" r="5" fill="#1a5fb4"/><circle cx="500" cy="30" r="5" fill="#2e7d32"/>
@@ -377,156 +433,364 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="46" y="44" font-size="10" fill="#243342" text-anchor="middle">已签名传感器报文</text>
     <text x="46" y="55" font-size="10" fill="#5b6b7c" text-anchor="middle">硬证据成立</text>
     <text x="186" y="20" font-size="10" fill="#c0392b" text-anchor="middle">T+数秒</text>
-    <text x="186" y="44" font-size="10" fill="#243342" text-anchor="middle">自动派单 + 只读预警广播</text>
+    <text x="186" y="44" font-size="10" fill="#243342" text-anchor="middle">自动派单 + 预警通报</text>
     <text x="186" y="55" font-size="10" fill="#5b6b7c" text-anchor="middle">产出工单,不产出告警</text>
     <text x="352" y="20" font-size="10" fill="#1a5fb4" text-anchor="middle">T+0~15 分钟(假设值)</text>
-    <text x="352" y="44" font-size="10" fill="#243342" text-anchor="middle">人并行复核</text>
-    <text x="352" y="55" font-size="10" fill="#5b6b7c" text-anchor="middle">超时进三级升级链</text>
+    <text x="352" y="44" font-size="10" fill="#243342" text-anchor="middle">复核员并行核实</text>
+    <text x="352" y="55" font-size="10" fill="#5b6b7c" text-anchor="middle">超时逐级上报</text>
     <text x="500" y="20" font-size="10" fill="#2e7d32" text-anchor="middle">复核结论</text>
-    <text x="500" y="44" font-size="10" fill="#243342" text-anchor="middle">确认 = 告警追认</text>
+    <text x="500" y="44" font-size="10" fill="#243342" text-anchor="middle">确认 = 追认为告警</text>
     <text x="500" y="55" font-size="10" fill="#5b6b7c" text-anchor="middle">撤回 = 召回班组</text>
   </svg>
-  <p class="tt">四条硬护栏:① 硬证据准入 = 已认证设备签名报文 ② 时效窗:补传与回放数据不触发自动派单 ③ 防抖冷却:同设备同事件冷却窗内合并 ④ 速率熔断:每片区每时窗派单上限,超限转人审并通知区值班长。<b>定性权没有下放——快车道派的是处置调度,不是定性。</b></p>
+  <p class="tt"><b>为什么敢先派后审:</b>延误成本(人身安全)远大于误派成本(班组白跑一趟);误派由四条硬门槛 + 全量抽查 + 月报控住,撤回件不计班组考核。四条硬门槛:① 只认已认证设备的签名报文 ② 补传与回放的旧数据不触发 ③ 同设备短时间重复信号自动合并 ④ 每片区单位时间派单有上限,超限熔断转人工并通知区值班长。<b>定性权没有下放——直派派的是处置调度,不是定性。</b></p>
 
-  <h2>三条业务线:三种流程,不共用一条流水线</h2>
-  <svg viewBox="0 0 560 148" role="img" aria-label="三线卡对照小表">
-    <rect x="0" y="0" width="560" height="148" fill="#ffffff"/>
-    <rect x="0" y="0" width="182" height="20" fill="#eef3fa" stroke="#d8dee6" stroke-width="1"/>
-    <text x="91" y="14" font-size="11" fill="#12233a" text-anchor="middle">A · 路面病害(养护流)</text>
-    <rect x="188" y="0" width="182" height="20" fill="#fdecea" stroke="#d8dee6" stroke-width="1"/>
-    <text x="279" y="14" font-size="11" fill="#c0392b" text-anchor="middle">B · 排水与井盖(应急流)</text>
-    <rect x="376" y="0" width="184" height="20" fill="#fdf6e3" stroke="#d8dee6" stroke-width="1"/>
-    <text x="468" y="14" font-size="11" fill="#9a6b00" text-anchor="middle">C · 灌溉管网(预警调查流)</text>
-    <rect x="0" y="20" width="182" height="30" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="6" y="32" font-size="10" fill="#5b6b7c">性质:渐进劣化,不是突发事件</text>
-    <text x="6" y="44" font-size="10" fill="#5b6b7c">量最大 · 单条风险最低</text>
-    <rect x="188" y="20" width="182" height="30" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="194" y="32" font-size="10" fill="#5b6b7c">性质:突发事件,分钟级敏感</text>
-    <text x="194" y="44" font-size="10" fill="#5b6b7c">井盖缺失 = 即时人身威胁</text>
-    <rect x="376" y="20" width="184" height="30" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="382" y="32" font-size="10" fill="#5b6b7c">性质:埋地连续系统,不可目视</text>
-    <text x="382" y="44" font-size="10" fill="#5b6b7c">证据是水力学时序,不是照片</text>
-    <rect x="0" y="50" width="182" height="26" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="6" y="62" font-size="10" fill="#12233a">分级:急修 / 养护 / 观察</text>
-    <text x="6" y="73" font-size="10" fill="#5b6b7c">深度类量一律现场核查回填定级</text>
-    <rect x="188" y="50" width="182" height="26" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="194" y="62" font-size="10" fill="#12233a">分级:应急 / 急修 / 养护</text>
-    <text x="194" y="73" font-size="10" fill="#5b6b7c">另有雨前清掏专项任务型</text>
-    <rect x="376" y="50" width="184" height="26" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="382" y="62" font-size="10" fill="#12233a">分级:紧急 / 调查 / 设备</text>
-    <text x="382" y="73" font-size="10" fill="#5b6b7c">「置信」= 规则持续时长 × 多源一致度</text>
-    <rect x="0" y="76" width="182" height="26" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="6" y="88" font-size="10" fill="#5b6b7c">主感知:固定相机网 + 城市移动</text>
-    <text x="6" y="99" font-size="10" fill="#5b6b7c">传感网(环卫/公交/出租)+ 公众</text>
-    <rect x="188" y="76" width="182" height="26" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="194" y="88" font-size="10" fill="#5b6b7c">主感知:位移与液位传感器先导</text>
-    <text x="194" y="99" font-size="10" fill="#5b6b7c">视觉后证 → 合成事件链确证</text>
-    <rect x="376" y="76" width="184" height="26" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
-    <text x="382" y="88" font-size="10" fill="#5b6b7c">主感知:分区流量计 + 压力计</text>
-    <text x="382" y="99" font-size="10" fill="#5b6b7c">视觉降为弱辅助(湿 ≠ 漏)</text>
-    <rect x="0" y="102" width="182" height="22" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="6" y="116" font-size="10" fill="#12233a">机械校验 5 项</text>
-    <rect x="188" y="102" width="182" height="22" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="194" y="116" font-size="10" fill="#12233a">机械校验 4 项</text>
-    <rect x="376" y="102" width="184" height="22" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
-    <text x="382" y="116" font-size="10" fill="#12233a">机械校验 3 项(规则先行)</text>
-    <rect x="0" y="124" width="182" height="24" fill="#eaf4ea" stroke="#d8dee6" stroke-width="1"/>
-    <text x="6" y="139" font-size="10" fill="#2e7d32">自动化占比最高:记账 + 自动升格</text>
-    <rect x="188" y="124" width="182" height="24" fill="#fdecea" stroke="#d8dee6" stroke-width="1"/>
-    <text x="194" y="139" font-size="10" fill="#c0392b">快车道主战场:先派后审</text>
-    <rect x="376" y="124" width="184" height="24" fill="#fdf6e3" stroke="#d8dee6" stroke-width="1"/>
-    <text x="382" y="139" font-size="10" fill="#9a6b00">形态不同:预警 → 调查案,两点拍板</text>
+  <h2>三条业务线为什么不共用一条流水线</h2>
+  <p class="tt">路面是<b>渐进劣化</b>(量最大、单条风险最低),井盖排水是<b>突发事件</b>(分钟级人身威胁),灌溉管网是<b>埋地系统</b>(看不见,证据是水流数据不是照片)——性质不同,流水线各画各的。</p>
+
+  <h3>线 A · 路面病害(养护流)</h3>
+  <svg viewBox="0 0 560 128" role="img" aria-label="路面养护流流水线">
+    <rect x="0" y="0" width="560" height="128" fill="#ffffff"/>
+    <rect x="0" y="6" width="118" height="44" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="59" y="20" font-size="10" fill="#12233a" text-anchor="middle">相机网 · 移动车载</text>
+    <text x="59" y="32" font-size="10" fill="#12233a" text-anchor="middle">公众上报</text>
+    <text x="59" y="44" font-size="10" fill="#5b6b7c" text-anchor="middle">(路面不可埋传感)</text>
+    <path d="M118 28 L134 28" stroke="#5b6b7c" stroke-width="1"/><path d="M134 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="136" y="6" width="96" height="44" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="184" y="24" font-size="10" fill="#12233a" text-anchor="middle">AI 识别病害</text>
+    <text x="184" y="38" font-size="10" fill="#5b6b7c" text-anchor="middle">坑槽 · 裂缝 · 沉陷</text>
+    <path d="M232 28 L248 28" stroke="#5b6b7c" stroke-width="1"/><path d="M248 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="250" y="6" width="88" height="44" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="294" y="24" font-size="10" fill="#12233a" text-anchor="middle">规则校验</text>
+    <text x="294" y="38" font-size="10" fill="#5b6b7c" text-anchor="middle">5 项,逐项留痕</text>
+    <path d="M338 28 L354 28" stroke="#5b6b7c" stroke-width="1"/><path d="M354 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="356" y="6" width="200" height="88" rx="3" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
+    <text x="364" y="20" font-size="10" fill="#12233a" font-weight="bold">按严重程度分流</text>
+    <text x="364" y="34" font-size="10" fill="#c0392b">急修 → 当日人工确认 → 派单班组修</text>
+    <text x="364" y="48" font-size="10" fill="#243342">养护 → 人工批量确认并入周养护计划;</text>
+    <text x="364" y="60" font-size="10" fill="#243342">达标类目免人工自动并入,事后抽查</text>
+    <text x="364" y="74" font-size="10" fill="#2e7d32">观察 → 自动记台账,劣化曲线追踪,</text>
+    <text x="364" y="86" font-size="10" fill="#2e7d32">恶化到阈值自动复报</text>
+    <rect x="0" y="100" width="556" height="24" rx="3" fill="#fdf6e3" stroke="#e8dcb8" stroke-width="1"/>
+    <text x="8" y="110" font-size="10" fill="#9a6b00">异常:多帧不复现 / 不在路网 → 驳回留样抽查 · 深度存疑(坑深难判)→ 现场核查后回填定级</text>
+    <text x="8" y="120" font-size="10" fill="#9a6b00">· 同点位重复上报 → 自动合并计数 · 复核积压超容量 → 过载三步(预警通报 → 批量加急分诊 → 临时借调与时限延展)</text>
   </svg>
 
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>4 / 6</span></div>
+  <h3>线 B · 排水与井盖(应急流)</h3>
+  <svg viewBox="0 0 560 128" role="img" aria-label="井盖应急流流水线">
+    <rect x="0" y="0" width="560" height="128" fill="#ffffff"/>
+    <rect x="0" y="6" width="128" height="44" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="64" y="20" font-size="10" fill="#12233a" text-anchor="middle">井盖位移/液位传感器</text>
+    <text x="64" y="32" font-size="10" fill="#12233a" text-anchor="middle">(机械触发,先导)</text>
+    <text x="64" y="44" font-size="10" fill="#5b6b7c" text-anchor="middle">+ 相机与公众后证</text>
+    <path d="M128 28 L144 28" stroke="#5b6b7c" stroke-width="1"/><path d="M144 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="146" y="6" width="120" height="44" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="206" y="20" font-size="10" fill="#12233a" text-anchor="middle">硬证据判定</text>
+    <text x="206" y="32" font-size="10" fill="#5b6b7c" text-anchor="middle">已签名传感报文?</text>
+    <text x="206" y="44" font-size="10" fill="#5b6b7c" text-anchor="middle">类目自动处理开着?</text>
+    <path d="M266 18 L288 18" stroke="#c0392b" stroke-width="1.4"/><path d="M288 18 l-6 -3 l0 6 z" fill="#c0392b"/>
+    <text x="276" y="12" font-size="10" fill="#c0392b" text-anchor="middle">是</text>
+    <rect x="290" y="2" width="266" height="42" rx="3" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+    <text x="298" y="14" font-size="10" fill="#c0392b" font-weight="bold">紧急直派:秒级派单班组 + 预警通报</text>
+    <text x="298" y="26" font-size="10" fill="#243342">复核员 15 分钟内并行核实:确认=追认告警</text>
+    <text x="298" y="38" font-size="10" fill="#243342">撤回=显名召回班组、记原因、该件转驳回流</text>
+    <path d="M266 40 L288 56" stroke="#1a5fb4" stroke-width="1"/><path d="M288 56 l-3 -5 l-3 5 z" fill="#1a5fb4"/>
+    <text x="272" y="54" font-size="10" fill="#1a5fb4">否</text>
+    <rect x="290" y="50" width="266" height="42" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="298" y="62" font-size="10" fill="#1a5fb4" font-weight="bold">加急人工确认(30 分钟,假设值)</text>
+    <text x="298" y="74" font-size="10" fill="#243342">确认 → 开单派班组;急修级当日 4 小时(假设值)</text>
+    <text x="298" y="86" font-size="10" fill="#243342">平时档堵塞类 → 批量确认 / 并入养护计划</text>
+    <rect x="0" y="60" width="266" height="32" rx="3" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
+    <text x="8" y="72" font-size="10" fill="#12233a">暴雨模式:预警发布即全线升档,</text>
+    <text x="8" y="84" font-size="10" fill="#12233a">雨前清掏专项任务批量下发</text>
+    <rect x="0" y="100" width="556" height="24" rx="3" fill="#fdf6e3" stroke="#e8dcb8" stroke-width="1"/>
+    <text x="8" y="110" font-size="10" fill="#9a6b00">异常:台账查无此井盖 / 多帧不复现 → <tspan font-weight="bold">不自动归档</tspan>,证据置顶转人工加急确认(高危零自动归档)</text>
+    <text x="8" y="120" font-size="10" fill="#9a6b00">· 复核超时 → 逐级上报(主管→区值班长)· 无人可派 → 抢占在途低优任务(留痕回补)· 撤回后同点位再报 → 升档不再直派</text>
+  </svg>
+
+  <h3>线 C · 灌溉管网(预警调查流)</h3>
+  <svg viewBox="0 0 560 128" role="img" aria-label="管网预警调查流流水线">
+    <rect x="0" y="0" width="560" height="128" fill="#ffffff"/>
+    <rect x="0" y="6" width="128" height="44" rx="3" fill="#ffffff" stroke="#d8dee6" stroke-width="1"/>
+    <text x="64" y="20" font-size="10" fill="#12233a" text-anchor="middle">分区流量计 · 压力计</text>
+    <text x="64" y="32" font-size="10" fill="#12233a" text-anchor="middle">连续监测(规则先行)</text>
+    <text x="64" y="44" font-size="10" fill="#5b6b7c" text-anchor="middle">视觉只作旁证(湿≠漏)</text>
+    <path d="M128 28 L144 28" stroke="#5b6b7c" stroke-width="1"/><path d="M144 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="146" y="6" width="120" height="44" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="206" y="18" font-size="10" fill="#12233a" text-anchor="middle">水力学规则报警</text>
+    <text x="206" y="30" font-size="10" fill="#5b6b7c" text-anchor="middle">如夜间最小流量超基线</text>
+    <text x="206" y="42" font-size="10" fill="#5b6b7c" text-anchor="middle">持续时长 × 多源一致</text>
+    <path d="M266 28 L282 28" stroke="#5b6b7c" stroke-width="1"/><path d="M282 28 l-5 -3 l0 6 z" fill="#5b6b7c"/>
+    <rect x="284" y="6" width="96" height="44" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="332" y="24" font-size="10" fill="#12233a" text-anchor="middle">AI 判型</text>
+    <text x="332" y="38" font-size="10" fill="#5b6b7c" text-anchor="middle">爆管?渗漏?设备故障?</text>
+    <rect x="392" y="2" width="164" height="28" rx="3" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+    <text x="400" y="13" font-size="10" fill="#c0392b" font-weight="bold">爆管特征 × 阀门事件对齐</text>
+    <text x="400" y="25" font-size="10" fill="#243342">→ 紧急直派 + 关阀影响面提示</text>
+    <rect x="392" y="34" width="164" height="30" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
+    <text x="400" y="45" font-size="10" fill="#1a5fb4" font-weight="bold">渗漏嫌疑 → 开调查案</text>
+    <text x="400" y="57" font-size="10" fill="#243342">累积观察→现场核查→人结案</text>
+    <rect x="392" y="68" width="164" height="28" rx="3" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
+    <text x="400" y="79" font-size="10" fill="#12233a" font-weight="bold">设备自检失败 → 设备维修单</text>
+    <text x="400" y="91" font-size="10" fill="#5b6b7c">不进业务队列,不污染误报率</text>
+    <path d="M380 18 L390 12" stroke="#c0392b" stroke-width="1"/><path d="M390 12 l-6 0 l2 5 z" fill="#c0392b"/>
+    <path d="M380 30 L390 44" stroke="#1a5fb4" stroke-width="1"/><path d="M390 44 l-2 -6 l-4 4 z" fill="#1a5fb4"/>
+    <path d="M380 42 L390 78" stroke="#5b6b7c" stroke-width="1"/><path d="M390 78 l0 -6 l-5 3 z" fill="#5b6b7c"/>
+    <rect x="0" y="60" width="266" height="32" rx="3" fill="#fbfcfd" stroke="#d8dee6" stroke-width="1"/>
+    <text x="8" y="72" font-size="10" fill="#12233a">人只在两点拍板:立案(把嫌疑升为调查)</text>
+    <text x="8" y="84" font-size="10" fill="#12233a">与结案(流量回归正常才许结)</text>
+    <rect x="0" y="100" width="556" height="24" rx="3" fill="#fdf6e3" stroke="#e8dcb8" stroke-width="1"/>
+    <text x="8" y="110" font-size="10" fill="#9a6b00">异常:结案后流量未回归 → 调查案自动重开 · 超期未结 → 上报主管 · 传感器故障 → 先自检后报业务,片区标「观测降级」</text>
+    <text x="8" y="120" font-size="10" fill="#9a6b00">· 规则报警但 AI 判不出型 → 按「不明异常」进调查案,不静默丢弃</text>
+  </svg>
+
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>5 / 10</span></div>
 </section>
 
-<!-- ═══════════════ 页 5 · PRD 2:车道 / 契约 / 功能清单 / 十机制 ═══════════════ -->
+<!-- ═══════════════ 页 5 · ②-3:分线路由三线全表 ═══════════════ -->
 <section class="page">
   <div class="hd">
-    <p class="kicker">交付② mini-PRD · 页 2 / 3</p>
-    <h1>车道路由 · 工单契约 · 功能清单 · AI 边界与兜底(上)</h1>
+    <p class="kicker">交付② mini-PRD · 页 3 / 7</p>
+    <h1>三(续)· 分线路由:三条线全表</h1>
+    <p class="sub">每条线索经两道关口后,按业务线与严重程度进对应处理通道。三条线全部列全,不做缩略。</p>
   </div>
 
-  <h2>三(续)· 分线路由:井盖线全表 + 另两线代表车道</h2>
+  <h2>线 B · 排水与井盖(应急流)</h2>
   <table>
-    <tr><th style="width:9%">线</th><th style="width:16%">车道</th><th style="width:26%">进入条件</th><th style="width:26%">处置</th><th style="width:23%">兜底</th></tr>
-    <tr><td class="k" rowspan="5">井盖<br>应急流</td><td class="k">紧急快车道</td><td>应急级 × 双闸过(传感器硬证据,或高置信 + 机械全过)</td><td><b>系统自动派单</b> + 预警广播;人 15 分钟(假设值)并行复核:确认 = 追认,撤回 = 显名召回</td><td>误派率月报 + 快车道件<b>全量抽审</b>;开关按类目治理;复核超时进升级链</td></tr>
-    <tr><td class="k">应急人审档</td><td>应急级 × 低置信且无硬证据</td><td>加急队列单条人工确认,SLA 30 分钟(假设值)</td><td>确认与驳回都拘主管抽审</td></tr>
-    <tr><td class="k">当日队列</td><td>急修级</td><td>人工确认,当日 SLA 4 小时(假设值)</td><td>抽审</td></tr>
-    <tr><td class="k">批量</td><td>养护级(平时档堵塞)</td><td>批量确认 / 并入养护计划</td><td>抽审;暴雨预警自动升档走应急</td></tr>
-    <tr><td class="k">机械驳回</td><td>台账无此井盖 / 多帧不复现 / 重复</td><td><b>应急与急修级不自动归档</b>:证据卡置顶,转加急人工驳回确认</td><td>影子池;守住「高危零自动归档」验收线</td></tr>
-    <tr><td class="k">路面<br>养护流</td><td class="k">自动升格<br>(代表车道)</td><td>养护级 × 高置信 × 机械全过</td><td><b>免人工</b>,自动并入周期养护计划(周批工单)</td><td>事后抽审;冷启动关闭,按数据判据开启</td></tr>
-    <tr><td class="k">管网<br>调查流</td><td class="k">调查案<br>(代表车道)</td><td>渗漏或压力嫌疑</td><td><b>自动开调查案</b>:观察窗累积 + 调度视觉旁证 + 可派现场核查</td><td>超期升级主管;结案需流量回归绿标</td></tr>
-  </table>
-  <p class="tt">另:路面线还有记账 / 批量半审 / 单条必审 / 机械驳回四道;管网线还有紧急快车道(爆管规则命中 × 阀事件对齐)与设备维护道(自检失败 → 免人工定性,自动开设备工单)。跨线资源仲裁默认序:<b>井盖应急 &gt; 管网紧急 &gt; 路面急修 &gt; 调查核查 &gt; 养护批量</b>,区值班主管可临时改序并留痕。</p>
-
-  <h3>异常流程(不另开展馆,织进主流程)</h3>
-  <table>
-    <tr><td class="k" style="width:13%">AI 侧异常</td><td>低置信 → 只影响排序与分道,高危档不看置信度 · 误报 → 机械驳回自动归档 + 人工驳回六码各自回流 · 漏报 → 证据链与覆盖窗正面答 + 抽检与公众上报交叉 · 断流 → 降级明示 · 传感器故障误报 → 管网线设备档吸收(先自检后报业务)</td></tr>
-    <tr><td class="k">业务侧异常</td><td>复核超时 → 三级升级 + 只读预警 · 确认错 → 撤销(主管确认,不删除)· 回传失败 → 重试 + 对账异常队列 · 重复线索 → 机械闸合并 · 处置后复检 → 新线索关联旧告警,不改写历史 · 暴雨模式 → 井盖线整体升档 · 无可派 → 过载三步(预警广播 → 批量加急分诊 → 临时借调与 SLA 延展档)</td></tr>
+    <tr><th style="width:15%">处理通道</th><th style="width:27%">进入条件</th><th style="width:31%">怎么处理</th><th style="width:27%">兜底</th></tr>
+    <tr><td class="k">紧急直派</td><td>紧急级 × 两道关口过(已签名传感器硬证据,或 AI 高置信 + 规则校验全过)</td><td><b>系统自动派单</b> + 预警通报;复核员 15 分钟(假设值)并行核实:确认 = 追认,撤回 = 显名召回</td><td>误派率月报 + 直派件<b>全量抽查</b>;开关按类目由上级主管部门管;复核超时逐级上报</td></tr>
+    <tr><td class="k">加急人工确认</td><td>紧急级 × 低置信且无硬证据</td><td>加急队列单条人工确认,时限 30 分钟(假设值)</td><td>确认与驳回都自动进主管抽查</td></tr>
+    <tr><td class="k">当日队列</td><td>急修级</td><td>人工确认,当日时限 4 小时(假设值)</td><td>抽查</td></tr>
+    <tr><td class="k">批量确认</td><td>养护级(平时档堵塞)</td><td>批量确认 / 并入养护计划</td><td>抽查;暴雨预警自动升档走紧急</td></tr>
+    <tr><td class="k">校验驳回</td><td>台账无此井盖 / 多帧不复现 / 重复</td><td><b>紧急与急修级不自动归档</b>:证据置顶,转加急人工驳回确认</td><td>驳回件留样抽查;守住「高危零自动归档」验收线</td></tr>
   </table>
 
-  <h2>三之附 · 工单系统对接契约</h2>
-  <p>确认动作的副作用调用区市政工单系统开修复工单,<b>字段映射</b> = 线索编号 / 类目 / 位置 / 风险级 / 证据包链接 / 建议时限,返回工单号后建我方「工单镜像」。客户侧五状态(已派工 / 已接单 / 已到场 / 已完工 / 已验收)与镜像逐格映射,<b>轮询与变更捕获为主、回调为增强</b>(老政务系统主动外呼进专网通常做不到),映射表为区可配参数。完工照片进证据链并触发 AI 复验;<b>每日全量对账,裁决规则 = 处置状态以客户系统为准、巡检定性以我方为准</b>,不一致挂对账异常队列,24 小时内(假设值)主管裁定并入日志。<b>集成三档</b>:A 双向接口 / B 只读库与批量回写 / C 无接口(我方内闭环 + 日终导出人工录入),三档均保全证据链,试点首周核实档位。</p>
-
-  <h2>四 · 功能清单与优先级</h2>
+  <h2>线 A · 路面病害(养护流)</h2>
   <table>
-    <tr><td class="k" style="width:13%">P0 工作台</td><td>三线队列分区视图(线卡路由 + 仲裁序置顶)· 线索详情与动作面板(动作按钮即动作,未满足的提交校验以灰态标注)· 调查案视图 · 确认→派工副作用与镜像回传 · 动作日志(一等公民对象 + 时间线)· 兜底面板(抽检池 + 公众上报并入)</td></tr>
-    <tr><td class="k">P0 识别与规则</td><td>三类目模型接入 + 置信输出 + 证据快照 · <b>全域传感网接入</b>(智能井盖 / 液位计 / 分区计量,一期标配)· <b>机械校验闸</b>(按线 5 / 4 / 3 项)· <b>水力学规则腿</b>(代码首日可用,首报需基线期)· <b>紧急快车道</b> · <b>AI 复验</b>(引导拍摄 + 配准判定 + 人裁兜底)</td></tr>
-    <tr><td class="k">P0 移动端</td><td>班组端:接单列表 · 工单详情与导航 · 现场拍照回传 · 完工提交(全部写回客户工单系统);班组动作族:拒单 / 受阻上报 / 安全上报 / 现场新增上报 / 部分完工 / 交接</td></tr>
-    <tr><td class="k">P0-lite</td><td>数据源健康监测(连续 N 时窗无有效帧或质量分塌方 → 自动开设备工单 + 总览横幅「本片区观测降级」;<b>另设推理产出率探针——有帧无线索 = 推理服务失明,与无帧分开报</b>)· 人工日对账清单</td></tr>
-    <tr><td class="k">P1</td><td>原因码回流路由与月度模型评估 · 主管抽审队列 · 撤销动作 · 影子池与抽样标注台 · 公众上报并入(防滥用三件:同点去重、单设备限频、重复无效降权;先人工甄别再升格)· 参数变更控制台(走审批)· 类目入池开关 · 值班排班与升级通道配置 · 传感网运维(在线率 / 盘点对账 / 设备绑定校验 / 电池与固件)· 劣化曲线台账 · <b>跨时次异源复现闸</b>(真正独立的第二闸候选)· 设施状态总览首版(含覆盖热区图)· 调度视图(负载地图 + 改派 / 合并 / 拆单)</td></tr>
-    <tr><td class="k">P2</td><td>报表与健康总览完整版 · 无人机与卫星腿</td></tr>
+    <tr><th style="width:15%">处理通道</th><th style="width:27%">进入条件</th><th style="width:31%">怎么处理</th><th style="width:27%">兜底</th></tr>
+    <tr><td class="k">急修队列</td><td>急修级(深坑 / 沉陷等行车安全类)</td><td>人工确认,当日派单班组;深度存疑先现场核查回填定级</td><td>抽查;同点位公众重复上报自动合并计数加权</td></tr>
+    <tr><td class="k">单条必审</td><td>养护级 × 边界情形(靠近学校医院 / 主干道)</td><td>单条人工确认</td><td>抽查</td></tr>
+    <tr><td class="k">批量确认</td><td>养护级 × 中低置信</td><td>复核员批量确认视图(规则校验结果做辅助列),一批一单</td><td>抽查;可存疑归档</td></tr>
+    <tr><td class="k">自动并入养护计划</td><td>养护级 × 高置信 × 规则校验全过 × 该类目数据门槛达标</td><td><b>免人工</b>,自动并入周期养护计划(周批工单);页面明示「本条未经人工,抽查兜底」</td><td>事后抽查;冷启动关闭;抽查错误率超阈值该类目自动退回人工</td></tr>
+    <tr><td class="k">记台账</td><td>观察级 × 规则校验过</td><td><b>免人工</b>,自动记台账入劣化曲线,不派单</td><td>台账可查;恶化到阈值自动复报升级</td></tr>
+    <tr><td class="k">校验驳回</td><td>不在路网 / 多帧不复现 / 重复</td><td>自动归档,原因自动记录</td><td>驳回件留样,定期抽样标注估「误杀率」</td></tr>
   </table>
 
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>5 / 6</span></div>
+  <h2>线 C · 灌溉管网(预警调查流)</h2>
+  <table>
+    <tr><th style="width:15%">处理通道</th><th style="width:27%">进入条件</th><th style="width:31%">怎么处理</th><th style="width:27%">兜底</th></tr>
+    <tr><td class="k">紧急直派</td><td>爆管特征规则命中 × 阀门事件对齐</td><td>秒级派单 + 预警通报 + 关阀影响面提示(影响哪些片区灌溉)</td><td>直派件全量抽查;误派率月报</td></tr>
+    <tr><td class="k">调查案</td><td>渗漏或压力异常嫌疑(持续时长 × 多源一致度达标)</td><td><b>自动开调查案</b>:观察窗累积证据 + 调度视觉旁证 + 可派现场核查;人在立案 / 结案两点拍板</td><td>调查超期上报主管;结案必须流量回归正常,否则自动重开</td></tr>
+    <tr><td class="k">持续观察</td><td>嫌疑未达立案门槛</td><td>系统累积观察,不打扰人;达门槛自动升调查案</td><td>观察队列可查,不静默丢弃</td></tr>
+    <tr><td class="k">设备维修单</td><td>传感器自检失败 / 数据断流</td><td>免人工定性,自动开设备维修单,<b>不进业务队列</b></td><td>故障期该片区标「观测降级」横幅,总览可见</td></tr>
+  </table>
+
+  <p class="tt"><b>跨线抢资源怎么排:</b>井盖紧急 &gt; 管网紧急 &gt; 路面急修 &gt; 调查现场核查 &gt; 养护批量;区值班主管可临时改序,改序留痕。派单时综合班组位置 / 资质 / 装备 / 当前负载择优;位置数据缺失自动退化为按辖区派。无人可派时在途低优任务可被抢占挂起(留痕、事后回补)。</p>
+
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>6 / 10</span></div>
 </section>
 
-<!-- ═══════════════ 页 6 · PRD 3:十机制 / 非功能 / 验收 ═══════════════ -->
+<!-- ═══════════════ 页 6 · ②-4:异常流程全展开 + 工单对接 ═══════════════ -->
 <section class="page">
   <div class="hd">
-    <p class="kicker">交付② mini-PRD · 页 3 / 3</p>
-    <h1>五 · AI 边界与兜底机制(核心节 · 十机制)</h1>
+    <p class="kicker">交付② mini-PRD · 页 4 / 7</p>
+    <h1>三(续)· 异常流程全展开 —— 出岔子的每一种走法</h1>
+    <p class="sub">正常流程只占运营的一半;下表把常见异常逐条展开,每条都有系统动作、人的动作和兜底,不缩略。</p>
   </div>
 
   <table>
-    <tr><th style="width:12%">机制</th><th style="width:45%">怎么运作</th><th style="width:43%">兜底在哪</th></tr>
+    <tr><th style="width:17%">异常情况</th><th style="width:34%">系统怎么办</th><th style="width:27%">人怎么办</th><th style="width:22%">兜底</th></tr>
+    <tr><td class="k">AI 误报</td><td>规则校验先拦一道(定位 / 台账 / 复现 / 重复);拦不住的进人工队列</td><td>复核驳回,必选原因(回模型 / 回规则 / 回台账 / 人工周审)</td><td>误报率月报;原因分布驱动模型月度评估</td></tr>
+    <tr><td class="k">AI 漏报</td><td>机械规则保底(阈值触发必报,不依赖 AI)+ 定期巡检覆盖 + 公众上报交叉</td><td>抽巡当审计腿;漏报复盘查观测记录:是模型漏了还是根本没拍到</td><td>每点位观测记录可导出;「没拍到」归覆盖治理,不算模型账</td></tr>
+    <tr><td class="k">AI 服务失明<br>(有数据无产出)</td><td>推理产出率探针:有帧无线索超时窗即报警,与数据断流分开报</td><td>运维介入;期间按纯规则模式跑</td><td>降级横幅明示;恢复后补扫积压帧</td></tr>
+    <tr><td class="k">数据源断流</td><td>连续 N 时窗无有效帧或质量塌方 → 自动开设备维修单 + 总览横幅「本片区观测降级」</td><td>运维修复;管理者在总览看到降级片区</td><td>降级态可复现,本身是一条验收项</td></tr>
+    <tr><td class="k">传感器故障误报</td><td>先设备自检、后报业务(管网线设备通道吸收)</td><td>设备工单走运维,不占复核人力</td><td>故障误报不进业务误报率,两本账分开</td></tr>
+    <tr><td class="k">复核超时</td><td>时限一到自动逐级上报:复核员 → 主管 → 区值班长(电话与短信)</td><td>上级接手或改派</td><td>夜间与节假日按值班表路由;上报链留痕</td></tr>
+    <tr><td class="k">确认错了</td><td>不能删除——撤销 = 显名动作,须主管确认,原记录保留</td><td>发起撤销并写理由</td><td>撤销件自动进抽查;审计链完整</td></tr>
+    <tr><td class="k">复核发现比报的严重</td><td>升级动作:非紧急件随时升转紧急通道(反向降级同理)</td><td>复核员一键升级,写判断依据</td><td>升级件留痕;升级率进月报</td></tr>
+    <tr><td class="k">派不出人(过载)</td><td>过载三步:预警通报 → 批量加急分诊 → 临时借调与时限延展档;在途低优任务可被抢占挂起</td><td>区值班主管拍板借调与延展</td><td>抢占与延展全部留痕,事后回补</td></tr>
+    <tr><td class="k">班组拒单 / 受阻</td><td>拒单须选原因,单子自动回派单池重派;受阻(断路 / 需断水断电)挂起并通知复核侧</td><td>调度侧改派 / 合并 / 拆单(显名 + 理由)</td><td>拒单率与受阻率进班组月报,不冤枉正当拒单</td></tr>
+    <tr><td class="k">完工回传失败</td><td>移动端离线缓存,回连自动补传;写回客户系统失败走重试队列</td><td>超阈值转人工电话核实并补录</td><td>次日对账兜底,漏单必现形</td></tr>
+    <tr><td class="k">与客户系统对不上账</td><td>每日全量对账,不一致挂对账异常队列</td><td>主管 24 小时内(假设值)裁定:处置状态以客户系统为准、巡检定性以我方为准</td><td>裁定入日志;长期不一致驱动接口排查</td></tr>
+    <tr><td class="k">公众重复 / 滥用上报</td><td>同点位去重合并(证据叠加、催办计数)· 单设备限频 · 重复无效上报降权</td><td>先人工甄别再升格;明显无效可驳回并告知</td><td>甄别驳回留痕;滥用不拉黑实名投诉通道</td></tr>
+    <tr><td class="k">台账对不上<br>(查无此设施)</td><td>规则校验拦下;高危级不自动归档,证据置顶转人工</td><td>人工确认是台账缺漏还是误报;台账缺漏发起台账更新</td><td>台账完整率不达标期间,该项校验只标注不驳回</td></tr>
+    <tr><td class="k">极端天气(暴雨)</td><td>预警发布即全站横幅 + 井盖排水线整体升档 + 雨前清掏专项批量下发</td><td>区值班主管确认启动;上级主管部门可关某类目自动处理并强制通知</td><td>升档期直派门槛不放松(硬证据要求不变)</td></tr>
+    <tr><td class="k">辖区边界件</td><td>定位漂移可能落错区:边界缓冲带内的件标「辖区待确认」</td><td>派单前人工确认归属;争议走上级仲裁</td><td>确认前不派单,避免两区都不管或都去</td></tr>
+  </table>
+
+  <h2>三之附 · 工单系统对接(与客户已有系统怎么接)</h2>
+  <table>
+    <tr><td class="k" style="width:15%">怎么开单</td><td>确认动作的副作用调用区工单系统开修复工单;字段 = 线索编号 / 类目 / 位置 / 风险级 / 证据包链接 / 建议时限;返回工单号后建我方「工单镜像」。</td></tr>
+    <tr><td class="k">状态怎么同步</td><td>客户侧五状态(已派工 / 已接单 / 已到场 / 已完工 / 已验收)与镜像逐格映射;<b>轮询与变更捕获为主、回调为增强</b>(老政务系统主动外呼进专网通常做不到);映射表为区可配参数。</td></tr>
+    <tr><td class="k">对不上怎么办</td><td><b>每日全量对账</b>;裁决规则 = 处置状态以客户系统为准、巡检定性以我方为准;不一致挂对账异常队列,24 小时内(假设值)主管裁定并入日志。</td></tr>
+    <tr><td class="k">接口档位</td><td>三档:A 双向接口 / B 只读库与批量回写 / C 无接口(我方内闭环 + 日终导出人工录入);三档均保全证据链,试点首周核实档位。</td></tr>
+  </table>
+
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>7 / 10</span></div>
+</section>
+
+<!-- ═══════════════ 页 7 · ②-5:功能清单 ═══════════════ -->
+<section class="page">
+  <div class="hd">
+    <p class="kicker">交付② mini-PRD · 页 5 / 7</p>
+    <h1>四 · 功能清单与优先级</h1>
+    <p class="sub">P0 = 最小可用版本必须有;P1 = 试点期内跟上;P2 = 路线图后段。</p>
+  </div>
+
+  <h2>P0 · 复核工作台</h2>
+  <ul>
+    <li>三线队列分区视图(按业务线路由 + 紧急件置顶)</li>
+    <li>线索详情与动作面板(按钮即动作;条件不满足的按钮灰态并写明原因)</li>
+    <li>调查案视图(管网线立案 / 结案两点拍板)</li>
+    <li>确认 → 开工单副作用与镜像回传;动作日志时间线(一等公民对象)</li>
+    <li>兜底面板:抽检任务池 + 公众上报甄别并入</li>
+  </ul>
+
+  <h2>P0 · 识别与规则</h2>
+  <ul>
+    <li>三类目识别模型接入 + 置信度输出 + 证据快照</li>
+    <li><b>全域传感网接入</b>(智能井盖 / 液位计 / 分区流量计,一期标配)</li>
+    <li><b>规则校验关口</b>(按线 5 / 4 / 3 项,逐项留痕)+ <b>管网水力学规则</b>(代码首日可用,首报需基线期)</li>
+    <li><b>紧急直派</b>(四条硬门槛 + 并行复核 + 撤回召回)</li>
+    <li><b>AI 复验</b>(引导拍摄 + 前后对比判定 + 存疑人裁)</li>
+  </ul>
+
+  <h2>P0 · 班组移动端</h2>
+  <ul>
+    <li>接单列表 · 工单详情与导航 · 现场拍照回传 · 完工提交(全部写回客户工单系统)</li>
+    <li>现场动作族:拒单(选原因)/ 受阻上报 / 安全上报 / 现场新增上报 / 部分完工 / 班次交接</li>
+  </ul>
+
+  <h2>P0-lite · 健康监测</h2>
+  <ul>
+    <li>数据源健康监测:连续 N 时窗无有效帧或质量塌方 → 自动开设备维修单 + 总览横幅「本片区观测降级」</li>
+    <li><b>推理产出率探针</b>——有帧无线索 = AI 服务失明,与无帧分开报</li>
+    <li>人工日对账清单</li>
+  </ul>
+
+  <h2>P1(试点期内跟上)</h2>
+  <ul>
+    <li>驳回原因回流路由与月度模型评估 · 主管抽查队列 · 撤销动作</li>
+    <li>误报样本留存与抽样标注台(估「误杀率」用)</li>
+    <li>公众上报防滥用三件:同点位去重合并、单设备限频、重复无效降权;先人工甄别再升格</li>
+    <li>参数变更控制台(走审批)· 类目自动处理开关 · 值班排班与上报链配置</li>
+    <li>传感网运维:在线率 / 盘点对账 / 设备绑定校验 / 电池与固件</li>
+    <li>劣化曲线台账 · 跨时次异源复现核验(真正独立的第二道校验候选)</li>
+    <li>设施状态总览首版(含覆盖热区图)· 调度视图(班组负载 + 改派 / 合并 / 拆单)</li>
+  </ul>
+
+  <h2>P2(路线图后段)</h2>
+  <ul>
+    <li>报表与健康总览完整版 · 无人机与卫星腿</li>
+  </ul>
+
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>8 / 10</span></div>
+</section>
+
+<!-- ═══════════════ 页 8 · ②-6:AI 干了什么 + 兜底机制 ═══════════════ -->
+<section class="page">
+  <div class="hd">
+    <p class="kicker">交付② mini-PRD · 页 6 / 7</p>
+    <h1>五 · AI 边界与兜底 —— 先说清 AI 干了什么,再谈怎么兜它的底</h1>
+  </div>
+
+  <h2>AI 在本系统干的全部活(兜底就是围着这张表建的)</h2>
+  <table>
+    <tr><th style="width:22%">AI 的活</th><th style="width:42%">干什么</th><th style="width:36%">干砸了会怎样(要兜的底)</th></tr>
+    <tr><td class="k">① 看图识别</td><td>从照片 / 视频里找路面病害、井盖异常,产出线索与置信度</td><td>误报浪费人力;漏报错过隐患 → 机制②③④</td></tr>
+    <tr><td class="k">② 异常判型</td><td>管网规则报警后,判断是爆管、渗漏还是设备故障</td><td>判错型走错通道 → 判不出按「不明异常」进调查案,机制②</td></tr>
+    <tr><td class="k">③ 排序建议</td><td>按置信度与风险给队列排序,让人先看最要紧的</td><td>排错序延误处理 → 高危档不看置信度必到人,机制②</td></tr>
+    <tr><td class="k">④ 完工复验</td><td>比对处置前后照片,判断修没修好</td><td>错判冤枉班组 → 判不出存疑人裁、永不默认打回,机制⑦</td></tr>
+    <tr><td class="k">⑤ 上报甄别辅助</td><td>对公众上报做图片质量与类目预判,辅助人工甄别</td><td>误杀真实上报 → 甄别驳回必人工、留痕可申诉,机制⑥</td></tr>
+    <tr><td class="k">AI 不干的</td><td colspan="2"><b>不定性(不产告警)、不关闭线索、不直接指挥班组。</b>唯一的自动派单是紧急直派——那由机械规则硬证据触发,且人 15 分钟内并行复核可撤回。</td></tr>
+  </table>
+
+  <h2>十条兜底机制</h2>
+  <table>
+    <tr><th style="width:14%">机制</th><th style="width:45%">怎么运作</th><th style="width:41%">兜底在哪</th></tr>
     <tr><td class="k">① 命名分权</td><td>AI 产出一律叫「线索」,人确认后才升格「告警」;命名写进对象模型、界面与日志。</td><td>界面上不存在「AI 直接产告警」的路径——定性权在人是结构性的,不靠自觉。</td></tr>
-    <tr><td class="k">② 双闸分线路由</td><td>一闸 AI 识别、二闸机械证据校验(硬编码判据,逐条留痕);置信度只定排序不定生死,高危档必到人。</td><td>机械驳回 ≠ AI 丢弃,逐条留痕 + 影子池抽样;<b>两闸互否 = 不算「双闸过」</b>,转人审标矛盾件。</td></tr>
-    <tr><td class="k">③ 漏报 = 证据链<br>正面答</td><td>不承诺不漏报,只承诺每次定性可追溯:回查 = 该点位全部线索与处置记录 + <b>观测覆盖窗</b>。</td><td>覆盖窗把「模型漏报」与「覆盖缺失」分开;人巡降为风险分层抽巡,当审计腿用。</td></tr>
-    <tr><td class="k">④ 误报 = 六码<br>各自回流</td><td>人工驳回必选原因码,不同码走不同回流路径(回模型 / 回规则 / 回台账 / 人工周审)。</td><td>误报率月报的数据源之一;原因码口径与客户共同评审后固化。</td></tr>
-    <tr><td class="k">⑤ 断流降级明示</td><td>数据源中断或质量塌方时,总览与队列打降级横幅,写明哪片区、哪条腿降级。</td><td>自动开设备工单;降级态可复现,本身是一条验收布尔。</td></tr>
-    <tr><td class="k">⑥ 单人确认 +<br>事后抽审</td><td>不叠审批层数,一名复核员即可定性;动作全部落在动作权限表上,AI 仅两个动作。</td><td><b>高危确认与高危驳回都自动拘进主管抽审</b>;撤销需主管确认。金句:问责靠审计链,不靠审批层数。</td></tr>
-    <tr><td class="k">⑦ 复验闭环</td><td>完工回传触发 AI 复验(引导拍摄 + 配准判定);复验结论本身只是「建议」。</td><td>判不出 = 存疑待人裁,<b>永不默认打回</b>;打回 = 显名动作附对比证据,班组可申诉。</td></tr>
-    <tr><td class="k">⑧ 抽审参数</td><td>全为假设值、冷启动加倍:记账 5% / 升格 10% / 机械驳回 5% / 批量确认 15% / 复验通过 10% / <b>快车道全量</b>,时限 48 小时。</td><td>抽审推翻自动动作 → 规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(<b>实际覆盖率可导出</b>)。</td></tr>
-    <tr><td class="k">⑨ 责任情形表<br>(双方签署)</td><td>(a) 模型漏报且覆盖窗证明数据源正常、(b) 机械规则误判且版本号可查 → <b>乙方</b>;(c) 复核员误判、(d) 客户未按依赖列供给致超时 → 甲方,SLA 豁免留痕。</td><td>(a)(b) 配套承诺:免费重训 / 该类目退出自动车道 / 不计入本期验收。金句:审计链是<b>分责</b>工具,不是甩责工具。</td></tr>
-    <tr><td class="k">⑩ 三方交替检验<br>与 override</td><td>机械会错、AI 会错、人也会错——九格互查(见下表),格格有人纠、格格留痕。</td><td>任何决定都有<b>显名推翻动作</b>(理由码 + 日志 + 触发抽审);<b>紧急 override = 红色动作</b>:主管以上跳闸行动、强制事后审计。</td></tr>
+    <tr><td class="k">② 两道关口<br>分线路由</td><td>一道 AI 识别、一道规则校验(硬编码判据逐项留痕);置信度只定排序不定生死,高危档必到人。</td><td>校验驳回 ≠ 静默丢弃:逐项留痕 + 留样抽查;<b>两道关口互相矛盾 = 不放行</b>,转人审标矛盾件。</td></tr>
+    <tr><td class="k">③ 漏报正面答</td><td>不承诺不漏报,承诺每次定性可追溯:回查 = 该点位全部线索与处置记录 + 观测记录(被哪些数据源、什么时间扫过)。</td><td>观测记录把「模型漏了」与「根本没拍到」分开;人巡降为风险分层抽巡,当审计腿用。</td></tr>
+    <tr><td class="k">④ 误报原因回流</td><td>人工驳回必选原因,不同原因走不同回流(回模型 / 回规则 / 回台账 / 人工周审)。</td><td>误报率月报数据源之一;原因口径与客户共同评审后固化。</td></tr>
+    <tr><td class="k">⑤ 断流降级明示</td><td>数据源中断或质量塌方时,总览与队列打降级横幅,写明哪片区、哪条数据源降级。</td><td>自动开设备维修单;降级态可复现,本身是一条验收项。</td></tr>
+    <tr><td class="k">⑥ 单人确认 +<br>事后抽查</td><td>不叠审批层数,一名复核员即可定性;动作全部落在权限表上,AI 只有两个动作。</td><td><b>高危确认与高危驳回都自动进主管抽查</b>;撤销需主管确认。问责靠审计链,不靠审批层数。</td></tr>
+    <tr><td class="k">⑦ 复验闭环</td><td>完工回传触发 AI 复验(引导拍摄 + 前后对比);复验结论本身只是「建议」。</td><td>判不出 = 存疑待人裁,<b>永不默认打回</b>;打回 = 显名动作附对比证据,班组可申诉。</td></tr>
+    <tr><td class="k">⑧ 抽查参数</td><td>全为假设值、冷启动加倍:记台账 5% / 自动并入 10% / 校验驳回 5% / 批量确认 15% / 复验通过 10% / <b>紧急直派全量</b>,时限 48 小时。</td><td>抽查推翻自动动作 → 规则降版建议;同类错误率超阈值 → 该类目自动处理自动关闭(实际抽查覆盖率可导出)。</td></tr>
+    <tr><td class="k">⑨ 责任情形表<br>(双方签署)</td><td>(a) 模型漏报且观测记录证明数据源正常、(b) 规则误判且版本号可查 → <b>乙方</b>;(c) 复核员误判、(d) 客户未按依赖供给致超时 → 甲方,时限豁免留痕。</td><td>(a)(b) 配套承诺:免费重训 / 该类目退出自动处理 / 不计入本期验收。审计链是<b>分责</b>工具,不是甩责工具。</td></tr>
+    <tr><td class="k">⑩ 三方交替检验<br>与紧急越权</td><td>机械会错、AI 会错、人也会错——九格互查(见下表),格格有人纠、格格留痕。</td><td>任何决定都有<b>显名推翻动作</b>(写理由 + 记日志 + 触发抽查);<b>紧急越权 = 红色动作</b>:主管以上跳流程行动、强制事后审计。</td></tr>
   </table>
 
   <table>
-    <tr><th style="width:11%">查 \ 被查</th><th style="width:29%">AI</th><th style="width:29%">机械</th><th style="width:29%">人</th></tr>
-    <tr><td class="k">AI 查</td><td>跨时次异源复现 + 影子池评估</td><td>机械驳回池二次扫描,抓「规则误杀」</td><td>偏差提示:与历史样本高相似即拘抽审</td></tr>
-    <tr><td class="k">机械查</td><td>证据校验闸,即第二闸</td><td>规则金题回归 + 传感器自检</td><td>提交校验 + 无理由撤回拦截</td></tr>
-    <tr><td class="k">人查</td><td>复核 / 驳回回流</td><td>推翻机械判定(显名 + 理由码)</td><td>主管抽审 / 改判 / 撤回复核</td></tr>
+    <tr><th style="width:11%">查 \ 被查</th><th style="width:29%">AI</th><th style="width:29%">机械规则</th><th style="width:29%">人</th></tr>
+    <tr><td class="k">AI 查</td><td>跨时次异源复现 + 留样评估</td><td>驳回池二次扫描,抓「规则误杀」</td><td>偏差提示:与历史样本高相似即进抽查</td></tr>
+    <tr><td class="k">机械查</td><td>规则校验,即第二道关口</td><td>规则金题回归 + 传感器自检</td><td>提交校验 + 无理由撤回拦截</td></tr>
+    <tr><td class="k">人查</td><td>复核 / 驳回原因回流</td><td>推翻规则判定(显名 + 写理由)</td><td>主管抽查 / 改判 / 撤销复核</td></tr>
   </table>
+
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>9 / 10</span></div>
+</section>
+
+<!-- ═══════════════ 页 9 · ②-7:非功能 + 验收 ═══════════════ -->
+<section class="page">
+  <div class="hd">
+    <p class="kicker">交付② mini-PRD · 页 7 / 7</p>
+    <h1>六 · 关键非功能要求 &nbsp;·&nbsp; 七 · 验收标准</h1>
+  </div>
 
   <h2>六 · 关键非功能要求</h2>
   <table>
-    <tr><td class="k" style="width:15%">数据主权</td><td>专网部署,原始视频不出网;模型进场、数据不动、指标出场。区级租户行级隔离(按「设施→归属→市政区」链过滤),归属变更产生新版本、不改历史可见性;跨区借调走临时授权对象、到期自动回收。</td></tr>
-    <tr><td class="k">审计 · 留存<br>· 可信时间</td><td>防篡改口径 = <b>可检测,而非「不可能」</b>(专网内应用层权限拦不住持库权限者):哈希链 + 周期锚定 + 权限收敛 + 独立校验。留存(假设值):日志与证据快照 ≥3 年,原始视频 90 天轮转 + 涉案冻结。全网授时 + 时钟漂移检测(SLA 与交叉窗全靠时间戳);<b>每传感器唯一密钥与报文签名,未签名报文不得作快车道硬证据</b>——伪造一条即可调动班组。</td></tr>
-    <tr><td class="k">性能 · 容量<br>· 采集 · 本地化</td><td>线索入队时延 ≤5 分钟、复核并发 50 坐席、可用性 99.5%(均为假设值),降级明示。量控与人力测算<b>成对给出</b>:容量 = 坐席 × 班次 × 单条复核时长倒推,超容量走过载三步,SLA 从入队起算。采集频率单列(视觉 = 帧率 × 过境频次,管网 = 遥测采样周期),<b>发现时延由采集频率兜底,不由管道时延兜底</b>。界面双语 + 从右至左版式;节假日与作息排班模板,SLA 档位随班表联动、区可配。</td></tr>
+    <tr><td class="k" style="width:15%">数据主权</td><td><ul>
+      <li>专网部署,原始视频不出网;识别在网内跑,出网只有聚合统计指标</li>
+      <li>区级数据按「设施→归属→市政区」隔离;归属变更产生新版本、不改历史可见性</li>
+      <li>跨区借调走临时授权,到期自动回收</li>
+    </ul></td></tr>
+    <tr><td class="k">审计与留存</td><td><ul>
+      <li>防篡改口径 = <b>可检测,而非「不可能」</b>(应用层权限拦不住持库权限者):哈希链 + 周期锚定 + 权限收敛 + 独立校验</li>
+      <li>留存(假设值):日志与证据快照 ≥ 3 年;原始视频 90 天轮转 + 涉案冻结</li>
+    </ul></td></tr>
+    <tr><td class="k">可信时间与<br>设备身份</td><td><ul>
+      <li>全网统一授时 + 时钟漂移检测(时限与交叉验证全靠时间戳)</li>
+      <li><b>每传感器唯一密钥与报文签名;未签名报文不得作直派硬证据</b>——伪造一条报文就能调动班组,这条是安全底线</li>
+    </ul></td></tr>
+    <tr><td class="k">性能与容量</td><td><ul>
+      <li>线索入队时延 ≤ 5 分钟、复核并发 50 坐席、可用性 99.5%(均为假设值),降级明示</li>
+      <li>量控与人力测算成对给出:容量 = 坐席 × 班次 × 单条复核时长倒推;超容量走过载三步;时限从入队起算</li>
+      <li>采集频率单列(视觉 = 帧率 × 过境频次,管网 = 遥测采样周期);<b>发现快慢由采集频率兜底,不由传输管道兜底</b></li>
+    </ul></td></tr>
+    <tr><td class="k">本地化</td><td><ul>
+      <li>界面双语 + 从右至左版式;节假日与作息排班模板</li>
+      <li>时限档位随班表联动;高危档时限有全市统一护栏(15–60 分钟区间,假设值),中低危各区自调</li>
+    </ul></td></tr>
   </table>
 
-  <h2>七 · 验收标准(布尔)</h2>
+  <h2>七 · 验收标准(每条都可判定,不写形容词)</h2>
   <table>
-    <tr><td class="k" style="width:15%">流程布尔</td><td>三线全流程各自可点通 · 动作日志字段齐全可导出(编号 / 时间戳 / 执行人 / 参数 / 世界状态快照)· <b>高危线索零进影子池、零自动归档</b> · 自动车道每条可查抽审入口且实际覆盖率 ≥ 配置值 · 降级态可复现</td></tr>
-    <tr><td class="k">机制布尔六条</td><td>① 专网外发起原始视频请求 → 被拒且留日志 ② A 区账号请求 B 区线索 → 403 ③ 最高权限账号删日志 → 被拒且篡改可检出 ④ 构造超时线索 → 升级链按时触发 ⑤ 制造镜像与客户系统不一致 → 次日出现在对账队列 ⑥ 给定点位与时间窗 → 可导出被哪些数据源扫过</td></tr>
-    <tr><td class="k">专项布尔</td><td><b>快车道</b>:注入硬证据应急件 → X 秒内(假设值)自动派单、预警广播、人复核任务同时生成,撤回后班组端收到召回。<b>覆盖率</b>:第 1-3 月末覆盖窗与热区图可导出、在线率 ≥ 阈值。<b>压力</b>:注入 3 倍高危线索行为符合过载策略。<b>责任</b>:责任情形表双方签署。</td></tr>
-    <tr><td class="k">业务结果<br>与 AI 质量</td><td>四行结果各带基线采集方案:① 隐患发现平均时长 ② 漏检抽查发现率(独立抽巡 + 公众上报交叉)③ 同点位返修率 ④ 相关投诉量;<b>每行 = 基线采集法 + 目标区间(假设值)+ 未达处置</b>(自动车道降档 + 模型重训)。<b>AI 质量</b>:「告警精确率」(入池普查)与「整体误报率」(分层抽样加权)<b>分开报、不混算</b>;开闸判据 = 样本量达标 + 双指标达标 + 抽检零漏报。</td></tr>
+    <tr><td class="k" style="width:15%">流程验收</td><td><ul>
+      <li>三条线全流程各自可点通;动作日志字段齐全可导出(编号 / 时间戳 / 执行人 / 参数 / 版本快照)</li>
+      <li><b>高危线索必到人:零免人工处理、零自动归档</b>;自动处理的每条可查抽查入口且实际抽查覆盖率 ≥ 配置值</li>
+      <li>降级态可复现</li>
+    </ul></td></tr>
+    <tr><td class="k">机制验收六条</td><td><ul>
+      <li>① 专网外发起原始视频请求 → 被拒且留日志</li>
+      <li>② A 区账号请求 B 区线索 → 拒绝访问</li>
+      <li>③ 最高权限账号删日志 → 被拒且篡改可检出</li>
+      <li>④ 构造超时线索 → 上报链按时触发</li>
+      <li>⑤ 制造镜像与客户系统不一致 → 次日出现在对账队列</li>
+      <li>⑥ 给定点位与时间窗 → 可导出被哪些数据源扫过</li>
+    </ul></td></tr>
+    <tr><td class="k">专项验收</td><td><ul>
+      <li><b>紧急直派</b>:注入硬证据紧急件 → X 秒内(假设值)自动派单、预警通报、复核任务同时生成;撤回后班组端收到召回</li>
+      <li><b>覆盖率</b>:试点期末观测记录与热区图可导出、传感器在线率 ≥ 阈值</li>
+      <li><b>压力</b>:注入 3 倍高危线索,行为符合过载三步</li>
+      <li><b>责任</b>:责任情形表双方签署</li>
+    </ul></td></tr>
+    <tr><td class="k">业务结果<br>与 AI 质量</td><td><ul>
+      <li>四行业务结果各带基线采集方案:① 隐患发现平均时长 ② 漏检抽查发现率(独立抽巡 + 公众上报交叉)③ 同点位返修率 ④ 相关投诉量;每行 = 基线采集法 + 目标区间(假设值)+ 未达处置(自动处理降档 + 模型重训)</li>
+      <li><b>AI 质量两本账分开报、不混算</b>:「告警精确率」(入池普查)与「整体误报率」(分层抽样加权)</li>
+      <li>自动处理开启门槛 = 样本量达标 + 双指标达标 + 抽查零漏报</li>
+    </ul></td></tr>
   </table>
 
-  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>6 / 6</span></div>
+  <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>10 / 10</span></div>
 </section>
 
 </body>

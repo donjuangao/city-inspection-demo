@@ -35,10 +35,12 @@ notes.append("误伤自查:R&D/RBAC/RTL 类词命中 %d 处(不计入 R\\d 正�
 other_idx = re.findall(r'\bHW-\d+|\bPM-B\d|判官标注件|反审 [FM]\d+', html)
 check("③b 零其它内部索引(HW-/PM-B/判官标注件/反审)", not other_idx, "命中 %r" % (other_idx[:8],))
 
-# 4 页数
+# 4 页数(2026-08-10 走查 R83-11:页数弹性放开;硬约束只剩 题面①≤3页 + 全文上限 12)
 pages = re.findall(r'<section class="page">', html)
-check("④ .page 计数 ≤6", len(pages) <= 6, "实际 %d 页" % len(pages))
-notes.append("页容器 = %d(交付① 3 页 + 交付② 3 页)" % len(pages))
+p1 = len(re.findall(r'交付① 平台规划', html))
+check("④ 页数:交付① ≤3 且全文 ≤12", p1 <= 3 and len(pages) <= 12,
+      "交付① %d 页 / 全文 %d 页" % (p1, len(pages)))
+notes.append("页容器 = %d(交付① %d 页 + 交付② %d 页)" % (len(pages), p1, len(pages) - p1))
 
 # 5 禁色值(黑金)
 bad_color = re.findall(r'#d4af37|#ffd700|gold|黑金', html, re.I)
@@ -78,10 +80,12 @@ per_page = html.split('<section class="page">')[1:]
 lack = [i + 1 for i, p in enumerate(per_page) if "假设" not in p]
 check("⑩ 每页 ≥1 处「假设」标注", not lack, "缺失页 %r" % (lack,))
 
-# 11 术语对照表 10 行
-terms = ["线索", "告警", "双闸", "快车道", "机械校验", "调查案", "动作日志", "覆盖窗", "影子池", "DMT"]
-miss = [t for t in terms if ('class="k">%s<' % t) not in per_page[0]]
-check("⑪ 首页术语对照 10 条齐全", not miss, "缺 %r" % (miss,))
+# 11 术语纪律(2026-08-10 走查 R83-1/-3:砍术语对照表,全文说人话)
+#    正向:首页有「线索/告警」这对唯一保留术语的定义句;反向:黑话族零残留
+jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html)
+has_pair = ("线索" in per_page[0]) and ("告警" in per_page[0]) and ("不再定义新词" in per_page[0])
+check("⑪ 术语纪律:线索/告警定义句在 + 黑话族零残留", has_pair and not jargon,
+      "定义句 %s;黑话命中 %r" % ("在" if has_pair else "缺", jargon[:8]))
 
 # 12 厂商专名红线
 vendor = re.findall(r'Origen|NABD|SpatialWare|Palantir', html, re.I)
@@ -116,7 +120,7 @@ var d=document.createElement('pre');d.id='P';d.textContent=o.join(' ');document.
     if pdf.exists():
         d = pdf.read_bytes()
         n = len(re.findall(rb"/Type\s*/Page[^s]", d))
-        check("⑭ 实际 PDF 页数 ≤6", n <= 6, "渲染得 %d 页" % n)
+        check("⑭ 实际 PDF 页数 = .page 计数(无隐性溢出分页)", n == len(pages), "渲染得 %d 页 / 容器 %d" % (n, len(pages)))
         pdf.unlink()
     tmp.unlink()
 else:
