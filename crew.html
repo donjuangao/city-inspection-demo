@@ -226,11 +226,11 @@
   function safetyStrip() {
     var head = '<div class="c-safety-hd" onclick="CREW_UI.toggleSafety()">' +
       '<span class="c-dot"></span><b>紧急 · 安全上报</b>' +
-      '<span class="k">' + (M.safety ? '收起' : '直达区值班长') + '</span></div>';
+      '<span class="k">' + (M.safety ? '收起' : '直达值班主管') + '</span></div>';
     if (!M.safety) return '<div class="c-safety">' + head + '</div>';
     return '<div class="c-safety">' + head +
       '<div class="c-safety-bd">' +
-      '<p>置顶通道:不排队、不走工单流,提交即刻通知区值班长。现场人身安全相关一律走这里。</p>' +
+      '<p>置顶通道:不排队、不走工单流,提交即刻通知复核主管(值班)。现场人身安全相关一律走这里。</p>' +
       '<input type="text" id="sf-note" placeholder="现场情况简述,如:井口周边有车流,需交通导改">' +
       '<div style="margin-top:10px"><button type="button" class="btn btn-danger btn-block" onclick="CREW_ACT.safety()">立即上报</button></div>' +
       '</div></div>';
@@ -414,7 +414,7 @@
       html += '<div style="margin-top:10px">' + UI.banner('warn',
         '已挂起:' + esc(t.suspendReason || '') + '(SLA 停表)' +
         (rc.cond ? '<br>恢复条件:' + esc(rc.cond) + ' · 由 ' + esc(rc.owner || '') + ' 解除 · 预计 ' + esc(rc.eta || '') : '') +
-        '<br>两个出口:条件解除后本端点「恢复作业」;等不到就由区值班长强制回队重派。') + '</div>';
+        '<br>两个出口:条件解除后本端点「恢复作业」;等不到就由复核主管(值班)强制回队重派。') + '</div>';
       html += UI.actionPanel([{ action: 'crew_resume', params: { ticketId: t.id, actor: '班组账号' }, label: '条件解除,恢复作业', cls: 'btn-primary' }]);
     }
     if (t.rejectNote) {

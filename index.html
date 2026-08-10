@@ -129,11 +129,11 @@
   </nav>
 
   <header class="hero">
-    <div class="kicker">产品原型演示 · 一个暴雨前夜的故事 · 全部界面可直接点</div>
+    <div class="kicker">产品原型演示 · 一个强对流预警之夜的故事 · 全部界面可直接点</div>
     <h1>一座绿洲城市,和它的<br><span class="hi">城市设施智能巡检平台</span></h1>
     <p class="what">
       Al Ain 的道路、井盖、灌溉管网从此自己会说话:全域传感网持续监测,AI 识别+机械证据校验双闸筛出真问题,
-      人只在拍板点签字;紧急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个暴雨前夜,把整个平台走一遍。
+      人只在拍板点签字;紧急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个强对流预警之夜,把整个平台走一遍。
     </p>
 
     <div class="roles">
@@ -143,9 +143,9 @@
         <div class="r3">确认或驳回的人:线索变告警,由他拍。</div>
       </div>
       <div class="role">
-        <div class="r1">复核主管 · 区值班长</div>
-        <div class="r2">Web 工作台 · 白/夜两岗</div>
-        <div class="r3">抽审、紧急 override、调度改派/合并/拆单;白班主管、夜班值班长轮值兜底。</div>
+        <div class="r1">复核主管</div>
+        <div class="r2">Web 工作台 · 坐席(夜间同岗值班)</div>
+        <div class="r3">抽审、紧急 override、提级、调度改派/合并/拆单与抢占仲裁;升级链最后一级兜底。</div>
       </div>
       <div class="role">
         <div class="r1">市政班组</div>
@@ -158,9 +158,9 @@
         <div class="r3">看总览、抽审、握机器直派开关。</div>
       </div>
       <div class="role">
-        <div class="r1">公众</div>
-        <div class="r2">手机 · 上报</div>
-        <div class="r3">上报异常线索,查看回执与去重合并状态。</div>
+        <div class="r1">12345 市政热线</div>
+        <div class="r2">接线员 · 录入</div>
+        <div class="r3">受理市民来电、生成回执编号;只录入不定性,录入件先进人工甄别。</div>
       </div>
     </div>
 
@@ -183,7 +183,7 @@
       <span class="banner-ico">i</span>
       <div>
         下面每一幕内嵌的都是同一套系统的实机镜像——先点框内底部导览条「▶ 下一镜」,把假时钟从 19:00 走到 19:02,
-        看那一次自动派单;工作台 / 班组端 / 公众端共享同一份 sessionStorage 演示状态,这里点开的框与全屏打开的页面状态互通,
+        看那一次自动派单;工作台与班组端共享同一份 sessionStorage 演示状态,这里点开的框与全屏打开的页面状态互通,
         继续点按可以把剧情一路推进到 21:30。
       </div>
     </div>
@@ -309,16 +309,17 @@
   <section class="act wide" id="act6">
     <div class="act-body">
       <div class="act-head"><span class="act-no">⑥</span><span class="act-time">21:00</span></div>
-      <h2>压力测试:调度、公众与治理</h2>
+      <h2>压力测试:调度、热线与治理</h2>
       <p class="quote">「Zakher 又一口井盖——没有空闲班组了。」</p>
       <p class="story">
-        过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,紧急件完成自动回队)。
-        公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;
+        过载三步:预警广播先喊现场、超额件进批量加急分诊、当班复核主管抢占在途养护班组(原单挂起,紧急件完成自动回队)。
+        12345 热线接到同一口井盖的来电,接线员录入后被去重合并进既有线索,来电人拿到回执编号。雨真的要来了:
+        气象预警接入,系统按提前量下发一张雨前清掏专项任务包——它是计划性任务,在池件分级与派单准入标准一条不改。
         上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的机器直派,该类目立刻回退人审,区可申诉。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">过载三步</span>
-        <span class="pt badge badge-blue">多源合并回执</span>
+        <span class="pt badge badge-blue">热线合并回执</span>
         <span class="pt badge badge-blue">上级主管部门关车道</span>
       </div>
     </div>
@@ -335,7 +336,7 @@
       </div>
       <div class="frame-wrap">
         <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-        <div class="phone"><iframe data-src="public.html" title="公众上报端(去重合并/回执)"></iframe></div>
+        <div class="phone"><iframe data-src="crew.html?crew=CR-02" title="现场端 · 借调班组(抢占后接单)"></iframe></div>
       </div>
     </div>
   </section>
@@ -354,12 +355,11 @@
   <div class="outro">
     <h2>亲自上手</h2>
     <p class="lead">
-      三套端到端原型都可全屏打开自由操作;打开就是同一份假时钟场景状态,与你在本页里点过的每一步共享同一份 sessionStorage。
+      两套端到端原型(Web 工作台 + 班组手机端)都可全屏打开自由操作;打开就是同一份假时钟场景状态,与你在本页里点过的每一步共享同一份 sessionStorage。
     </p>
     <div class="links">
       <a class="btn btn-primary" href="app.html" target="_blank" rel="noopener">工作台 →</a>
       <a class="btn" href="crew.html" target="_blank" rel="noopener">班组处置端 →</a>
-      <a class="btn" href="public.html" target="_blank" rel="noopener">公众上报端 →</a>
       <button type="button" class="btn btn-danger" id="btnResetDemo">重置演示</button>
     </div>
     <p class="lead" style="margin-top:22px">评审三视图(同一实机的三种打开方式):</p>
@@ -416,7 +416,7 @@
   if (btnReset) {
     btnReset.addEventListener('click', function () {
       try { window.sessionStorage.removeItem('origen-demo-v1'); } catch (e) { /* 内存兜底态,忽略 */ }
-      window.alert('演示状态已清空。刷新本页,或已打开的工作台 / 班组端 / 公众端页面,即可从 19:00 重新开始。');
+      window.alert('演示状态已清空。刷新本页,或已打开的工作台 / 班组端页面,即可从 19:00 重新开始。');
     });
   }
 })();

@@ -254,7 +254,7 @@
     if (!mix) { mix = {}; os.forEach(function (o) { var k = o.kind || '其他'; mix[k] = (mix[k] || 0) + 1; }); }
     return Object.keys(mix).map(function (k) { return k + '×' + mix[k]; }).join(' / ');
   }
-  /* 线索卡/详情头部观测行:观测 N 次 · 首见 xx:xx · 最近 xx:xx · 来源:传感器×2/公众×1 */
+  /* 线索卡/详情头部观测行:观测 N 次 · 首见 xx:xx · 最近 xx:xx · 来源:传感器×2/热线×1 */
   U.obsLine = function (c) {
     if (!c) return '';
     var os = obsList(c);
@@ -300,7 +300,7 @@
     ticket: { color: '#1a5fb4', label: '工单' },
     case: { color: '#6b3fa0', label: '调查案' },
     audit: { color: '#9a6b00', label: '抽审' },
-    report: { color: '#2e7d32', label: '公众上报' },
+    report: { color: '#2e7d32', label: '热线上报' },
     facility: { color: '#5b6b7c', label: '设施' }
   };
   var LINE_COLOR = { '井盖': '#c2410c', '路面': '#1a5fb4', '管网': '#0e7490' };
@@ -469,7 +469,7 @@
     var cs = clue.checks || [];
     if (!cs.length) {
       return '<div class="checks"><div class="checks-hd">机械校验闸</div>' +
-        '<div class="check-row"><span class="check-na">本件无机械校验记录(来源=现场发现/公众上报,直接进人审甄别)</span></div></div>';
+        '<div class="check-row"><span class="check-na">本件无机械校验记录(来源=现场发现/热线上报,直接进人审甄别)</span></div></div>';
     }
     var pass = cs.filter(function (c) { return c.result === 'pass'; }).length;
     var rows = cs.map(function (c) {
@@ -612,7 +612,7 @@
     { key: 'alertId', type: '告警', route: 'alert' },
     { key: 'caseId', type: '调查案', route: 'case' },
     { key: 'reconId', type: '对账件', route: 'recon' },
-    { key: 'reportId', type: '公众上报', route: null },
+    { key: 'reportId', type: '热线上报', route: null },
     { key: 'sensorId', type: '传感器', route: null },
     { key: 'facility', type: '设施', route: 'facility' },
     { key: 'crew', type: '班组', route: null },
@@ -889,28 +889,60 @@
       '<span class="banner-ico">' + (ICO[tone] || 'i') + '</span>' + body + x + '</div>';
   };
   var TONE_LABEL = { info: '通知', warn: '提醒', danger: '预警', ok: '完成', amber: '提醒' };
+  /* R88 布局靶单⑧ · 横幅栈:横幅不许把主视图(调度=地图)挤出首屏 ——
+     >1 条一律收成**一行**「N 条待处理 ▾」,危险级同样接入折叠(只是折叠条本身仍是红系醒目态),
+     收起行里带最高级别那条的摘要与分级计数,展开才铺全部;整栈永远只占一行高度。 */
+  var TONE_RANK = { danger: 0, warn: 1, amber: 1, ok: 2, info: 3 };
+  function toneKey(t) { return t === 'amber' ? 'warn' : (t || 'info'); }
+  function toneRank(t) { var r = TONE_RANK[t]; return r === undefined ? 9 : r; }
+  function bannerBrief(b) {
+    var s = String(b.text || '').replace(/\s+/g, ' ');
+    return s.length > 36 ? s.slice(0, 36) + '…' : s;
+  }
+  (function injectBannerCss() {
+    if (!w.document || w.document.getElementById('origen-banner-css')) return;
+    var css = [
+      '.banner-fold>summary{display:flex;align-items:center;gap:8px}',
+      '.banner-fold .bf-n{color:var(--faint,#8e968f);font-size:11.5px;margin-left:auto;white-space:nowrap}',
+      '.banner-fold .bf-ico{flex:none;width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;',
+      'font-size:11px;font-weight:700;background:#e4e7e2;color:#5c6660}',
+      '.banner-fold .bf-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.bf-danger>summary{border-style:solid;border-color:#e6bfb8;background:#fdf3f1;color:#8d2f22;font-weight:600}',
+      '.bf-danger .bf-ico{background:#c0392b;color:#fff}',
+      '.bf-warn>summary{border-style:solid;border-color:#ecdcbc;background:#fdf9f0;color:#7a5a12}',
+      '.bf-warn .bf-ico{background:#9a6b00;color:#fff}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-banner-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  })();
   U.banners = function (scope) {
     var bs = (w.S.banners ? w.S.banners(scope)
       : w.S.get().banners.filter(function (b) { return !scope || b.scope === 'global' || b.scope === scope; }));
     bs = bs.slice(-8);
-    /* 同类(同 tone)>2 条 → 折叠成「N 条提示 ▾」;组序按该组最新一条的先后 */
-    var order = [], groups = {};
-    bs.forEach(function (b) {
-      var k = b.tone === 'amber' ? 'warn' : b.tone;
-      if (!groups[k]) { groups[k] = []; }
-      groups[k].push(b);
-      var at = order.indexOf(k); if (at >= 0) order.splice(at, 1);
-      order.push(k);
-    });
-    return order.map(function (k) {
-      var list = groups[k];
-      var html = list.map(function (b) {
-        return U.banner(b.tone, esc(b.text), { id: b.dismissible === false ? null : b.id, href: b.href });
-      }).join('');
-      if (list.length <= 2) return html;
-      return '<details class="banner-fold"><summary>' + list.length + ' 条' +
-        esc(TONE_LABEL[k] || '提示') + ' ▾(点开展开全部)</summary>' + html + '</details>';
+    if (!bs.length) return '';
+    /* 危险级排前(收起行的摘要取它),同级保持原有先后 */
+    var sorted = bs.map(function (b, i) { return { b: b, i: i }; }).sort(function (x, y) {
+      var d = toneRank(x.b.tone) - toneRank(y.b.tone);
+      return d || (x.i - y.i);
+    }).map(function (o) { return o.b; });
+    var html = sorted.map(function (b) {
+      return U.banner(b.tone, esc(b.text), { id: b.dismissible === false ? null : b.id, href: b.href });
     }).join('');
+    if (bs.length <= 1) return html;
+    var top = sorted[0], k = toneKey(top.tone);
+    var counts = {}, order = [];
+    sorted.forEach(function (b) {
+      var kk = toneKey(b.tone);
+      if (!counts[kk]) { counts[kk] = 0; order.push(kk); }
+      counts[kk]++;
+    });
+    var brief = order.map(function (kk) { return (TONE_LABEL[kk] || '提示') + ' ' + counts[kk]; }).join(' · ');
+    return '<details class="banner-fold bf-' + esc(k) + '">' +
+      '<summary><span class="bf-ico">' + (ICO[top.tone] || 'i') + '</span>' +
+      '<span class="bf-t">' + bs.length + ' 条待处理 ▾ · ' + esc(bannerBrief(top)) + '</span>' +
+      '<span class="bf-n">' + esc(brief) + ' · 点开展开全部</span></summary>' + html + '</details>';
   };
 
   /* ---------------- toast(动作反馈 / 系统提示)---------------- */
@@ -1385,6 +1417,63 @@
         '</div>';
     }).join('') + '</div>';
   };
+
+  /* ================================================================
+     R88 Y1 分区 · 折叠区(UI.fold)—— 本区只归 Y1 维护
+     用途:①动作面板「更多(N,当前不可用)」②证据性区块降级折叠 ③队列页「本线概览」两层化。
+     开合态存在 UI 层(不进 store),跨重绘保留;点击 → 改态 → 派发 render 由路由重绘。
+     ================================================================ */
+  var FOLD = {};
+  function foldCss() {
+    if (!w.document || w.document.getElementById('origen-fold-css')) return;
+    var css = [
+      '.fold{border:1px solid var(--line,#e4e7e2);border-radius:8px;background:#fff;margin-bottom:var(--gap,10px)}',
+      '.fold-hd{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#fbfcfa;border:0;',
+      'border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:12.5px;color:var(--mute,#5c6660)}',
+      '.fold-hd:hover{background:#f2f6fd;color:var(--ink,#1b231f)}',
+      '.fold.is-open>.fold-hd{background:#f2f6fd;color:var(--ink,#1b231f);border-radius:8px 8px 0 0;',
+      'border-bottom:1px solid var(--line,#e4e7e2)}',
+      '.fold-t{flex:1 1 auto}',
+      '.fold-r{flex:none;font-size:11.5px;color:var(--faint,#8e968f);white-space:nowrap}',
+      '.fold-body{padding:10px 12px 4px}',
+      '.fold-body>.card{box-shadow:none}',
+      '.fold-cev{flex:none;color:#7b8794;font-size:11px}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-fold-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+  /* UI.fold(key, title, body, {open:默认展开, right:右侧小字}) —— title/right 收 HTML,body 收 HTML */
+  U.fold = function (key, title, body, opts) {
+    opts = opts || {};
+    foldCss();
+    if (FOLD[key] === undefined) FOLD[key] = !!opts.open;
+    var on = !!FOLD[key];
+    return '<div class="fold' + (on ? ' is-open' : '') + '">' +
+      '<button type="button" class="fold-hd" data-foldk="' + esc(key) + '" aria-expanded="' + (on ? 'true' : 'false') + '">' +
+      '<span class="fold-cev">' + (on ? '▾' : '▸') + '</span>' +
+      '<span class="fold-t">' + (title || '') + '</span>' +
+      (opts.right ? '<span class="fold-r">' + opts.right + '</span>' : '') +
+      '</button>' +
+      (on ? '<div class="fold-body">' + (body || '') + '</div>' : '') +
+      '</div>';
+  };
+  if (w.document) {
+    w.document.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el.getAttribute && !el.getAttribute('data-foldk')) el = el.parentNode;
+      if (!el || !el.getAttribute) return;
+      var k = el.getAttribute('data-foldk');
+      if (!k) return;
+      e.preventDefault();
+      FOLD[k] = !FOLD[k];
+      var y = w.scrollY || w.pageYOffset || 0;
+      try { w.dispatchEvent(new CustomEvent('render', { detail: { ui: 'fold' } })); }
+      catch (err) { var ev = w.document.createEvent('Event'); ev.initEvent('render', false, false); w.dispatchEvent(ev); }
+      try { w.scrollTo(0, y); } catch (e2) { /* noop */ }
+    });
+  }
 
   /* ---------------- 小工具 ---------------- */
   U.kv = function (pairs) {

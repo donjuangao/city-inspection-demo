@@ -15,12 +15,13 @@
   var LANDMARKS = ['Al Jimi Mall', 'Qasr Al Muwaiji', 'Hili Fun City', 'Al Ain Mall',
     'Green Mubazzarah', 'Jebel Hafeet'];
 
-  // 设计档 §0.6 角色(R85④ 五行角色口径:区复核员/复核主管(白班)/区值班长(夜班)/上级主管部门 + 非人三账号;
-  // 原「区巡检管理者」「区管理员」并入「复核主管」——身份值仍取不带班次后缀的裸字符串,「(白班)/(夜班)」只在下拉与角色表显示)
-  var ROLES = ['区复核员', '复核主管', '区值班长', '上级主管部门'];
-  var ROLE_DISPLAY = { '复核主管': '复核主管(白班)', '区值班长': '区值班长(夜班)' };
-  var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号'];
-  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '上级主管部门': 2 };
+  /* 设计档 §0.6 角色(R88 A1④ 角色三值:区复核员 / 复核主管 / 上级主管部门 + 非人服务账号)
+     推翻 R84⑥「同一职级两班两岗」:原第四个身份值并入「复核主管」——同一角色轮值,
+     夜间语境只在文案里写「复核主管(值班)」,不再是第二个身份;班次显示名机制(ROLE_DISPLAY)整条删。
+     R88 A1⑬:热线接线员 = 12345 市政热线的录入服务账号(只录入,无定性权)。 */
+  var ROLES = ['区复核员', '复核主管', '上级主管部门'];
+  var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号', '热线接线员'];
+  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '上级主管部门': 2 };
 
   // 设计档 §0.5.1/0.5.2/0.5.3 线内分级档名(逐字)
   var LEVELS = {
@@ -111,7 +112,8 @@
   var TICKET_SOURCES = {
     auto: '① 机器直派自动派',
     human: '② 人确认派',
-    plan: '③ 计划批量派'
+    plan: '③ 计划批量派',
+    overdue: '④ 超时兜底派'
   };
 
   // SLA 假设值(设计档 §0.8.2 第 4 步 / §0.5 线卡;数字=假设值,区可配 R48)
@@ -290,11 +292,11 @@
          enroute = 在途目标 {to: 设施 id} | null —— 空闲/已到场的班组为 null,在途的指向目的设施。
          T0 剧情:CR-02 已到场 GR-1147;CR-05 在途赶往 RD-2101(周批养护 WO-8871);其余三班待命。 */
   var CREWS = [
-    { id: 'CR-01', name: '排水一班', lines: ['井盖'], quals: ['密闭空间作业'], gear: ['吸污车'], loc: 'Al Jimi', load: 0, status: '空闲', contractor: false, shift: '夜班 19:00-07:00', xy: [258, 252], enroute: null },
-    { id: 'CR-02', name: '排水二班', lines: ['井盖'], quals: ['密闭空间作业', '交通导改'], gear: ['清淤车'], loc: 'Hili', load: 1, status: '在办', contractor: false, shift: '夜班 19:00-07:00', xy: [180, 214], enroute: null },
-    { id: 'CR-03', name: '道路养护班', lines: ['路面'], quals: ['交通导改'], gear: ['铣刨机'], loc: 'Al Maqam', load: 0, status: '空闲', contractor: false, shift: '白班 07:00-19:00(可加班)', xy: [560, 660], enroute: null },
-    { id: 'CR-04', name: '水务抢修班', lines: ['管网'], quals: ['带压作业'], gear: ['听漏仪', 'CCTV 检测车'], loc: 'Al Muwaiji', load: 0, status: '空闲', contractor: false, shift: '夜班 19:00-07:00', xy: [150, 455], enroute: null },
-    { id: 'CR-05', name: '东区养护班(年度承包商)', lines: ['路面', '井盖'], quals: ['交通导改'], gear: ['吸污车'], loc: 'Zakher', load: 1, status: '在办', contractor: true, shift: '夜班 19:00-07:00', xy: [400, 676], enroute: { to: 'RD-2101' } }
+    { id: 'CR-01', name: '排水一班', lines: ['井盖'], quals: ['密闭空间作业'], gear: ['吸污车'], loc: 'Al Jimi', load: 0, status: '空闲', contractor: false, shift: '夜间班 19:00-07:00', xy: [258, 252], enroute: null },
+    { id: 'CR-02', name: '排水二班', lines: ['井盖'], quals: ['密闭空间作业', '交通导改'], gear: ['清淤车'], loc: 'Hili', load: 1, status: '在办', contractor: false, shift: '夜间班 19:00-07:00', xy: [180, 214], enroute: null },
+    { id: 'CR-03', name: '道路养护班', lines: ['路面'], quals: ['交通导改'], gear: ['铣刨机'], loc: 'Al Maqam', load: 0, status: '空闲', contractor: false, shift: '日间班 07:00-19:00(可加班)', xy: [560, 660], enroute: null },
+    { id: 'CR-04', name: '水务抢修班', lines: ['管网'], quals: ['带压作业'], gear: ['听漏仪', 'CCTV 检测车'], loc: 'Al Muwaiji', load: 0, status: '空闲', contractor: false, shift: '夜间班 19:00-07:00', xy: [150, 455], enroute: null },
+    { id: 'CR-05', name: '东区养护班(年度承包商)', lines: ['路面', '井盖'], quals: ['交通导改'], gear: ['吸污车'], loc: 'Zakher', load: 1, status: '在办', contractor: true, shift: '夜间班 19:00-07:00', xy: [400, 676], enroute: { to: 'RD-2101' } }
   ];
 
   /* ============ 4 · 存量线索(§6 T0 行)============ */
@@ -303,10 +305,11 @@
       return { id: c.id, name: c.name, rule_ver: c.rule_ver, result: results[i] || 'pass' };
     });
   }
-  /* R86 A3 · 观测来源归类(线索卡头部「来源:传感器×2/公众×1」用) */
+  /* R86 A3 · 观测来源归类(线索卡头部「来源:传感器×2/热线×1」用)
+     R88 A1⑬:公众自助端下线,市民渠道改「12345 市政热线 → 接线员录入」;来源归类值 '公众' → '热线'。 */
   function obsKind(src) {
     var s = String(src || '');
-    if (s.indexOf('公众') >= 0) return '公众';
+    if (s.indexOf('热线') >= 0 || s.indexOf('公众') >= 0) return '热线';
     if (s.indexOf('传感器') >= 0 || s.indexOf('液位') >= 0 || s.indexOf('流量') >= 0) return '传感器';
     if (s.indexOf('相机') >= 0) return '固定相机';
     if (s.indexOf('移动传感网') >= 0 || s.indexOf('车载') >= 0) return '车载过检';
@@ -376,6 +379,18 @@
       note: i === 0 ? '低置信 0.58:批量半审车道内可「存疑归档」(非理想态②)' : ''
     }));
   }
+  /* R88 A2 · 超时兜底派单的专置演示件:18:20 入池的路面急修件,加急人工档 18:50 到期,至今无人给结论。
+     兜底等待 180 分钟(RD-R07 假设值)→ 今夜主线(推到 21:30)不会自动触发,叙事不被打断;
+     导览支线直调 S.commit('auto_overdue_dispatch', { clueId: 'CL-0333' }) 即可演示。 */
+  T0_CLUES.push(clue({
+    id: 'CL-0333', line: '路面', level: '急修', conf: 0.87, source: '城市移动传感网',
+    facility: 'RD-2172', block: 'Al Towayya', kindText: '沉陷(主干道路口)',
+    checks: checks('路面', ['pass', 'pass', 'pass', 'pass', 'pass']),
+    evidence: [{ kind: 'pothole', label: 'AI 生成示意' }],
+    lane: '加急人工', t: '18:20', slaDeadline: '18:50',
+    note: '加急人工件:人工确认档 18:50 已到期仍无人给结论 —— 三级升级走完由系统兜底派单(RD-R07);兜底派单只是处置调度,告警不成立、定性仍悬'
+  }));
+
   // T0 存量:雨水口养护 5 条
   var grFacs = ['GR-1102', 'GR-1147', 'GR-1163', 'GR-1188', 'GR-1205'];
   grFacs.forEach(function (g, k) {
@@ -386,18 +401,24 @@
       checks: checks('井盖', ['pass', k === 2 ? 'na' : 'pass', 'pass', 'pass']),
       evidence: [{ kind: 'grate', label: 'AI 生成示意' }],
       lane: '批量', batchId: 'BT-2608092', t: '18:3' + k,
-      note: '暴雨预警期整体升一档(养护→雨前急修)'
+      note: '雨水口箅面堵塞(养护档):属雨前清掏专项任务包的取件范围;分级不因气象预警变动(R88 A1⑳)'
     }));
   });
 
   /* ============ 5 · T0 抽审队列 3 条 + 治理开关 ============ */
   var GOV = {
     fastlane: { '井盖缺失': true, '爆管': true },
-    stormMode: false,
+    /* R88 A1⑳:推翻「暴雨模式 / 全线升档 / 机器直派标准切换」——气象预警只起计划性专项任务,
+       不改任何在池件的分级、不改机器直派准入。字段 gov.stormMode → gov.weatherAlert(null | {level,leadHours,t})。 */
+    weatherAlert: null,
     auditQueue: [
-      { id: 'AU-1201', src: '高危确认拘审', clueId: 'CL-0198', reason: '井盖移位·高危确认件全量拘审', t: '17:42', status: '待抽审' },
-      { id: 'AU-1202', src: '批量确认 15% 抽样', clueId: 'CL-0175', reason: '路面养护批量件抽样', t: '17:55', status: '待抽审' },
-      { id: 'AU-1203', src: '机器直派件全量抽审', clueId: 'CL-0166', reason: '机器直派自动派单件·误派率月报口径', t: '18:10', status: '待抽审' }
+      /* R88 A5⑭:每行带被抽对象(targetKind / targetId / targetRoute)与触发动作 rid(srcRid),m4 行内可点跳详情 */
+      { id: 'AU-1201', src: '高危确认拘审', clueId: 'CL-0198', reason: '井盖移位·高危确认件全量拘审', t: '17:42', status: '待抽审',
+        targetKind: '线索', targetId: 'CL-0198', targetRoute: '#/m1/clue/CL-0198', srcRid: 'LG-0001' },
+      { id: 'AU-1202', src: '批量确认 15% 抽样', clueId: 'CL-0175', reason: '路面养护批量件抽样', t: '17:55', status: '待抽审',
+        targetKind: '线索', targetId: 'CL-0175', targetRoute: '#/m1/clue/CL-0175', srcRid: null },
+      { id: 'AU-1203', src: '机器直派件全量抽审', clueId: 'CL-0166', reason: '机器直派自动派单件·误派率月报口径', t: '18:10', status: '待抽审',
+        targetKind: '线索', targetId: 'CL-0166', targetRoute: '#/m1/clue/CL-0166', srcRid: null }
     ]
   };
 
@@ -436,13 +457,15 @@
     { rid: 'LG-0004', t: '18:45', actor: 'AI 服务', action: 'auto_create_clue', params: { batchId: 'BT-2608091' }, snapshot: 'RS-4', sum: '城市移动传感网批次入池:路面线索 12 条 → 批量半审车道' }
   ];
 
-  /* ============ 8 · 公众上报 / 对账队列 / 值班表 / 参数变更(§4 模型的运行期增补位)============ */
+  /* ============ 8 · 热线上报 / 对账队列 / 值班表 / 参数变更(§4 模型的运行期增补位)============
+     R88 A1⑬:市民渠道 = 12345 市政热线,接线员录入;容器键名 publicReports 保持不变(向后兼容),
+     语义与文案一律「热线上报」。 */
   var PUBLIC_REPORTS = [];
   var RECON = [];   // 对账异常队列(§2.3b④ / 场景图 P7)
+  /* R88 A1④:角色三值后,值班表两行 —— 夜间的调度仲裁与抽审授权同在「复核主管(值班)」这一位上 */
   var DUTY = [
-    { date: '今夜', role: '区值班长', who: '区值班长(岗位角色)', note: '暴雨预警值班' },
-    { date: '今夜', role: '复核坐席', who: '区复核员 ×2', note: '7×24 复核坐席' },
-    { date: '今夜', role: '复核主管', who: '复核主管', note: '抽审与 override 授权位' }
+    { date: '今夜', role: '复核主管(值班)', who: '复核主管 ×1', note: '气象预警值班;抽审与 override 授权位、调度仲裁与抢占裁定' },
+    { date: '今夜', role: '复核坐席', who: '区复核员 ×2', note: '7×24 复核坐席' }
   ];
   var PARAM_CHANGES = [
     { id: 'PC-0031', item: '井盖线 加急人工 SLA', from: '30 分', to: '30 分', status: '现行', by: '复核主管', note: '假设值,区可配' }
@@ -497,17 +520,29 @@
         P('conf', '置信阈值', 0.7, '', '相机判定箅面堵塞的把握度下限,低于这个数不进清掏计划。'),
         P('batch', '单批上限', 20, '条', '一次批量确认最多带多少条,防止一屏点过、看不过来。')],
       version: 'v1.0', editableBy: MGR },
-    { id: 'MH-R07', line: '井盖', name: '暴雨预警期整体升一档', action: '全线升档 + 雨前清掏任务包',
-      when: '气象强对流预警生效 → 井盖线在池养护件整体升「急修」,液位计转先导预警源',
-      params: [P('leadHours', '预警提前量', 6, '小时', '气象预警生效前多久开始全线升档并起雨前清掏任务包。')],
+    /* R88 A1⑳ rollback:推翻 v1.0 的「整体升一档 / 全线升档 / 派单标准切换」——
+       气象预警只起计划性专项任务,不动在池件分级,也不动机器直派准入。 */
+    { id: 'MH-R07', line: '井盖', name: '气象预警接入 → 雨前清掏专项任务包', action: '开雨前清掏专项任务包(计划性)',
+      when: '气象部门强对流预警生效 → 按预警提前量起雨前清掏专项任务包,与客户清掏计划对接;在池件分级不变,派单准入标准不变',
+      params: [
+        P('leadHours', '预警提前量', 6, '小时', '气象预警生效前多久开始起雨前清掏专项任务包。'),
+        P('packSize', '单包点位数', 20, '个', '一个专项任务包最多带多少个雨水口/井位,按一个班组一夜能走完的量切包。')],
+      version: 'v2.0', editableBy: SUP },
+    /* R88 A2 · 加急人工超时兜底派单(与「先派尽派」同源:派单是处置调度,不是定性) */
+    { id: 'MH-R08', line: '井盖', name: '加急人工件超时无人审 → 超时兜底派单', lane: '机器直派',
+      when: '井盖线加急人工件的人工确认档到期,再等一个兜底等待期(三级升级已走完)仍无人给结论 → 系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审',
+      params: [
+        P('graceMin', '兜底等待', 180, '分钟', '人工确认档到期后再等这么久 —— 复核员→主管→复核主管(值班)三级升级全走完仍无人给结论,系统就自己把单发出去。'),
+        P('needCrew', '须有可用班组', '是', '', '辖区里得有一个能接这单的班组才自动派;一个都没有时走抢占三步,不在这条规则里解决。'),
+        P('holdAudit', '兜底件抽审', '全量', '', '兜底派出去的件全部拘进主管抽审 —— 自动派不豁免审计。')],
       version: 'v1.0', editableBy: SUP },
 
     /* ---- 路面线 ---- */
     { id: 'RD-R01', line: '路面', name: '高置信 + 多源确证 + 主干道 → 加急人工', lane: '加急人工',
-      when: 'AI 置信达标,且公众上报或复检构成第二来源,且落在主干道 → 分钟级人工确认后派',
+      when: 'AI 置信达标,且热线上报或复检构成第二来源,且落在主干道 → 分钟级人工确认后派',
       params: [
         P('conf', 'AI 置信阈值', 0.85, '', '视觉识别的把握度下限,达标才进分钟级人工确认。'),
-        P('sources', '最少来源数', 2, '个', '同一处异常至少要有几路来源印证(车载、固定相机、公众上报各算一路)。'),
+        P('sources', '最少来源数', 2, '个', '同一处异常至少要有几路来源印证(车载、固定相机、热线上报各算一路)。'),
         P('roadClass', '道路等级', '主干道', '', '哪一级道路适用这条加急口径;支路与背街按常规队列走。')],
       version: 'v1.0', editableBy: SUP },
     { id: 'RD-R02', line: '路面', name: '单源中置信 → 常规人工', lane: '常规人工',
@@ -533,6 +568,13 @@
       when: '观察级且机械校验通过 → 不开单,自动记台账入劣化曲线',
       params: [P('curveWin', '劣化曲线回看窗', 90, '天', '记账件往回看多长时间的历史,用来判断这处路面是不是在持续变差。')],
       version: 'v1.0', editableBy: MGR },
+    { id: 'RD-R07', line: '路面', name: '加急人工件超时无人审 → 超时兜底派单', lane: '机器直派',
+      when: '路面线加急人工件的人工确认档到期,再等一个兜底等待期仍无人给结论 → 系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审',
+      params: [
+        P('graceMin', '兜底等待', 180, '分钟', '人工确认档到期后再等这么久,三级升级全走完仍无人给结论,系统就自己把单发出去。'),
+        P('needCrew', '须有可用班组', '是', '', '辖区里得有一个能接这单的班组才自动派;一个都没有时走抢占三步。'),
+        P('holdAudit', '兜底件抽审', '全量', '', '兜底派出去的件全部拘进主管抽审 —— 自动派不豁免审计。')],
+      version: 'v1.0', editableBy: SUP },
     { id: 'RD-R06', line: '路面', name: '周期定检漏扫 → 补扫任务(自动)', action: '开补扫任务', lane: '自动处理',
       when: '路段超过定检周期仍无有效过检帧 → 自动排补扫任务,不产线索',
       params: [
@@ -574,7 +616,7 @@
       when: '能接这单的班组按到现场路程从近到远排;超出就近半径的不剔除,只往后排',
       params: [
         P('radius', '就近半径', 8, '公里', '超过这个路程的班组排序往后放,但仍留在候选里。'),
-        P('etaCap', '到场时间上限', 30, '分钟', '预计到场超过这个时间的,派单时标出来给值班长看。')],
+        P('etaCap', '到场时间上限', 30, '分钟', '预计到场超过这个时间的,派单时标出来给复核主管(值班)看。')],
       version: 'v1.0', editableBy: MGR },
     { id: 'DP-R02', line: '派单', name: '技能与持证匹配', action: '候选班组过滤',
       when: '井盖线要密闭空间作业证、管网线要带压作业证;没证的不进候选,班组也可显名拒单',
@@ -585,20 +627,20 @@
     { id: 'DP-R03', line: '派单', name: '先派尽派:有能接的就先发出去', action: '候选班组指派',
       when: '只要辖区里还有一个能接这单的班组(含跨类目可胜任的),单就先发出去;班组手上有在办件只把它往后排,不构成把单压在系统里不派的理由',
       params: [
-        P('maxLoad', '单班组在办提醒上限', 2, '件', '手上超过这么多件的班组仍然可以派,只是派单时标出来提醒值班长。'),
+        P('maxLoad', '单班组在办提醒上限', 2, '件', '手上超过这么多件的班组仍然可以派,只是派单时标出来提醒复核主管(值班)。'),
         P('holdOnBusy', '班组都在办时压单', '不允许', '', '所有班组都在办,也不许把单压在系统里等人;先发出去,再走抢占程序。')],
       version: 'v1.0', editableBy: MGR },
-    { id: 'DP-R04', line: '派单', name: '辖区零可用班组 → 抢占调度三步', action: '在办件让位 → 跨班组借调 → 值班长裁定',
-      when: '只有当辖区里一个能接单的班组都没有时才进抢占:先从在办件里挑一件让位,让不出来就跨班组借调,还不解决就交值班长裁定;三步各自留痕,每一步系统都先算好具体方案再交人',
+    { id: 'DP-R04', line: '派单', name: '辖区零可用班组 → 抢占调度三步', action: '在办件让位 → 跨班组借调 → 复核主管(值班)裁定',
+      when: '只有当辖区里一个能接单的班组都没有时才进抢占:先从在办件里挑一件让位,让不出来就跨班组借调,还不解决就交复核主管(值班)裁定;三步各自留痕,每一步系统都先算好具体方案再交人',
       steps: [
         { no: 1, name: '在办件让位', when: '从占用班组手上的在办件里挑出优先级最低、且中断不会造成二次风险的一件,系统建议把它挂起让位;原件停表并回队重派。' },
         { no: 2, name: '跨班组借调', when: '本线让不出人时,向相邻责任区或相邻班次借一个持证可胜任的班组;证不符的不进借调候选。' },
-        { no: 3, name: '值班长裁定', when: '前两步系统都已经给出具体建议单,值班长收到待裁定卡(含建议方案与执行后果),一键采纳或改派;不是等人想办法,是人只做确认或改。' }
+        { no: 3, name: '复核主管(值班)裁定', when: '前两步系统都已经给出具体建议单,复核主管(值班)收到待裁定卡(含建议方案与执行后果),一键采纳或改派;不是等人想办法,是人只做确认或改。' }
       ],
       params: [
         P('yieldGap', '让位优先级差', 2, '档', '新来的件要比在办件高出这么多档,才允许让位。'),
         P('borrowRadius', '借调半径', 15, '公里', '向多远范围内的相邻责任区或相邻班次借人。'),
-        P('escalate', '升值班长等待', 10, '分钟', '前两步这么久还没解决,就直接推给值班长裁定,不再等。')],
+        P('escalate', '升主管裁定等待', 10, '分钟', '前两步这么久还没解决,就直接推给复核主管(值班)裁定,不再等。')],
       version: 'v1.0', editableBy: SUP },
     { id: 'DP-R05', line: '派单', name: 'SLA 档位', action: '工单计时档',
       when: '派工后按档计时:接单、到场、完工三段各自计时;挂起与待条件期间停表,条件解除后接着算',
@@ -620,6 +662,67 @@
     { id: 'CL-R03', line: '线索归并', name: '跨类目不并 / 关闭后再发现另开新线索', action: '新开线索 + 历史关联',
       when: '不同类的异常各自成线索;线索关闭后又发现 → 新开一条,并挂上旧线索作「历史关联」',
       params: [P('reopenGap', '关闭后另开判定间隔', 0, '分钟', '线索关闭后再发现同类异常即另开新线索,不做等待。')],
+      version: 'v1.0', editableBy: MGR },
+
+    /* ---- R88 A3 · AI 复验策略(白盒:判定规则 + 可配 prompt 模板;触发时机=完工回传即触发)----
+       promptTpl = 生产口吻的复验提示词模板,{占位符} 由工单上下文填入;
+       改模板与改参数同一条审批语义(走 rule_param_change 影子试算,不改当前运行判定)。 */
+    { id: 'AV-R01', line: 'AI 复验', name: '先判是不是同一处设施(前后照配准)', action: '判定同一设施 / 换了地方',
+      when: '拿到修复后照先与修复前照配准:同一设施、同一视角才继续比;配准不上就不出结论,直接转人裁',
+      params: [
+        P('registScore', '配准相似度阈值', 0.75, '', '前后两张照片要有多像才算拍的是同一处;低于这个数一律不比,转人裁。'),
+        P('gpsGap', '拍摄点位偏差上限', 8, '米', '前后照拍摄位置差多远之内仍算同一处;超出就当换了地方。')],
+      promptTpl: '对比同一工单的修复前照与修复后照。\n1) 判断两张是否为同一设施(参照设施编号 {facility}、异常类目 {kindText}、拍摄点位偏差不超过 {gpsGap} 米);\n2) 不是同一处,直接输出「无法判定 · 非同一设施」并说明依据的画面区域。\n只输出结论与理由,不做修复与否的判断。',
+      version: 'v1.0', editableBy: SUP },
+    { id: 'AV-R02', line: 'AI 复验', name: '修复完成判定(多帧一致 + 置信达标)', action: '判定修复完成 / 未完成',
+      when: '同一设施确认后,取多帧比对异常是否消除;帧间一致且置信达标才给「修复完成 / 未完成」的结论',
+      params: [
+        P('frames', '复验取帧数', 3, '帧', '修复后照取几帧一起看,单帧不作数。'),
+        P('agree', '帧间一致率', 0.8, '', '这几帧给出同一结论的比例,低于这个数按判不出处理。'),
+        P('conf', '判定置信阈值', 0.8, '', '给出「修复完成 / 未完成」结论所需的把握度下限。')],
+      promptTpl: '对比修复前后影像:定位是否同一设施(编号 {facility}),异常「{kindText}」是否已消除。\n输出格式:结论(修复完成 / 未完成 / 无法判定)+ 理由 + 依据的画面区域。\n把握不足时输出「无法判定」,不要猜。',
+      version: 'v1.0', editableBy: SUP },
+    { id: 'AV-R03', line: 'AI 复验', name: '判不出 → 存疑待人裁(宁升不降)', action: '转存疑待人裁(永不默认打回)',
+      when: '置信落在存疑区间、或帧间不一致、或配准失败 → 一律转「存疑待人裁」;系统不默认打回,也不默认通过',
+      params: [
+        P('confLo', '存疑下界', 0.6, '', '把握度低于这个数就不出结论,直接转人裁 —— 判不出时宁可占用人力,也不替人做定性。'),
+        P('humanSla', '人裁时限', 60, '分钟', '转人裁后复核员多久之内要给结论,超时按加急人工的三级升级走。')],
+      promptTpl: '若无法给出「修复完成 / 未完成」的确定结论,输出「无法判定」并列出阻碍判定的具体原因(遮挡 / 光照 / 视角 / 配准失败 / 异常区域不可见)。禁止在无法判定时输出倾向性结论。',
+      version: 'v1.0', editableBy: SUP },
+    { id: 'AV-R04', line: 'AI 复验', name: '打回须附对比证据', action: '拦截无证据的打回',
+      when: '人要把完工件打回时须附复验对比证据;证据不足的打回请求被拦下,班组可申诉 → 主管裁',
+      params: [
+        P('evidenceMin', '打回须附证据件数', 2, '件', '打回时至少要附几件对比证据(前照 / 后照 / 复验截图),不足不放行。')],
+      version: 'v1.0', editableBy: MGR },
+
+    /* ---- R88 A3 · 观测调度(⑫ 采集侧的节奏是参数,不是玄学;每条的服务机制见 svc)---- */
+    { id: 'OB-R01', line: '观测调度', name: '固定相机推理频率', action: '采集调度:按频率推流给识别服务',
+      when: '固定相机不是每帧都进模型:按设定间隔抽帧推理,夜间照度不达标的时段自动降频并标注覆盖缺口',
+      svc: '采集调度服务按此参数推流',
+      params: [
+        P('interval', '推理间隔', 5, '分钟/帧', '同一路相机多久抽一帧进识别服务;调密了算力涨,调稀了漏检窗变长。'),
+        P('nightMin', '夜间照度门限', 30, 'lux', '照度低于这个值的时段不推理,直接标「观测覆盖缺口」,不假装看过。')],
+      version: 'v1.0', editableBy: SUP },
+    { id: 'OB-R02', line: '观测调度', name: '车载按巡线班次采集', action: '采集调度:按班次排巡线',
+      when: '车载过检不是随机跑:按巡线班次排班,每个路段两次有效过检的间隔受定检周期约束,漏扫自动排补扫',
+      svc: '采集调度服务按此参数推流',
+      params: [
+        P('shifts', '巡线班次', 3, '班/日', '一天排几班车载巡线;班次越多同一路段的复现越密。'),
+        P('cycle', '路段定检周期', 14, '天', '同一路段两次有效过检之间的最长间隔,超期自动排补扫任务(RD-R06)。')],
+      version: 'v1.0', editableBy: SUP },
+    { id: 'OB-R03', line: '观测调度', name: '传感器秒级直连,不经 AI', action: '采集调度:直连规则腿',
+      when: '位移 / 液位 / 流量 / 压力这类传感器读数按秒级直连规则腿,不进视觉模型;只做自检与阈值判定',
+      svc: '采集调度服务按此参数推流',
+      params: [
+        P('pushSec', '上报间隔', 1, '秒', '传感器多久上报一次读数;这条腿不经模型,延迟就是它的价值。'),
+        P('hbGap', '心跳缺失容忍', 10, '分钟', '多久没上报就判掉线,转设备侧排查(MH-R04 / PL-R03)。')],
+      version: 'v1.0', editableBy: MGR },
+    { id: 'OB-R04', line: '观测调度', name: 'AI 复验 = 事件触发,不轮询', action: '采集调度:完工回传即触发复验',
+      when: 'AI 复验不按周期跑:班组完工回传那一刻触发一次,判不出转人裁(AV-R03),不重复轮询占算力',
+      svc: '采集调度服务按此参数推流',
+      params: [
+        P('trigger', '触发事件', '完工回传', '', '哪个事件把复验叫起来;当前只认「班组完工提交」这一个。'),
+        P('delaySec', '触发延迟', 30, '秒', '完工回传后等多久开跑,留出照片上传与落库的时间。')],
       version: 'v1.0', editableBy: MGR }
   ];
 
@@ -627,12 +730,12 @@
   w.DATA = {
     meta: {
       city: 'Al Ain', tenant: 'Al Ain 区市政', t0: '19:00',
-      storm: '今夜有强对流预警',
-      scene: '暴雨前夜',
+      weather: '今夜有强对流预警(气象部门发布)',
+      scene: '强对流预警之夜',
       ruleVer: 'rules-2026.08.1', modelVer: 'vision-2026.07.3', paramVer: 'param-AlAin-v4', refVer: 'ref-2026.08.01'
     },
     dict: {
-      blocks: BLOCKS, landmarks: LANDMARKS, roles: ROLES, roleDisplay: ROLE_DISPLAY, serviceAccounts: SERVICE_ACCOUNTS,
+      blocks: BLOCKS, landmarks: LANDMARKS, roles: ROLES, serviceAccounts: SERVICE_ACCOUNTS,
       roleRank: ROLE_RANK, levels: LEVELS, lanes: LINE_LANES, laneDefs: LANE_DEFS, checkDefs: CHECK_DEFS,
       rejectCodes: REJECT_CODES, reasonCodes: REASON_CODES,
       ticketStates: TICKET_STATES, ticketSources: TICKET_SOURCES, sla: SLA,
@@ -654,8 +757,8 @@
     /* R86 A9 · 横幅统一形态:{id, tone, text, scope, href?(点主体跳对象路由), dismissible} */
     banners: [
       {
-        id: 'BN-storm', tone: 'warn', scope: 'global', dismissible: true, href: '#/m1/line/mh',
-        text: '今夜有强对流预警:井盖线雨水口养护件整体升一档,雨前清掏专项待启。'
+        id: 'BN-weather', tone: 'warn', scope: 'global', dismissible: true, href: '#/m1/line/mh',
+        text: '今夜有强对流预警:雨前清掏专项任务包待下发(计划性任务);在池件分级与派单标准均不变动。'
       }
     ],
     /* R86 A9 · 已关闭横幅 id(重置数据后回来) */
@@ -768,26 +871,26 @@
     {
       id: 'T9', t: '21:00', figs: 'D6/D7',
       title: '过载三步 · 第二井盖件(Zakher)无空闲班组',
-      narration: '21:00 第二井盖件 MH-0733(Zakher)紧急级,承接池无空闲班组 → 过载三步:①只读预警先喊现场 ②超额件显名降级进批量加急分诊 ③值班长可抢占在途养护班组。',
+      narration: '21:00 第二井盖件 MH-0733(Zakher)紧急级,承接池无空闲班组 → 过载三步:①只读预警先喊现场 ②超额件显名降级进批量加急分诊 ③复核主管(值班)可抢占在途养护班组。',
       unlocks: [{ type: 'clue', obj: 'CL-0733' }],
       auto: [
         { action: 'auto_sensor_alarm', params: { actor: '规则引擎', sensorId: 'SN-0733', facility: 'MH-0733', clueId: 'CL-0733' } },
         { action: 'auto_mech_check', params: { actor: '规则引擎', clueId: 'CL-0733' } },
         { action: 'auto_overload', params: { actor: '规则引擎', clueId: 'CL-0733' } },
-        { action: 'auto_broadcast', params: { actor: '规则引擎', scope: 'Zakher', text: 'MH-0733 井盖缺失,承接池无可派 → 已进批量加急分诊,等待值班长仲裁。' } }
+        { action: 'auto_broadcast', params: { actor: '规则引擎', scope: 'Zakher', text: 'MH-0733 井盖缺失,承接池无可派 → 已进批量加急分诊,等待复核主管(值班)仲裁。' } }
       ],
-      manual: '切「区值班长」角色 → m2 调度视图点「挂起 WO-8871(抢占调度)」再改派 → 挂起回补卡可见。'
+      manual: '切「复核主管」角色 → m2 调度视图点「挂起 WO-8871(抢占调度)」再改派 → 挂起回补卡可见。'
     },
     {
       id: 'T10', t: '21:10', figs: 'E3/D8',
-      title: '公众上报同点位 → 回执编号 → 去重合并',
-      narration: '21:10 公众上报同点位(Zakher 井盖):生成受理编号回执 → 与传感器线索去重合并,证据叠加;催办计数可见。',
+      title: '热线上报同点位 → 受理编号 → 去重合并',
+      narration: '21:10 12345 市政热线接到同点位来电(Zakher 井盖),接线员录入:生成受理编号回执 → 与传感器线索去重合并,证据叠加;重复来电计数可见。',
       unlocks: [{ type: 'publicReport', obj: 'PR-0301' }],
       auto: [
-        { action: 'public_report', params: { actor: '公众', reportId: 'PR-0301', cat: '井盖', block: 'Zakher', facility: 'MH-0733' } },
+        { action: 'public_report', params: { actor: '热线接线员', reportId: 'PR-0301', cat: '井盖', block: 'Zakher', facility: 'MH-0733' } },
         { action: 'auto_dedupe', params: { actor: '规则引擎', reportId: 'PR-0301', clueId: 'CL-0733' } }
       ],
-      manual: 'public.html 可自己走三步提交;回执页显示受理编号与状态。'
+      manual: 'm4「热线上报并入清单」里可见 PR-0301 的受理编号与合并标;线索 CL-0733 上多出一次「热线」观测。'
     },
     {
       id: 'T11', t: '21:20', figs: 'D9/P7',
@@ -803,12 +906,11 @@
     },
     {
       id: 'T12', t: '21:30', figs: 'G4/D10/G1/D5',
-      title: '暴雨模式启动 · 全线升档 + 雨前清掏任务包',
-      narration: '21:30 暴雨模式启动:井盖线整体升档横幅 + 雨前清掏任务包卡。上级主管部门可关「井盖缺失」机器直派 → 回退人审 + 区申诉入口;主管详情内紧急 override 红色动作可点。',
+      title: '气象预警接入 · 雨前清掏专项任务包下发',
+      narration: '21:30 气象预警接入:按预警提前量起「雨前清掏专项任务包」WO-9012 并下发班组(纯计划性任务)。在池件分级不变、派单准入标准不变 —— 该派的照派,该人审的照人审。上级主管部门可关「井盖缺失」机器直派 → 回退人审 + 区申诉入口;主管详情内紧急 override 红色动作可点。',
       unlocks: [{ type: 'ticket', obj: 'WO-9012' }],
       auto: [
-        { action: 'auto_storm_on', params: { actor: '规则引擎' } },
-        { action: 'auto_storm_tasks', params: { actor: '规则引擎', ticketId: 'WO-9012' } }
+        { action: 'auto_weather_tasks', params: { actor: '规则引擎', ticketId: 'WO-9012' } }
       ],
       manual: '切「上级主管部门」→ m6 关「井盖缺失」机器直派(强制通知横幅 + 区申诉入口);切「复核主管」→ m1 详情紧急 override(双确认)。'
     }
@@ -882,7 +984,7 @@
         checks: checks('井盖', ['pass', 'pass', 'pass', 'pass']),
         evidence: [{ kind: 'manhole-missing', label: 'AI 生成示意' }],
         lane: '机器直派', fastlane: true, t: '21:00',
-        note: '承接池无空闲班组 → 过载三步(预警广播 / 显名降级分诊 / 值班长抢占)'
+        note: '承接池无空闲班组 → 过载三步(预警广播 / 显名降级分诊 / 复核主管(值班)抢占)'
       })
     },
     investigations: {
@@ -895,8 +997,11 @@
       }
     },
     publicReports: {
+      /* R88 A1⑬:市民渠道 = 12345 市政热线;source/takenBy 说清这条记录是谁在什么渠道录进来的。
+         urges 字段名保留(向后兼容),语义 = 同一问题的重复来电次数。 */
       'PR-0301': {
         id: 'PR-0301', t: '21:10', cat: '井盖', block: 'Zakher', facility: 'MH-0733',
+        source: '12345 热线', takenBy: '热线接线员',
         contact: '05****3271(列级脱敏)', status: '已受理', receipt: 'RC-PR-0301',
         mergedInto: null, urges: 0, evidence: [{ kind: 'manhole-missing', label: 'AI 生成示意' }]
       }

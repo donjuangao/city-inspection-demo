@@ -40,7 +40,6 @@
     </div>
     <span style="width:1px;height:20px;background:#d8dee6"></span>
     <button type="button" onClick="{{ onCrew }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">班组端</button>
-    <button type="button" onClick="{{ onPublic }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#243342;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#1a5fb4;color:#1a5fb4">公众端</button>
     <button type="button" onClick="{{ onReset }}" style="padding:4px 9px;border-radius:6px;border:1px solid #d8dee6;background:#fff;color:#5b6b7c;font-size:12px;font-family:inherit;cursor:pointer" style-hover="border-color:#c0392b;color:#c0392b">重置演示</button>
   </header>
 
@@ -177,21 +176,21 @@ class Component extends DCLogic {
   deskRef = React.createRef();
   phoneRef = React.createRef();
 
-  ROUTES = ['#/m1', '#/m1/clue/CL-0417', 'crew', '#/m1/clue/CL-0417', '#/m1/line/mh', '#/m1/line/mh', '#/m1/line/rd', '#/m1/line/pl', '#/m2/dispatch', 'public', '#/m2', '#/m6'];
+  ROUTES = ['#/m1', '#/m1/clue/CL-0417', 'crew', '#/m1/clue/CL-0417', '#/m1/line/mh', '#/m1/line/mh', '#/m1/line/rd', '#/m1/line/pl', '#/m2/dispatch', '#/m4', '#/m2', '#/m6'];
 
-  LABELS = ['复核工作台 · 井盖线队列(机器直派件置顶)', '线索详情 CL-0417 · 并行复核与动作面板', '班组处置端 · 排水一班', '线索详情 CL-0417 · 复验人裁', '井盖线队列 · 三条线索三个结局', '井盖线队列 · 机械驳回件置顶', '路面线 · 自动升格与批量半审', '管网线 · 调查案 IV-0071', '告警与工单 · 调度视图', '公众上报端 · 回执与去重合并', '告警与工单 · 对账异常队列', '系统管理 · 类目机器直派开关'];
+  LABELS = ['复核工作台 · 井盖线队列(机器直派件置顶)', '线索详情 CL-0417 · 并行复核与动作面板', '班组处置端 · 排水一班', '线索详情 CL-0417 · 复验人裁', '井盖线队列 · 三条线索三个结局', '井盖线队列 · 机械驳回件置顶', '路面线 · 自动升格与批量半审', '管网线 · 调查案 IV-0071', '告警与工单 · 调度视图', '兜底与质量 · 热线上报并入与去重', '告警与工单 · 对账异常队列', '系统管理 · 类目机器直派开关'];
 
   SAY = [
     '「先看这一条。19 点 02 分,没有人在现场,是 MH-0417 的位移传感器自己触发的。系统两秒内自动派了排水一班——但请看队列顶上这行字:机器派单,人复核中。派单是调度动作,定性还没发生。」',
     '「这是整个方案的立场:自动化没有拿走定性权,它只是换了闸门的位置。人还是那个签字的人,只是签在派单之后的 15 分钟内。撤回是显名动作,按班组当前状态分三个分支召回。」',
-    '「班组端我只强调两件事:处置真源是客户的工单系统,我们的动作全部写回去;红色那张卡是安全上报,置顶直达值班长——现场的人身安全不排队。」',
+    '「班组端我只强调两件事:处置真源是客户的工单系统,我们的动作全部写回去;红色那张卡是安全上报,置顶直达复核主管(值班)——现场的人身安全不排队。」',
     '「完工照进来,AI 复验判不出配准——注意它没有默认打回,而是转『存疑待人裁』。打回必须是复核员显名动作并附对比证据,班组还能申诉到主管。」',
     '「同样是井盖、同样高危,这条 0.31 没有传感器硬证据,它就没有资格进机器直派,老老实实排 30 分钟人审。低置信高危不是放行,是强制人核。」',
     '「树影这条机械闸硬失败,但高危件零自动归档——必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。人也可以反过来推翻机械判定,误杀样本回流规则组。」',
     '「路面线是养护流:五项机械校验全过、养护级、高置信,直接免人工升格并入周批。页面上明示『本条未经人工,抽审兜底』——我们不藏这件事。」',
     '「管网线连线索池都没有。水力学规则先行、AI 判型、自动开调查案,人只在立案和结案两个点上拍板。连『置信度』三个字在三条线上的含义都不一样。」',
-    '「资源不够的时候,系统不装作够:超额件显名降级,写清楚为什么没被立刻派出去,然后把仲裁权交给值班长。」',
-    '「同一口井盖,公众也报了。去重合并进既有线索、证据叠加,上报人拿到回执编号——不重复开单,但也不让他觉得石沉大海。」',
+    '「资源不够的时候,系统不装作够:超额件显名降级,写清楚为什么没被立刻派出去,然后把仲裁权交给复核主管。」',
+    '「同一口井盖,热线也接到了。去重合并进既有线索、证据叠加,来电人拿到受理编号——不重复开单,但也不让他觉得石沉大海。录入的是接线员,定性权还在复核员手上。」',
     '「两套系统并行一定会有不一致。对账队列把它显式列出来,给一条裁决口径和 24 小时人工裁定窗,而不是让它安静地漂着。」',
     '「最后是治理侧那把刀:上级主管部门能关掉整个类目的机器直派,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个能收回的把手。」'
   ];
@@ -205,8 +204,8 @@ class Component extends DCLogic {
     '「机器错杀了谁来救?」→ 人。推翻机械判定按钮就在同屏,线索复活进人审并自动触发抽审。',
     '「免人工不怕出事?」→ 只对养护级开放,且按批入抽审队列(批量确认件 15%,假设值);高危级永远没有免人工这条路。',
     '「传感器坏了会不会误报成业务异常?」→ 先排设备故障:SN-FM03 自检失败走设备维护工单,不惊动业务队列。',
-    '「过载时谁来决定牺牲哪一单?」→ 值班长。系统只做到显名降级 + 广播先喊现场,抢占动作必须有人按。',
-    '「公众乱报怎么办?」→ 防滥用三件:同点位去重合并、单设备限频、重复无效上报降权;后两件在静态前端只作机制说明。',
+    '「过载时谁来决定牺牲哪一单?」→ 复核主管。系统只做到显名降级 + 广播先喊现场,抢占动作必须有人按。',
+    '「重复来电怎么办?」→ 同点位去重合并、重复来电计数可见(只累计,不构成自动提级)。',
     '「以谁的数据为准?」→ 处置状态以客户系统为准,巡检定性以我方为准;异常 24 小时内人工裁定。',
     '「上线后发现某类目不靠谱怎么办?」→ 不用改代码也不用停系统:关掉那个类目的机器直派即可,区可申诉,全程留痕。'
   ];
@@ -233,7 +232,7 @@ class Component extends DCLogic {
       this.setState({
         idx: st.stepIdx,
         clock: W.S.now(),
-        sceneCtx: st.meta.scene + (st.gov.stormMode ? ' · 暴雨模式已启动' : ''),
+        sceneCtx: st.meta.scene + (st.gov.weatherAlert ? ' · 气象预警生效中' : ''),
         stepHint: nx ? ('下一步 ' + nx.id + ' ' + nx.t + ' ' + nx.title) : '剧情已走完 T12',
         scen: (W.SCENARIO || []).map(s => ({ id: s.id, t: s.t, title: s.title, narration: s.narration, figs: s.figs, manual: s.manual })),
         logCount: logs.length,
@@ -290,7 +289,6 @@ class Component extends DCLogic {
   };
 
   onCrew = () => { this.setState({ phone: 'crew' }, () => { const p = this.phoneRef.current; if (p) p.setAttribute('src', 'crew.html'); }); };
-  onPublic = () => { this.setState({ phone: 'public' }, () => { const p = this.phoneRef.current; if (p) p.setAttribute('src', 'public.html'); }); };
 
   componentDidMount() {
     this.fitT = setInterval(this.fit, 500);
@@ -330,14 +328,13 @@ class Component extends DCLogic {
       logCount: this.state.logCount,
       autoCount: this.state.autoCount,
       showPhone: !!this.state.phone,
-      phoneLabel: this.state.phone === 'public' ? '公众上报端 · 实机' : '班组处置端 · 实机',
+      phoneLabel: '班组处置端 · 实机',
       boxRef: this.boxRef,
       deskRef: this.deskRef,
       phoneRef: this.phoneRef,
       onNext: this.onNext,
       onReset: this.onReset,
       onCrew: this.onCrew,
-      onPublic: this.onPublic,
       goM1: this.hop('#/m1'), goM2: this.hop('#/m2'), goM3: this.hop('#/m3'),
       goM4: this.hop('#/m4'), goM5: this.hop('#/m5'), goM6: this.hop('#/m6')
     };

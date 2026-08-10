@@ -147,6 +147,25 @@
       probe: function (id) { return { clueId: id, owner: '预检' }; },
       params: function (m, f) { return { clueId: m.id, owner: f.owner }; }
     },
+    /* R88 A1⑬ 后半 · 主管主动提级(推翻「重复来电计数达阈值自动提级」):原因必填,显名留痕 */
+    escalate: {
+      title: '提级为急修 · 复核主管',
+      action: 'clue_escalate', submit: '提交提级',
+      cls: 'btn-primary',
+      intro: function (m) {
+        var c = S.find.clue(m.id);
+        return '提级是<b>人做的显名动作</b>,不是系统按重复来电计数自动定性。' +
+          (c ? ('当前档「' + esc(c.level) + '」→「急修」,车道转单条必审,SLA 按急修档重算。') : '');
+      },
+      fields: [{ k: 'reason', label: '提级原因(必填 · 进动作日志可回查)', opts: [
+        ['同点位险情升级', '同点位险情升级(现场反馈异常扩大)'],
+        ['临近学校/医院等敏感点', '临近学校 / 医院等敏感点位'],
+        ['重复来电集中反映', '重复来电集中反映(计数只作输入,提级由我判定)'],
+        ['雨前风险窗口', '雨前风险窗口(气象预警前处置提前)']
+      ] }],
+      probe: function (id) { return { clueId: id, reason: '预检' }; },
+      params: function (m, f) { return { clueId: m.id, reason: f.reason || '' }; }
+    },
     verifyreject: {
       title: '复验打回 · 须附对比证据',
       action: 'verify_reject', submit: '打回并附证据',
@@ -203,7 +222,7 @@
       params: function (m, f) { return { alertId: m.id, reason: f.reason, note: f.note || '' }; }
     },
     ruling: {
-      title: '误报申诉裁定 · 主管 / 值班长',
+      title: '误报申诉裁定 · 复核主管',
       action: 'misfire_ruling', submit: '提交裁定',
       cls: 'btn-primary',
       intro: function (m) {
@@ -299,7 +318,7 @@
       '<div class="card-hd"><h2>1 · 复核工作台</h2>' +
       '<span class="row" style="gap:8px;align-items:center">' +
       '<span class="tiny">当前身份 ' + esc(st.role) + '</span>' + UI.helpBtn('m1') + '</span></div>' +
-      '<div class="oc-t3">跨线仲裁默认序:<b>井盖紧急 &gt; 管网紧急 &gt; 路面急修</b>;本线内机器直派件再置顶。区值班主管可临时置顶改序,动作留痕。' +
+      '<div class="oc-t3">跨线仲裁默认序:<b>井盖紧急 &gt; 管网紧急 &gt; 路面急修</b>;本线内机器直派件再置顶。复核主管可临时置顶改序,动作留痕。' +
       'SLA / 阈值数字均为' + UI.assume('假设值', '全部 SLA 与阈值为假设值,试点首周与客户核实后按区可配参数调整') + '。</div>' +
       '</div>' +
       '<div class="tabs">' + tabs + '</div>';
@@ -319,11 +338,12 @@
       /* R87 A4/⑯:以下从组件里挪进来的说明,原来贴在卡片上当小抄 —— 规则本体住 6 · 系统管理,工作台只在档位徽章上挂 hover */
       '<p><b>置信度的语义按线不同:</b>井盖与路面线是图像置信度;管网线是规则持续时长 × 多源一致度,不是图像置信度,所以两条线的数字不可互相比较。</p>' +
       '<p><b>机器直派件的代价:</b>该通道件全量拘进主管抽审(误派率月报口径);撤回件班组白跑不计考核,班组可申诉。</p>' +
-      '<p><b>加急人工档的兜底:</b>超时走三级升级(复核员 → 复核主管 → 区值班长),并发只读预警不定性也不派工;本档的确认与驳回都拘进主管抽审。</p>' +
+      '<p><b>加急人工档的兜底:</b>超时走三级升级(区复核员 → 复核主管 → 上级主管部门),并发只读预警不定性也不派工;本档的确认与驳回都拘进主管抽审。' +
+      '三级升级走完仍无人给结论,<b>系统自动派单兜底</b>(宁可多看一眼,不漏掉):单先发出去,告警仍不成立、定性仍悬,复核员事后补审,该件全量拘抽审。</p>' +
       '<p><b>机械闸的实际拦截面:</b>定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行。树影这类物理上持续存在的假目标,机械闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。推翻机械判定 = 线索复活进人审 + 自动触发抽审,误杀样本回流规则组。</p>' +
       '<p><b>免人工车道的判据与兜底:</b>养护级 × 高置信 × 机械全过 = 自动并入周期养护计划;观察级 × 机械过 = 自动记台账入劣化曲线。免人工不豁免审计:每条一条动作日志,按抽审率捞回复查,抽审可推翻。</p>' +
       '<p><b>存疑归档:</b>既不算确认也不算驳回,计入模型评估统计;只在批量半审车道内可用。</p>' +
-      '<p><b>数据源隐性失效两态:</b>读数卡死(方差为零超时,过得了心跳过不了它)与量程饱和(暴雨积水恒满值,不等于失联),判据分开。先排设备故障,再报业务异常;设备工单承接方是传感网运维方,不进三线班组队列。</p>' +
+      '<p><b>数据源隐性失效两态:</b>读数卡死(方差为零超时,过得了心跳过不了它)与量程饱和(强降雨积水恒满值,不等于失联),判据分开。先排设备故障,再报业务异常;设备工单承接方是传感网运维方,不进三线班组队列。</p>' +
       '<p><b>雨前清掏为什么是任务不是识别:</b>箅面干净不代表过水能力在,井筒淤积对视觉与液位皆盲。所以它按任务包与客户清掏计划对接,不靠识别。</p>' +
       '<p><b>漏报的正面答复:</b>不承诺不漏报;承诺每次定性可追溯 —— 该点位全部线索与处置记录 + 该点位观测覆盖窗。无传感器绑定的设施在事故回查时可据此区分「模型漏报」与「覆盖缺失」。</p>' +
       '<p><b>动作记录的版本字段:</b>每条动作记录带当时的规则包 / 参数集 / 模型 / 参考数据版本,三年后可重放当时的判定依据;动作日志保存 ≥3 年,防篡改口径 = 可检测。</p>' +
@@ -371,6 +391,7 @@
       var urgent = isHigh(c) && isOpen(c), on = !!M.rowOpen[c.id];
       return '<tr class="' + (urgent ? 'is-urgent ' : '') + (on ? 'is-sel' : '') + '" data-row="' + esc(c.id) + '" style="cursor:pointer" title="点击展开详情">' +
         '<td><span class="acc-cev">' + (on ? '▾' : '▸') + '</span> <b>' + esc(c.id) + '</b>' + (c.fastlane ? ' ' + UI.badge('机器直派', 'amber') : '') +
+        (c.overdueFallback ? ' ' + UI.badge('超时兜底已派单 · 定性待补审', 'amber') : '') +
         '<div class="tiny">观测 ' + (c.obsCount || UI.obsList(c).length) + ' 次 · 最近 ' + esc(c.lastSeen || c.t) + '</div></td>' +
         '<td>' + UI.addr(c.facility) + '<div class="tiny">' + esc(c.kindText || '') + '</div></td>' +
         '<td>' + UI.levelBadge(c.level) + '</td>' +
@@ -379,7 +400,8 @@
         '<td>' + slaCell(c) + '</td>' +
         '<td>' + UI.statusBadge(c.status) + '</td>' +
         '<td><a href="#/m1/clue/' + esc(c.id) + '" class="tiny">详情 →</a></td></tr>' +
-        (on ? '<tr class="row-open"><td colspan="8">' + cardFor(c) + '</td></tr>' : '');
+        /* R88 靶单#3:行内展开 = 只读摘要(无动作按钮);动作只在置顶手风琴与详情页 */
+        (on ? '<tr class="row-open"><td colspan="8">' + cardFor(c, true) + '</td></tr>' : '');
     }).join('');
     return filterBar(key, list, view.length) +
       '<table class="tb"><thead><tr>' +
@@ -390,9 +412,32 @@
   }
 
   /* ============ 置顶区「待处置 · 按时限排序」(R87 A4:只放当前角色需动作的件 · 手风琴同时只开一条)============ */
+  /* R88 A4① · 只读模式(ro=true):卡内嵌动作行全删,卡退化为「只读摘要」。
+     动作只在两处:队列页置顶手风琴(唯一动作区之一)与线索详情右侧动作面板。
+     调用点:详情页左列 / 全部线索表行内展开 → ro=true;置顶手风琴 → ro=false。 */
+  /* 卡内证据缩略列:ro='detail' 时不渲染 —— 详情页下方已有唯一的「证据卡」区块,不重复出按钮 */
+  function evCol(c, ro) {
+    if (ro === 'detail') return '';
+    return '<div style="width:286px;flex:none;min-width:212px">' + UI.evInset(UI.evThumb(c)) + '</div>';
+  }
+  function roNote(ro) {
+    var where = (ro === 'detail') ? '本页右侧动作面板' : '该线索详情页的动作面板(或本页置顶待处置区)';
+    return '<div class="tiny" style="margin-top:8px">只读摘要 —— 动作在' + esc(where) + '。</div>';
+  }
+  /* R88 A2⑧ · 超时兜底件的显式态 */
+  function fallbackBadge(c) {
+    return c && c.overdueFallback ? ' ' + UI.badge('超时兜底已派单 · 定性待补审', 'amber') : '';
+  }
+  function fallbackBanner(c) {
+    if (!c || !c.overdueFallback) return '';
+    var fb = c.overdueFallback;
+    return UI.banner('warn', '<b>超时兜底已派单 · 定性待补审</b> —— 人工确认档 ' + esc(fb.deadline || '—') +
+      ' 到期无人给结论,系统于 ' + esc(fb.t || '—') + ' 自动派 ' + esc(fb.crew ? UI.crewName(fb.crew) : '(待改派)') +
+      '(工单 ' + esc(fb.ticketId || '—') + ')。<b>告警仍未成立、定性仍悬</b>,请复核员补审;该件已全量拘抽审。');
+  }
   /* 通用待处置卡(不属于机器直派 / 加急人工 / 机械驳回三种专卡的件) */
-  function pendingCard(c) {
-    var body = UI.obsLine(c) +
+  function pendingCard(c, ro) {
+    var body = fallbackBanner(c) + UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:230px">' +
       UI.kv([
@@ -402,25 +447,26 @@
         ['来源', esc(c.source || '—')],
         ['异常', esc(c.kindText || '—')]
       ]) + '</div>' +
-      '<div style="width:286px;flex:none;min-width:230px">' + UI.evInset(UI.evThumb(c)) + '</div>' +
-      '</div><div class="sep"></div>' +
-      '<div class="row wrap"><div class="grow">' + pw(UI.actionPanel([
-        { action: 'confirm', params: { clueId: c.id }, label: '确认(线索成立)', cls: 'btn-ok' }
-      ])) + '</div><div class="grow">' +
-      pw(modalBtn('驳回(六码)', 'reject', c.id) + modalBtn('转办产权单位', 'transfer', c.id)) +
-      '</div></div>';
-    return tcard('clue', esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + laneBadgeH(c), body,
+      evCol(c, ro) +
+      '</div>' +
+      (ro ? roNote(ro) : '<div class="sep"></div>' +
+        '<div class="row wrap"><div class="grow">' + pw(UI.actionPanel([
+          { action: 'confirm', params: { clueId: c.id }, label: '确认(线索成立)', cls: 'btn-ok' }
+        ])) + '</div><div class="grow">' +
+        pw(modalBtn('驳回(六码)', 'reject', c.id) + modalBtn('转办产权单位', 'transfer', c.id)) +
+        '</div></div>');
+    return tcard('clue', esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + laneBadgeH(c) + fallbackBadge(c), body,
       '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
-  /* 同一详情组件:置顶卡与表内展开共用 */
-  function cardFor(c) {
-    if (c.fastlane && isOpen(c)) return fastlaneCard(c);
-    if (c.lane === '加急人工' && isOpen(c)) return urgentReviewCard(c);
-    if (c.mechFail) return mechRejectCard(c);
-    return pendingCard(c);
+  /* 同一详情组件:置顶卡与表内展开共用(ro=true 时为只读摘要) */
+  function cardFor(c, ro) {
+    if (c.fastlane && isOpen(c)) return fastlaneCard(c, ro);
+    if (c.lane === '加急人工' && isOpen(c)) return urgentReviewCard(c, ro);
+    if (c.mechFail) return mechRejectCard(c, ro);
+    return pendingCard(c, ro);
   }
-  /* 待裁定卡:误报申诉交到主管 / 值班长手上的那一件 */
-  function rulingCard(al) {
+  /* 待裁定卡:误报申诉交到复核主管手上的那一件 */
+  function rulingCard(al, ro) {
     var ap = al.appeal || {}, c = al.clueId ? S.find.clue(al.clueId) : null;
     var body = UI.banner('warn', '<b>误报申诉待裁定</b> —— ' + esc(al.id) + '(' + UI.addr(al.facility) + ')') +
       UI.kv([
@@ -430,7 +476,7 @@
         ['源线索', c ? ('<a href="#/m1/clue/' + esc(c.id) + '">' + esc(c.id) + '</a> · ' + esc(c.kindText || '')) : '—', true],
         ['告警状态', UI.badge(al.status, 'amber'), true]
       ]) +
-      '<div class="sep"></div>' + pw(modalBtn('申诉裁定(成立 / 不成立)', 'ruling', al.id, 'btn-primary'));
+      (ro ? roNote(ro) : '<div class="sep"></div>' + pw(modalBtn('申诉裁定(成立 / 不成立)', 'ruling', al.id, 'btn-primary')));
     return tcard('alert', '误报申诉裁定 · ' + esc(al.id), body,
       c ? '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">看源线索 →</a>' : '', { tag: '待裁定' });
   }
@@ -485,7 +531,7 @@
   }
 
   /* ============ 机器直派并行复核卡(T1/T2 后出现)============ */
-  function fastlaneCard(c) {
+  function fastlaneCard(c, ro) {
     var tk = c.ticketId ? S.find.ticket(c.ticketId) : null;
     var cw = tk && tk.crew ? S.find.crew(tk.crew) : null;
     var body =
@@ -501,23 +547,24 @@
         ['撤回后果', esc(recallBranch(tk))]
       ]) +
       '</div>' +
-      '<div style="width:286px;flex:none;min-width:212px">' + UI.evInset(UI.evThumb(c)) + '</div>' +
+      evCol(c, ro) +
       '</div>' +
-      '<div class="sep"></div>' +
-      '<div class="row wrap">' +
-      '<div class="grow">' + pw(UI.actionPanel([
-        { action: 'confirm', params: { clueId: c.id }, label: '确认 = 告警追认', cls: 'btn-ok' }
-      ])) + '</div>' +
-      '<div class="grow">' + pw(modalBtn('机器直派撤回(理由码 · 召回班组)', 'recall', c.id, 'btn-danger')) + '</div>' +
-      '</div>' +
+      (ro ? roNote(ro) : '<div class="sep"></div>' +
+        '<div class="row wrap">' +
+        '<div class="grow">' + pw(UI.actionPanel([
+          { action: 'confirm', params: { clueId: c.id }, label: '确认 = 告警追认', cls: 'btn-ok' }
+        ])) + '</div>' +
+        '<div class="grow">' + pw(modalBtn('机器直派撤回(理由码 · 召回班组)', 'recall', c.id, 'btn-danger')) + '</div>' +
+        '</div>') +
       '<div class="tiny" style="margin-top:8px"><a href="#/m4">该件已入抽审队列 →</a></div>';
     return tcard('clue', '机器直派并行复核 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('先派后审', 'amber'),
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
   /* ============ 加急人工卡(T5 · 0.31 件,与机器直派成对照)============ */
-  function urgentReviewCard(c) {
+  function urgentReviewCard(c, ro) {
     var body =
+      fallbackBanner(c) +
       '<div class="banner banner-warn"><span class="banner-ico">!</span><span>' +
       '<b>为什么它不走机器直派:</b>置信 ' + esc(conf2(c.conf)) + ' 纯视觉、<b>无传感器硬证据</b>,机械四项未全过 —— 双闸硬条件不满足。' +
       '低置信不等于放过:紧急级<b>不看置信度</b>,强制人核。</span></div>' +
@@ -530,20 +577,21 @@
         ['机械校验', ((c.checks || []).filter(function (x) { return x.result === 'pass'; }).length) + '/' + (c.checks || []).length + ' 项通过'],
         ['来源', esc(c.source || '—')]
       ]) + '</div>' +
-      '<div style="width:286px;flex:none;min-width:230px">' + UI.evInset(UI.evThumb(c)) + '</div>' +
+      evCol(c, ro) +
       '</div>' +
-      '<div class="sep"></div>' +
-      '<div class="row wrap"><div class="grow">' + pw(UI.actionPanel([
-        { action: 'confirm', params: { clueId: c.id }, label: '确认(线索成立)', cls: 'btn-ok' }
-      ])) + '</div><div class="grow">' +
-      pw(modalBtn('驳回(六码)', 'reject', c.id) + modalBtn('转办产权单位', 'transfer', c.id)) +
-      '</div></div>';
-    return tcard('clue', '加急人工 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('置信 ' + conf2(c.conf), 'grey'),
+      (ro ? roNote(ro) : '<div class="sep"></div>' +
+        '<div class="row wrap"><div class="grow">' + pw(UI.actionPanel([
+          { action: 'confirm', params: { clueId: c.id }, label: '确认(线索成立)', cls: 'btn-ok' }
+        ])) + '</div><div class="grow">' +
+        pw(modalBtn('驳回(六码)', 'reject', c.id) + modalBtn('转办产权单位', 'transfer', c.id)) +
+        '</div></div>');
+    return tcard('clue', '加急人工 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('置信 ' + conf2(c.conf), 'grey') +
+      (c.slaDeadline && S.slaLeft(c.slaDeadline) < 0 ? ' ' + UI.badge('人工确认档已过时限', 'red') : '') + fallbackBadge(c),
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
   /* ============ 机械驳回置顶证据卡(T6 树影件:高危零自动归档)============ */
-  function mechRejectCard(c) {
+  function mechRejectCard(c, ro) {
     var bad = (c.checks || []).filter(function (x) { return x.result === 'fail' || x.result === 'warn'; })
       .map(function (x) { return x.name; }).join(' / ');
     var done = c.status === 'rejected';
@@ -555,15 +603,15 @@
         ';复核员把真异常驳回成树影时,由抽审发现。') : '') +
       UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
-      '<div style="width:286px;flex:none;min-width:230px">' + UI.evInset(UI.evThumb(c)) + '</div>' +
+      evCol(c, ro) +
       '<div class="grow" style="min-width:240px">' + UI.checksCard(c) + '</div></div>' +
-      '<div class="sep"></div>' +
-      '<div class="row wrap"><div class="grow">' +
-      pw(UI.actionPanel([{ action: 'reject', params: { clueId: c.id, code: '①' }, label: '认可机械判定 · 驳回(码① 拍摄干扰)' }]) +
-      modalBtn('其他原因码驳回…', 'reject', c.id)) +
-      '</div><div class="grow">' +
-      pw(modalBtn('推翻机械判定(理由码必填)', 'overrule', c.id, 'btn-danger')) +
-      '</div></div>';
+      (ro ? roNote(ro) : '<div class="sep"></div>' +
+        '<div class="row wrap"><div class="grow">' +
+        pw(UI.actionPanel([{ action: 'reject', params: { clueId: c.id, code: '①' }, label: '认可机械判定 · 驳回(码① 拍摄干扰)' }]) +
+        modalBtn('其他原因码驳回…', 'reject', c.id)) +
+        '</div><div class="grow">' +
+        pw(modalBtn('推翻机械判定(理由码必填)', 'overrule', c.id, 'btn-danger')) +
+        '</div></div>');
     return tcard('clue', '机械驳回置顶 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.laneBadge('机械驳回'),
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
@@ -657,57 +705,118 @@
     return tcard('case', '调查案 ' + esc(k.id) + ' ' + UI.badge(k.status, k.status === '已结案' ? 'green' : 'blue'), body, '', { color: '#6b3fa0' });
   }
 
-  /* ============ 数据源健康(隐性失效两态 / 设备工单)============ */
-  function healthCard(L) {
+  /* ============ 数据源健康(隐性失效两态 / 设备工单)============
+     R88 A4⑯:全局大卡从队列主区下沉 —— 队列页只在「本线概览」折叠区放一行摘要 + 明细表;
+     单条线索的观测状况改在详情页按设施派生(facilityObsCard);全局汇总仍在 m5 统计页一处。 */
+  function healthOf(L) {
     var st = S.get();
     var facIds = st.facilities.filter(function (f) { return f.line === L.line; }).map(function (f) { return f.id; });
-    var bad = st.sensors.filter(function (s) { return facIds.indexOf(s.facility) >= 0 && s.health !== '正常'; });
+    var all = st.sensors.filter(function (s) { return facIds.indexOf(s.facility) >= 0; });
+    var bad = all.filter(function (s) { return s.health !== '正常'; });
     var devTk = st.tickets.filter(function (t) { return t.type === '设备工单' && t.line === L.line; });
-    if (!bad.length && !devTk.length) return '';
-    var rows = bad.map(function (s) {
+    return { all: all, bad: bad, devTk: devTk };
+  }
+  /* 一行摘要(概览折叠区标题右侧也用它) */
+  function healthLine(L) {
+    var h = healthOf(L);
+    return '数据源健康:' + h.all.length + ' 个点位 · ' +
+      (h.bad.length ? UI.badge('异常 ' + h.bad.length, 'amber') : UI.badge('全部正常', 'green')) +
+      (h.devTk.length ? ' · 设备工单 ' + h.devTk.length + ' 单(承接方:传感网运维方)' : '');
+  }
+  function healthBlock(L) {
+    var h = healthOf(L);
+    var rows = h.bad.map(function (s) {
       return '<tr><td><b>' + esc(s.id) + '</b></td><td>' + esc(s.type) + '</td><td>' + UI.addr(s.facility) + '</td>' +
         '<td>' + UI.badge(s.health, 'amber') + '</td><td class="tiny">' + esc(s.window || '') + '</td></tr>';
     }).join('');
-    var body =
-      (rows ? '<table class="tb"><thead><tr><th style="width:110px">点位</th><th style="width:110px">类型</th><th>设施 · 地址</th><th style="width:190px">自检状态</th><th>观测覆盖窗</th></tr></thead><tbody>' + rows + '</tbody></table>' : '') +
-      (devTk.length ? '<div class="tiny" style="margin-top:6px">已自动开设备工单:' + devTk.map(function (t) { return esc(t.id) + '(' + esc(t.state) + ')'; }).join(' · ') +
-        ' · 承接方:传感网运维方。 <a href="#/m2">工单镜像 →</a></div>' : '');
-    return card('数据源健康 · 观测覆盖(' + esc(L.line) + '线)', body);
+    return '<div class="small">' + healthLine(L) + '</div>' +
+      (rows ? '<table class="tb" style="margin-top:6px"><thead><tr><th style="width:110px">点位</th><th style="width:110px">类型</th><th>设施 · 地址</th><th style="width:190px">自检状态</th><th>观测覆盖窗</th></tr></thead><tbody>' + rows + '</tbody></table>' : '') +
+      (h.devTk.length ? '<div class="tiny" style="margin-top:6px">已自动开设备工单:' + h.devTk.map(function (t) { return esc(t.id) + '(' + esc(t.state) + ')'; }).join(' · ') +
+        ' · 承接方:传感网运维方。 <a href="#/m2">工单镜像 →</a></div>' : '') +
+      '<div class="tiny" style="margin-top:6px">全局汇总口径在 <a href="#/m5">5 · 统计与月报</a> 一处;单条线索的观测状况在该线索详情页。</div>';
   }
 
-  /* ============ 暴雨模式 · 雨前专项任务包(T12;井盖线兜底模块任务型)============ */
-  function stormCard() {
+  /* ============ 气象预警 · 雨前清掏专项任务包(T12;计划性任务,不动分级也不动派单标准)============ */
+  function weatherCard() {
     var st = S.get();
-    if (!st.gov.stormMode) return '';
+    var wa = st.gov.weatherAlert;
+    if (!wa) return '';
     var tks = st.tickets.filter(function (t) { return t.type === '雨前专项任务'; });
-    var up = st.clues.filter(function (c) { return c.stormUp; }).length;
-    var body = UI.banner('warn', '<b>暴雨模式已启动</b> —— 井盖线整体升档:养护件 ' + up + ' 条 → 急修档;液位计转先导预警源;' +
-      '淹没失联时按最后读数 + 降级视觉。区值班长可启用「临时借调 + SLA 延展档」(启用动作留痕)。') +
+    var body = UI.banner('info', '<b>' + esc(wa.level || '气象预警') + '</b> —— 提前量 ' + esc(String(wa.leadHours || '—')) +
+      ' 小时(' + esc(wa.t || '—') + ' 下发)。本预警只触发<b>计划性专项任务</b>:雨前清掏按任务包下发;' +
+      '<b>在池件分级不变、机器直派准入标准不变</b>。') +
       '<div class="small"><b>雨前清掏核查任务包</b>:' +
       (tks.length ? tks.map(function (t) { return esc(t.id) + ' · ' + esc(t.state) + ' · ' + esc(UI.crewName(t.crew)) + ' · ' + UI.addr(t.facility); }).join(' ; ') : '待下发') +
       ' <a href="#/m2">工单镜像 →</a></div>';
-    return card('暴雨模式 · 全线升档 ' + UI.badge('雨前专项', 'amber'), body);
+    return card('气象预警 · 雨前清掏专项任务包 ' + UI.badge('计划性任务', 'blue'), body);
   }
 
-  /* ============ 三个 tab 的队列页 ============ */
+  /* ============ R88 A4⑯ · 本设施观测状况(线索详情内一行,从 sensors / observations 派生)============ */
+  function facilityObsCard(c) {
+    var f = S.find.facility(c.facility);
+    var sns = ((f && f.sensors) || []).map(function (sid) { return S.find.sensor(sid); }).filter(Boolean);
+    var badN = sns.filter(function (s) { return s.health !== '正常'; }).length;
+    var os = UI.obsList(c);
+    var last = c.lastSeen || (os[os.length - 1] && os[os.length - 1].t) || c.t;
+    var ways = [];
+    os.forEach(function (o) { var k = o.kind || '其他'; if (ways.indexOf(k) < 0) ways.push(k); });
+    sns.forEach(function (s) { var k = '传感器(' + s.type + ')'; if (ways.indexOf(k) < 0) ways.push(k); });
+    var health = !sns.length
+      ? UI.badge('本设施无传感器绑定 · 覆盖缺口', 'grey')
+      : (badN ? UI.badge(sns.length - badN + '/' + sns.length + ' 正常 · ' + badN + ' 异常', 'amber')
+        : UI.badge(sns.length + '/' + sns.length + ' 正常', 'green'));
+    var rows = sns.map(function (sn) {
+      return '<tr><td><b>' + esc(sn.id) + '</b></td><td>' + esc(sn.type) + '</td><td>' +
+        UI.badge(sn.health, sn.health === '正常' ? 'green' : 'amber') + '</td><td class="tiny">' + esc(sn.window || '') + '</td></tr>';
+    }).join('');
+    var body = UI.kv([
+      ['传感器健康', health, true],
+      ['最近观测', esc(last || '—') + ' · 共 ' + os.length + ' 次观测', true],
+      ['覆盖方式', ways.join(' / ') || '—']
+    ]) +
+      (rows ? '<table class="tb"><thead><tr><th style="width:110px">数据源点位</th><th style="width:120px">类型</th><th style="width:110px">自检</th><th>覆盖窗</th></tr></thead><tbody>' + rows + '</tbody></table>'
+        : '<div class="tiny">本设施<b>无传感器绑定</b>(观测覆盖缺口)。</div>');
+    return card('本设施观测状况 · ' + esc(c.facility), body,
+      '<span class="tiny">按本设施派生 · 全线汇总见 <a href="#/m5">m5</a></span>');
+  }
+
+  /* 本线统计一行(概览折叠区内;全局统计口径仍在 m5) */
+  function lineStats(L, all) {
+    function n(fn) { return all.filter(fn).length; }
+    return '<div class="row wrap" style="gap:18px">' +
+      [['在池待核查', n(isOpen)], ['已确认成立', n(function (c) { return c.status === 'confirmed'; })],
+       ['已驳回', n(function (c) { return c.status === 'rejected'; })],
+       ['免人工自动办结', n(function (c) { return c.status === 'auto_done'; })],
+       ['本线线索合计', all.length]].map(function (p) {
+        return '<div style="min-width:96px"><div class="tiny">' + esc(p[0]) + '</div><div class="oc-t1">' + p[1] + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="tiny" style="margin-top:4px">本线口径;跨线与月报口径在 <a href="#/m5">5 · 统计与月报</a>。</div>';
+  }
+
+  /* ============ 三个 tab 的队列页(R88 靶单#4:两层化)============
+     第一层「本线概览」= 折叠区(默认收):健康摘要 / 任务包 / 本线统计 —— 全局性、不需当场动手的东西;
+     第二层「线索队列」= 主区(常开):置顶待处置 + 本线专有工作区 + 全部线索表;动作日志折叠在末尾。 */
   function queuePage(key) {
     var L = lineOfKey(key), st = S.get();
     var all = cluesOf(L.line);
     var html = '';
 
-    /* ① 置顶区:只放当前角色需要动作的件,按时限升序,手风琴同时只开一条 */
+    /* ① 本线概览(默认收起) */
+    var ov = '';
+    if (L.key === 'mh') ov += weatherCard();
+    if (L.key === 'rd') ov += autoUpgradeCard(all.filter(function (c) { return c.status === 'auto_done'; }));
+    ov += card('本线统计', lineStats(L, all), '', 'card-tight');
+    ov += card('数据源健康 · 观测覆盖(' + esc(L.line) + '线)', healthBlock(L), '', 'card-tight');
+    html += UI.fold('m1-ov-' + key, '<b>本线概览</b> · ' + esc(L.title) + '(健康 / 任务包 / 统计)', ov,
+      { right: healthLine(L) });
+
+    /* ② 线索队列主区 —— 置顶待处置(唯一动作区之一,按时限升序,手风琴同时只开一条) */
     html += pendingSection(key, L.line);
 
-    /* ② 本线专有工作区(批量半审 / 调查案 / 暴雨任务包 / 数据源健康) */
-    if (L.key === 'mh') {
-      html += stormCard();
-      html += healthCard(L);
-
-    } else if (L.key === 'rd') {
-      html += autoUpgradeCard(all.filter(function (c) { return c.status === 'auto_done'; }));
+    /* ③ 本线专有工作区(批量半审 / 调查案) */
+    if (L.key === 'rd') {
       html += batchView(all.filter(function (c) { return c.lane === '批量半审' && isOpen(c); }));
-
-    } else {
+    } else if (L.key === 'pl') {
       var cases = st.investigations;
       if (cases.length) { cases.forEach(function (k) { html += caseCard(k); }); }
       else {
@@ -715,16 +824,15 @@
           UI.banner('info', '本线走「预警 → 调查案」:DMA 分区流量计与压力计出规则报警,系统自动开调查案,人在<b>立案 / 结案</b>两点拍板。') +
           '<div class="tiny">冷启动口径:首次可信报警需基线期 ' + UI.assume('X 天', '基线期 X 天 = 假设值:遥测通道打通 + 基线窗口历史;客户有归档则回算') + '。</div>');
       }
-      html += healthCard(L);
     }
 
-    /* ③ 全部线索表:状态 / 档位筛选,点行内联展开同一详情组件 */
+    /* ④ 全部线索表:状态 / 档位筛选,点行内联展开只读摘要 */
     html += tcard('clue', '全部线索(' + all.length + ')', queueTable(key, all),
       '', { line: L.line, tag: L.line + '线' });
 
-    html += card('最近动作日志',
-      UI.timeline(null, { limit: 8, desc: true }),
-      '<span class="tiny">机械自动步也逐条留痕</span>');
+    /* ⑤ 动作日志(折叠) */
+    html += UI.fold('m1-log-' + key, '<b>最近动作日志</b>(机械自动步也逐条留痕)',
+      UI.timeline(null, { limit: 8, desc: true }), { right: '按需展开' });
     return html;
   }
 
@@ -738,10 +846,10 @@
     var back = '#/m1/line/' + keyOfLine(c.line);
     var tk = c.ticketId ? S.find.ticket(c.ticketId) : null;
     var al = c.alertId ? S.find.alert(c.alertId) : null;
-    var f = S.find.facility(c.facility);
     var meta = S.get().meta;
 
     /* --- 左列 --- */
+    /* 超时兜底横幅由下方对应的只读摘要卡承载(加急人工卡 / 通用待处置卡),此处不重复 */
     var left = UI.objectCard(c, { kind: '线索' }) + UI.obsLine(c);
 
     /* R87 A1:申诉 / 裁定留痕横幅(状态取 alertStates 枚举) */
@@ -763,64 +871,111 @@
         ]), '', { tag: '误报撤销' });
     }
 
-    if (c.fastlane && isOpen(c)) left += fastlaneCard(c);
-    if (c.lane === '加急人工' && isOpen(c)) left += urgentReviewCard(c);
-    if (c.mechFail) left += mechRejectCard(c);
+    /* R88 A4① · 左列三卡改「只读摘要」:动作全部收进右侧动作面板(唯一动作区),不再有同一动作两处按钮 */
+    if (c.fastlane && isOpen(c)) left += fastlaneCard(c, 'detail');
+    if (c.lane === '加急人工' && isOpen(c)) left += urgentReviewCard(c, 'detail');
+    if (c.mechFail) left += mechRejectCard(c, 'detail');
 
     left += tcard('clue', '证据卡 · ' + UI.evShots(c).length + ' 张',
       UI.evInset(UI.evThumb(c, {
         note: '来源:' + esc(c.source || '—') +
-          (c.publicRefs && c.publicRefs.length ? ' · 已叠加公众上报:' + c.publicRefs.map(esc).join(' / ') : '')
+          (c.publicRefs && c.publicRefs.length ? ' · 已叠加热线上报:' + c.publicRefs.map(esc).join(' / ') : '')
       })),
       c.evidenceViewed ? UI.badge('已查看(高危确认前置已满足)', 'green') : UI.badge('高危件确认前须查看', 'grey'),
       { line: c.line, tag: '证据' });
 
-    left += card('机械校验闸(第二闸)', UI.checksCard(c));
+    /* R88 A4① · 机械校验四项 = 证据性区块,保留但降为折叠区(它是确认的前置凭据,不是动作) */
+    var mechPass = (c.checks || []).filter(function (x) { return x.result === 'pass'; }).length;
+    left += UI.fold('m1-mech-' + c.id, '<b>机械校验闸(第二闸)</b> · ' + mechPass + '/' + (c.checks || []).length + ' 项通过' +
+      (c.mechFail ? ' ' + UI.badge('硬失败', 'red') : ''), UI.checksCard(c), { right: '证据区 · 按需展开' });
 
-    var covRows = (f && f.sensors || []).map(function (sid) {
-      var sn = S.find.sensor(sid);
-      return sn ? ('<tr><td><b>' + esc(sn.id) + '</b></td><td>' + esc(sn.type) + '</td><td>' +
-        UI.badge(sn.health, sn.health === '正常' ? 'green' : 'amber') + '</td><td class="tiny">' + esc(sn.window || '') + '</td></tr>') : '';
-    }).join('');
-    left += card('观测覆盖窗',
-      (covRows ? '<table class="tb"><thead><tr><th style="width:110px">数据源点位</th><th style="width:120px">类型</th><th style="width:110px">自检</th><th>覆盖窗</th></tr></thead><tbody>' + covRows + '</tbody></table>'
-        : '<div class="tiny">本设施<b>无传感器绑定</b>(观测覆盖缺口)。</div>'));
+    /* R88 A4⑯ · 数据源健康下沉:每条线索详情带「本设施观测状况」(该设施传感器健康 + 最近观测 + 覆盖方式) */
+    left += facilityObsCard(c);
 
-    /* --- 右列:动作面板 + 时间线 --- */
+    /* --- 右列:动作面板(R88 A4① 唯一动作区)+ 时间线 --- */
     var right = '';
     var inWindow = !!(c.reviewEnd && S.slaLeft(c.reviewEnd) >= 0);
-    var acts = '<div class="sec-title">定性动作 · 复核员</div>' +
-      '<div class="act-item"><button type="button" class="btn" data-ev="' + esc(c.id) + '">' +
-      (c.evidenceViewed ? '✓ 查看证据卡(已满足)' : '查看证据卡') + '</button></div>' +
-      UI.actionPanel([
-        { action: 'confirm', params: { clueId: c.id }, label: c.fastlane ? '确认 = 告警追认' : '确认(线索成立)', cls: 'btn-ok' }
-      ]) +
-      modalBtn('驳回(必选六原因码)', 'reject', c.id) +
-      modalBtn('转办产权单位', 'transfer', c.id) +
-      UI.actionPanel([{ action: 'archive_doubt', params: { clueId: c.id }, label: '存疑归档(仅批量半审车道)' }]);
-
-    acts += '<div class="sep"></div>' + UI.secTitle('机械闸 / 机器直派', 'clue') +
-      modalBtn('推翻机械判定', 'overrule', c.id) +
-      /* R87 A1:复核窗内 = 撤回召回班组;窗过 = 误报申诉(交主管裁定) */
-      (inWindow || !al
-        ? modalBtn('机器直派撤回 · 召回班组' + (c.reviewEnd ? '(窗内 · 截止 ' + esc(c.reviewEnd) + ')' : ''), 'recall', c.id, 'btn-danger')
-        : modalBtn('误报申诉(复核窗已过)', 'appeal', al.id, '', c.id));
-
-    if (tk) {
-      acts += '<div class="sep"></div><div class="sec-title">复验人裁(永不默认打回)</div>' +
-        UI.actionPanel([{ action: 'verify_pass', params: { ticketId: tk.id }, label: '复验人裁 · 合格(闭环)', cls: 'btn-ok' }]) +
-        modalBtn('复验打回(须附对比证据)', 'verifyreject', tk.id, '', c.id);
+    /* 一条动作项 → {ok, g(分组), html};动作项三形态:act(直接动作)/ modal(带表单)/ raw(非状态变更的前置动作) */
+    function pItem(it) {
+      var ok, why = '', btn;
+      if (it.kind === 'raw') {
+        ok = true; btn = it.html;
+      } else if (it.kind === 'modal') {
+        var spec = MODALS[it.modal], r = S.check(spec.action, spec.probe(it.id));
+        ok = r.ok; why = r.reason || '';
+        btn = '<button type="button" class="btn ' + (it.cls || '') + (ok ? '' : ' is-off') + '"' + (ok ? '' : ' disabled') +
+          ' data-ui="modal" data-val="' + esc(it.modal + ':' + it.id + ':' + (it.ctx || '')) + '"' +
+          ' title="' + esc((S.ACTIONS[spec.action] || {}).hint || '') + '">' + esc(it.label) + '</button>';
+      } else {
+        var def = S.ACTIONS[it.action] || {}, r2 = S.check(it.action, it.params || {});
+        ok = r2.ok; why = r2.reason || '';
+        btn = '<button type="button" class="btn ' + (it.cls || '') + (ok ? '' : ' is-off') + '"' + (ok ? '' : ' disabled') +
+          ' data-act="' + esc(it.action) + '" data-p="' + UI.attr(it.params || {}) + '"' +
+          ' title="' + esc(def.hint || '') + '">' + esc(it.label) + '</button>';
+      }
+      return {
+        ok: ok, g: it.g,
+        html: '<div class="act-item">' + btn +
+          (ok ? '' : '<span class="act-why">' + esc(it.g) + ' · 未满足:' + esc(why) + '</span>') + '</div>'
+      };
     }
 
-    acts += '<div class="sep"></div><div class="sec-title">主管以上(切顶栏角色可解锁)</div>' +
-      (al && al.status === '申诉复核中' ? modalBtn('申诉裁定 ' + al.id + '(成立 / 不成立)', 'ruling', al.id, 'btn-primary', c.id) : '') +
-      modalBtn('紧急 override(红色动作 · 双确认)', 'override', c.id, 'btn-danger') +
-      modalBtn('证据冻结 · 导出法务包', 'freeze', c.id) +
-      (al ? modalBtn('撤销告警 ' + al.id, 'revoke', al.id, '', c.id)
-        : '<div class="act-item"><button type="button" class="btn is-off" disabled>撤销告警</button><span class="act-why">未满足:本线索尚未确认成立,无告警可撤销</span></div>');
+    var G1 = '定性动作 · 区复核员', G2 = '机械闸 / 机器直派', G3 = '复验人裁', G4 = '复核主管以上';
+    var items = [
+      { g: G1, kind: 'raw', html: '<button type="button" class="btn" data-ev="' + esc(c.id) + '">' +
+        (c.evidenceViewed ? '✓ 查看证据卡(已满足)' : '查看证据卡') + '</button>' },
+      { g: G1, kind: 'act', action: 'confirm', params: { clueId: c.id }, cls: 'btn-ok',
+        label: c.fastlane ? '确认 = 告警追认' : '确认(线索成立)' },
+      { g: G1, kind: 'modal', modal: 'reject', id: c.id, label: '驳回(必选六原因码)' },
+      { g: G1, kind: 'modal', modal: 'transfer', id: c.id, label: '转办产权单位' },
+      { g: G1, kind: 'act', action: 'archive_doubt', params: { clueId: c.id }, label: '存疑归档(仅批量半审车道)' }
+    ];
+    /* R88 A1⑬ 后半:提级入口显式化 —— 养护 / 观察件由复核主管主动提级为急修(原因必填) */
+    if (['养护', '观察'].indexOf(c.level) >= 0) {
+      items.push({ g: G4, kind: 'modal', modal: 'escalate', id: c.id, cls: 'btn-primary', label: '提级为急修(原因必填)' });
+    }
+    items.push({ g: G2, kind: 'modal', modal: 'overrule', id: c.id, label: '推翻机械判定' });
+    /* R87 A1:复核窗内 = 撤回召回班组;窗过 = 误报申诉(交复核主管裁定) */
+    items.push(inWindow || !al
+      ? { g: G2, kind: 'modal', modal: 'recall', id: c.id, cls: 'btn-danger',
+          label: '机器直派撤回 · 召回班组' + (c.reviewEnd ? '(窗内 · 截止 ' + c.reviewEnd + ')' : '') }
+      : { g: G2, kind: 'modal', modal: 'appeal', id: al.id, ctx: c.id, label: '误报申诉(复核窗已过)' });
+    if (tk) {
+      items.push({ g: G3, kind: 'act', action: 'verify_pass', params: { ticketId: tk.id }, cls: 'btn-ok', label: '复验人裁 · 合格(闭环)' });
+      items.push({ g: G3, kind: 'modal', modal: 'verifyreject', id: tk.id, ctx: c.id, label: '复验打回(须附对比证据)' });
+    }
+    if (al && al.status === '申诉复核中') {
+      items.push({ g: G4, kind: 'modal', modal: 'ruling', id: al.id, ctx: c.id, cls: 'btn-primary', label: '申诉裁定 ' + al.id + '(成立 / 不成立)' });
+    }
+    items.push({ g: G4, kind: 'modal', modal: 'override', id: c.id, cls: 'btn-danger', label: '紧急 override(红色动作 · 双确认)' });
+    items.push({ g: G4, kind: 'modal', modal: 'freeze', id: c.id, label: '证据冻结 · 导出法务包' });
+    if (al) items.push({ g: G4, kind: 'modal', modal: 'revoke', id: al.id, ctx: c.id, label: '撤销告警 ' + al.id });
+
+    var rendered = items.map(pItem);
+    var live = rendered.filter(function (x) { return x.ok; });
+    var dead = rendered.filter(function (x) { return !x.ok; });
+    if (!al) {
+      dead.push({ ok: false, g: G4, html: '<div class="act-item"><button type="button" class="btn is-off" disabled>撤销告警</button>' +
+        '<span class="act-why">' + esc(G4) + ' · 未满足:本线索尚未确认成立,无告警可撤销</span></div>' });
+    }
+
+    var acts = '';
+    [G1, G2, G3, G4].forEach(function (g) {
+      var seg = live.filter(function (x) { return x.g === g; });
+      if (!seg.length) return;
+      acts += (acts ? '<div class="sep"></div>' : '') + '<div class="sec-title">' + esc(g) + '</div>' +
+        seg.map(function (x) { return x.html; }).join('');
+    });
+    if (!acts) acts = '<div class="tiny">当前身份「' + esc(S.get().role) + '」在本件上没有可执行动作 —— 全部动作在下方「更多」里,附未满足原因。</div>';
+    if (dead.length) {
+      acts += '<div class="sep"></div>' +
+        UI.fold('m1-more-' + c.id, '<b>更多(' + dead.length + ',当前不可用)</b>',
+          dead.map(function (x) { return x.html; }).join(''),
+          { right: '灰态原因逐条可见' });
+    }
 
     right += card('动作面板 · 按钮即动作', acts,
-      '<span class="tiny">当前身份:' + esc(S.get().role) + '</span>');
+      '<span class="tiny">当前身份:' + esc(S.get().role) + ' · 唯一动作区</span>');
 
     var link = [c.id, c.ticketId, c.alertId].concat(c.publicRefs || []).filter(Boolean);
     var logs = S.get().actionLog.filter(function (g) {
@@ -844,6 +999,7 @@
       relate += '<div class="small">工单镜像:<b>' + esc(tk.id) + '</b> · ' + esc(tk.type) + ' · 状态 ' + UI.badge(tk.state, 'blue') +
         ' · 承接 ' + esc(UI.crewName(tk.crew)) + ' · 客户系统 ' + esc(tk.mirror) + ' · 来源 ' + esc(tk.source) +
         (tk.suspended ? ' · ' + UI.badge('已挂起 · SLA 停表', 'amber') : '') +
+        (tk.overdueFallback ? ' · ' + UI.badge('超时兜底已派单 · 定性待补审', 'amber') : '') +
         ' <a href="#/m2">告警与工单 →</a></div>';
     }
     if (al) {

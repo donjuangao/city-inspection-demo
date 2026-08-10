@@ -10,7 +10,9 @@
    - 支线镜 = 主线某一步之上再叠一条动作链(sc.acts,走 S.commit);跳到支线镜 = 先重放主线到 ref 步,再逐动作 commit。
      acts 是**累积链**(从分岔点到本镜的全部动作),重放器统一执行 —— 任何一镜都能被直接点到,状态可复现。
    - 状态机不可逆,所以「上一镜 / 跳镜 / 离开支线」实现为重放(S.tourGoto(0) 重新播种后静默连推)。
-   - 下车 = 非导览发起的 hashchange;回来只重新导航 + 重新聚焦,不动状态。 */
+   - 下车 = 非导览发起的 hashchange;回来只重新导航 + 重新聚焦,不动状态。
+   - R88 A6⑲:每镜带 role,进镜自动 S.setRole(排在 applyState 之后 —— 回跳会重新播种,role 会被冲掉);
+     下车后用户自己切过的身份导览不改回(reboard 不调 applyRole)。 */
 (function (w, d) {
   'use strict';
 
@@ -39,8 +41,11 @@
   /* ---------------- 分镜树 ----------------
      {sid, ref(场景步 id 或 null), axis, stage, route, focus(选择器 或 备选数组),
       lane(LANES 名), laneNote, title, say,
+      role(本镜的操作视角:进镜自动 S.setRole;R88 A6⑲,缺省 = 区复核员)
       branches:[{label,sid}](分岔点)· br(所属支线 id)· back(支线尽头回哪一镜)· acts[{action,params}](支线累积动作链)
-      graph(流程图:mh/rd/pl/dp)· node(当前所在节点)· phone{src,title}(自动弹手机浮窗)} */
+      graph(流程图:mh/rd/pl/dp)· node(当前所在节点)· phone{src,title}(自动弹手机浮窗)}
+     R88 A6⑲ 角色口径:镜里要看的那个动作由谁做,role 就写谁 —— 主管落锤(驳回/裁定/抽审/提级/参数变更)
+     的镜写「复核主管」,其余写「区复核员」;班组镜的现场视角由右侧手机浮窗自己承载,工作台身份不跟着变。 */
   var STORY = [
     /* ============ 主线 18 镜 ============ */
     {
@@ -56,7 +61,10 @@
       say: '19:02,Al Jimi 街区 MH-0417 的位移传感器报警,报文带已认证设备签名,属于硬证据。注意抬头的措辞:它现在只是「线索」——AI 与规则只产线索,定性权在人。'
     },
     {
-      sid: 'S2', ref: 'T1', axis: '井盖线', stage: '规则校验', route: '#/m1/clue/CL-0417', focus: '.checks',
+      /* focus 用备选数组:m1 详情把机械校验四项降成折叠区后 .checks 这个类名可能不在了,
+         退到文本命中「机械校验」所在的卡 —— 焦点不跟着别人的 DOM 变动一起烂掉。 */
+      sid: 'S2', ref: 'T1', axis: '井盖线', stage: '规则校验', route: '#/m1/clue/CL-0417',
+      focus: ['.checks', 'text:机械校验', 'text:规则包版本'],
       lane: '机器直派', graph: 'mh', node: 'mh_gate',
       title: '第二闸 · 机械校验四项逐项打钩',
       say: '第一闸是 AI 识别,第二闸是机械证据校验:硬编码判据逐项打钩,每项留规则包版本号。井盖线四项全过——两闸都过的高危件,才有资格先派后审。'
@@ -74,12 +82,42 @@
       title: '并行复核窗 · 15 分钟倒计时',
       say: '19:03,复核窗开启,倒计时挂在卡片上。人这时二选一:确认,等于对已经出动的这一单追认;撤回,班组当场召回。先派后审的代价明写在卡上——这类件全量拘进主管抽审。'
     },
+    /* R88 A6② 班组段细化:原「班组端回传」一镜拆三镜,每镜只落该格的动作,
+       右侧手机浮窗因此逐镜联动(接单 → 到场+前照 → 后照+完工),旁白讲清每格的必填项。
+       实现:三镜都停在 T2(复核窗已开、工单已派、班组还没动),再按镜叠加累积动作链 —— 与支线镜同一套重放器。 */
     {
-      sid: 'S5', ref: 'T3', axis: '井盖线', stage: '处置', route: '#/m2/tickets/WO-9001', focus: '#tk-WO-9001',
+      sid: 'S5', ref: 'T2', axis: '井盖线', stage: '处置', route: '#/m2/tickets/WO-9001', focus: '#tk-WO-9001',
       lane: '机器直派', graph: 'mh', node: 'mh_do',
       phone: { src: 'crew.html?crew=CR-01', title: '现场端 · 排水一班' },
-      title: '班组端回传 · 五格状态机走完',
-      say: '19:05,排水一班接单、到场、回传修复前后双照、提交完工,工单在五格状态机上逐格前进。右侧浮窗就是班组手机上的那一屏,和工作台共用同一份状态,推进一镜它跟着翻。'
+      acts: [{ action: 'crew_accept', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } }],
+      title: '班组端①接单与导航',
+      say: '19:05,单落到排水一班手机上,班长点「接单」。这一格没有必填项——接单只是应答,接单时刻本身就是 SLA 的第一个计时点。右侧浮窗就是班组那一屏,和工作台共用同一份状态,推进一镜它跟着翻。接不了也有出口:拒单要选原因,单退回调度重派。'
+    },
+    {
+      sid: 'S5B', ref: 'T2', axis: '井盖线', stage: '处置', route: '#/m2/tickets/WO-9001', focus: '#tk-WO-9001',
+      lane: '机器直派', graph: 'mh', node: 'mh_do',
+      phone: { src: 'crew.html?crew=CR-01', title: '现场端 · 排水一班' },
+      acts: [
+        { action: 'crew_accept', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } },
+        { action: 'crew_photo', params: { ticketId: 'WO-9001', crew: 'CR-01', phase: '修复前', actor: '班组账号' } }
+      ],
+      title: '班组端②到场与修复前照(两项必填)',
+      say: '到场这一格开始有硬门槛:到场定位必填,修复前照必填——没有前照,后面的 AI 复验没有比对基准,复验这一环整条落空。必填不是表单洁癖,是复验链的入口条件。班组按「到场」后手机上直接跳到拍照页,拍完才让往下走。'
+    },
+    {
+      sid: 'S5C', ref: 'T2', axis: '井盖线', stage: '处置', route: '#/m2/tickets/WO-9001', focus: '#tk-WO-9001',
+      lane: '机器直派', graph: 'mh', node: 'mh_do',
+      phone: { src: 'crew.html?crew=CR-01', title: '现场端 · 排水一班' },
+      acts: [
+        { action: 'crew_accept', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } },
+        { action: 'crew_photo', params: { ticketId: 'WO-9001', crew: 'CR-01', phase: '修复前', actor: '班组账号' } },
+        { action: 'crew_photo', params: { ticketId: 'WO-9001', crew: 'CR-01', phase: '修复后', actor: '班组账号' } },
+        { action: 'crew_done', params: { ticketId: 'WO-9001', crew: 'CR-01', actor: '班组账号' } }
+      ],
+      title: '班组端③修复后照与完工提交(必填 + 可选)',
+      say: '最后一格:修复后照必填、完工说明必填,备注与材料用量可选。后照一交,完工提交这一步同时把 AI 复验叫起来——复验是事件触发,不是定时轮询。五格状态机到此走完,工单转「已完工」等复验与验收。'
     },
     {
       sid: 'S6', ref: 'T4', axis: '井盖线', stage: '复验闭环', route: '#/m1',
@@ -114,7 +152,7 @@
     {
       sid: 'S10', ref: 'T7', axis: '路面线', stage: '分级路由+处置', route: '#/m2/tickets', focus: '#tk-WO-9007',
       lane: '自动处理', graph: 'rd', node: 'rd_plan',
-      branches: [{ label: '↳ 深入:催办提级与完工抽查', sid: 'R1' }],
+      branches: [{ label: '↳ 深入:主管提级与完工抽查', sid: 'R1' }],
       title: '并入周期养护的批量工单',
       say: '升格后的件不单独开单,并入周批养护工单——这是自动处理通道,绿色,判据句是「不派人定性」。同一条流水线,井盖线那件走的是红色的机器直派,路面线这件走到这里是绿色:分档不同的是级别与证据,不是系统。'
     },
@@ -138,14 +176,15 @@
       lane: '常规人工', laneNote: '批量加急分诊 · 显名降级', graph: 'dp', node: 'dp_none',
       branches: [{ label: '↳ 深入:抢占调度三步', sid: 'O1' }],
       title: '承接池无空闲班组 · 过载三步',
-      say: '21:00,Zakher 又来一件紧急级井盖,可承接池里没有空闲班组。过载三步依次落地:先发只读预警喊现场,再把超额件显名降级进批量加急分诊、件件可抽审,最后由值班长决定要不要抢占在途的养护班组。挂起会让 SLA 停表,班组释放。'
+      say: '21:00,Zakher 又来一件紧急级井盖,可承接池里没有空闲班组。过载三步依次落地:先发只读预警喊现场,再把超额件显名降级进批量加急分诊、件件可抽审,最后由当班的复核主管决定要不要抢占在途的养护班组。挂起会让 SLA 停表,班组释放。'
     },
     {
-      sid: 'S14', ref: 'T10', axis: '支线·越级与压力', stage: '发现', route: '#/m4', focus: 'text:PR-0301',
-      lane: null, laneNote: '人工甄别并入(不直接进加急队列)', graph: 'mh', node: 'mh_find',
-      phone: { src: 'public.html', title: '公众上报端 · 市民侧' },
-      title: '公众上报 · 回执编号与去重合并',
-      say: '21:10,同一个点位有市民上报。系统先出受理编号回执,再与传感器那条线索去重合并——同设施同类目在活跃期内并作一次观测,不新开线索,证据叠加,催办计数可见。公众上报不直接进加急队列,先进人工甄别。'
+      sid: 'S14', ref: 'T10', axis: '支线·越级与压力', stage: '发现', route: '#/m4',
+      focus: ['text:PR-0301', 'text:热线上报'],
+      lane: null, laneNote: '热线上报 · 人工甄别并入(不直接进加急队列)', graph: 'mh', node: 'mh_find',
+      branches: [{ label: '↳ 深入:加急件超时兜底派单', sid: 'H1' }],
+      title: '热线上报并入观测 · 受理编号与去重合并',
+      say: '21:10,12345 市政热线接到同一点位的来电,接线员录入受理。系统先出受理编号回执,再与传感器那条线索去重合并——同设施同类目在活跃期内并作一次观测,不新开线索,证据叠加,重复来电计数可见。市民渠道没有自助客户端,接线员是录入身份、没有定性权;热线件也不直接进加急队列,先进人工甄别。'
     },
     {
       sid: 'S15', ref: 'T11', axis: '支线·越级与压力', stage: '复验闭环', route: '#/m2/recon', focus: 'text:RC-0011',
@@ -154,10 +193,11 @@
       say: '21:20,与客户工单系统的日对账出现 1 条不一致。裁决规则写在页首:处置状态以客户系统为准,巡检定性以我方为准。这个界面不是第二真源,它是镜像;对不上就人工裁定,裁定本身也是一条动作。同一时刻 DMA-07 流量回归基线,管网那条线也走到了建议结案。'
     },
     {
-      sid: 'S16', ref: 'T12', axis: '支线·越级与压力', stage: '处置', route: '#/m2/dispatch', focus: 'text:暴雨模式已启动',
-      lane: null, laneNote: '全线升档 · 雨前专项任务包', graph: 'mh', node: 'mh_route',
-      title: '暴雨模式 · 全线升档',
-      say: '21:30,暴雨模式启动:井盖线整体升一档,液位计转成先导预警源,雨前清掏任务包下发。压力最大的时候,上级主管部门可以直接关掉某个类目的机器直派——关是即时生效的安全侧动作,区里不服可以申诉,重开要按数据判据批。'
+      sid: 'S16', ref: 'T12', axis: '支线·越级与压力', stage: '处置', route: '#/m2/tickets',
+      focus: ['text:气象预警接入', 'text:雨前清掏', '#tk-WO-9012'],
+      lane: null, laneNote: '气象预警 · 雨前清掏专项任务包', graph: 'mh', node: 'mh_route',
+      title: '气象预警接入 · 雨前清掏专项任务包下发',
+      say: '21:30,气象预警接进来,系统按预警提前量起一张「雨前清掏专项任务包」派下去。它是计划性任务:在池件的分级一件不动,派单准入标准一条不改,SLA 档也不变——该派的照派,该人审的照人审。真正的治理手柄在另一处:上级主管部门可以直接关掉某个类目的机器直派,关是即时生效的安全侧动作,区里不服可以申诉,重开要按数据判据批。'
     },
     {
       sid: 'S17', ref: null, axis: '终幕', stage: '复验闭环', route: '#/m6', focus: '#m6-ontology-log',
@@ -230,14 +270,16 @@
       say: '回流到判据这一层就成了具体动作:把 MH-R03 的帧间一致率从 0.8 提到 0.88。要点是改之前先看它会改变今天的哪几件——试算把今天经过这条规则的件逐件回放,路由会变的当场列出来。这一条的答案是零件改变,原因也直接写出来了:今天这 7 件画面识别件全卡在置信线上,最高一件 0.83 还没到 0.85,一致率根本轮不到起作用。调参的人在生效前就知道自己拧错了旋钮——这比事后看误派率省一整个试点周。提交也只是留痕,当前运行判定一行不动,正式生效仍要走审批。'
     },
 
-    /* ============ 支线 R · 路面催办提级与完工抽查(分岔点 S10,回 S11)============ */
+    /* ============ 支线 R · 路面主管提级与完工抽查(分岔点 S10,回 S11)============
+       R88 A1⑬:原「公众催办计数达阈值 → 自动提级」整条推翻(rd_urge_boost 已从数据层删除)。
+       重复来电只是排序的输入,提级改为复核主管主动做的显名动作(clue_escalate,原因必填)。 */
     {
       sid: 'R1', br: 'R', back: 'S11', ref: 'T7', axis: '路面线', stage: '分级路由',
-      route: '#/m1/line/rd', focus: ['text:CL-0311', 'text:催办'],
-      lane: '常规人工', graph: 'rd', node: 'rd_urgent',
-      acts: [{ action: 'rd_urge_boost', params: { clueId: 'CL-0311', urges: 3, actor: '复核主管' } }],
-      title: '公众催办提级 · 人做的显名动作',
-      say: '批量池里那条 CL-0311,同一位置的市民已经催办到第 3 次。复核主管把它从养护提到急修——提级是人做的,显名留痕;催办计数只是排序的输入,不构成自动定性。阈值是假设值,按区可配。'
+      route: '#/m1/line/rd', focus: ['text:CL-0311', 'text:提级', 'text:急修'],
+      lane: '加急人工', laneNote: '主管主动提级 · 原因必填', graph: 'rd', node: 'rd_urgent',
+      acts: [{ action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } }],
+      title: '主管主动提级 · 养护 → 急修',
+      say: '批量池里那条 CL-0311,同一路口的重复来电已经攒了几次。注意系统在这里没有自动提级:重复来电只是排序的输入,不构成定性理由。提级是复核主管自己落的一个显名动作,原因必填、进日志可回查;提完级这一件的车道从批量转单条必审,SLA 按急修档重算。'
     },
     {
       sid: 'R2', br: 'R', back: 'S11', ref: 'T7', axis: '路面线', stage: '处置',
@@ -245,7 +287,7 @@
       lane: '自动处理', laneNote: '并入周批 · 处置流程同款', graph: 'rd', node: 'rd_do',
       phone: { src: 'crew.html?crew=CR-03', title: '现场端 · 道路养护班' },
       acts: [
-        { action: 'rd_urge_boost', params: { clueId: 'CL-0311', urges: 3, actor: '复核主管' } },
+        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_photo', params: { ticketId: 'WO-9007', phase: '修复前', actor: '班组账号' } },
@@ -260,7 +302,7 @@
       route: '#/m4', focus: ['text:完工抽查', 'text:抽审'],
       lane: null, laneNote: '抽查兜底(复核主管)', graph: 'rd', node: 'rd_spot',
       acts: [
-        { action: 'rd_urge_boost', params: { clueId: 'CL-0311', urges: 3, actor: '复核主管' } },
+        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_photo', params: { ticketId: 'WO-9007', phase: '修复前', actor: '班组账号' } },
@@ -296,7 +338,7 @@
       ],
       card: { title: '关阀试验 · 夜间最小流量对比', html: function () { return valveCardHtml('IV-0071'); } },
       title: '现场确认渗漏 · 嫌疑转确认',
-      say: '关阀试验的数就摆在右边:逐段关阀,别的段一关流量就掉下去,只有第 3 段关了几乎不动——水还在往那一段后面走,这就是渗漏的证据。听漏点位也对上,调查案由「嫌疑」转「确认」。AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。'
+      say: '关阀试验的数就摆在右边:逐段关阀,别的段一关流量就掉下去,只有第 3 段关了几乎不动——水还在往那一段后面走,这就是渗漏的证据。第 4 段还空着「待关阀」:定位到第 3 段就收敛了,剩下那段不用白跑。卡上的数是两条腿合出来的——流量计自动上报 + 班组每关一段回传一次,来源写在卡底下。听漏点位也对上,调查案由「嫌疑」转「确认」;AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。'
     },
     {
       sid: 'P3', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
@@ -346,8 +388,8 @@
     {
       sid: 'O1', br: 'O', back: 'S14', ref: 'T9', axis: '支线·越级与压力', stage: '处置',
       route: '#/m2/dispatch', focus: ['text:WO-8871', 'text:挂起'],
-      lane: null, laneNote: '抢占①让位(区值班长)', graph: 'dp', node: 'dp_yield',
-      acts: [{ action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '区值班长' } }],
+      lane: null, laneNote: '抢占①让位(复核主管 · 值班)', graph: 'dp', node: 'dp_yield',
+      acts: [{ action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '复核主管' } }],
       title: '抢占①让位 · 挂起最低优先级件',
       say: '第一步不是抢人,是让位:在办件里挑优先级最低的那张——周批养护 WO-8871——挂起,SLA 停表,班组释放。挂起带原因码,条件解除后原单回队重派,不是丢掉。谁让的位、为谁让的,都在这条记录里。'
     },
@@ -356,8 +398,8 @@
       route: '#/m2/dispatch', focus: ['text:借调', 'text:排水二班'],
       lane: null, laneNote: '抢占②跨片借调', graph: 'dp', node: 'dp_borrow',
       acts: [
-        { action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '区值班长' } },
-        { action: 'preempt_borrow', params: { crew: 'CR-02', line: '井盖', reason: 'Zakher 无空闲井盖班组,自 Hili 片区跨片借调', actor: '区值班长' } }
+        { action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '复核主管' } },
+        { action: 'preempt_borrow', params: { crew: 'CR-02', line: '井盖', reason: 'Zakher 无空闲井盖班组,自 Hili 片区跨片借调', actor: '复核主管' } }
       ],
       title: '抢占②跨班组借调 · 持证硬校验',
       say: '第二步跨片借调。谁能借,由派单判据说了算:井盖线要密闭空间作业证,管网线要带压作业证,不符的连候选都进不去。借调放宽的是归属和距离,不是资质——这一条是硬性过滤,不是排序权重。'
@@ -367,14 +409,35 @@
       route: '#/m2/dispatch', focus: ['text:人裁', 'text:CL-0733'],
       lane: '机器直派', laneNote: '人裁指派(显名)', graph: 'dp', node: 'dp_arb',
       acts: [
-        { action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '区值班长' } },
-        { action: 'preempt_borrow', params: { crew: 'CR-02', line: '井盖', reason: 'Zakher 无空闲井盖班组,自 Hili 片区跨片借调', actor: '区值班长' } },
-        { action: 'preempt_arbitrate', params: { clueId: 'CL-0733', crew: 'CR-02', reason: 'Zakher 紧急件承接池无空闲,显名指派跨片借调班组', actor: '区值班长' } }
+        { action: 'preempt_yield', params: { ticketId: 'WO-8871', forClueId: 'CL-0733', actor: '复核主管' } },
+        { action: 'preempt_borrow', params: { crew: 'CR-02', line: '井盖', reason: 'Zakher 无空闲井盖班组,自 Hili 片区跨片借调', actor: '复核主管' } },
+        { action: 'preempt_arbitrate', params: { clueId: 'CL-0733', crew: 'CR-02', reason: 'Zakher 紧急件承接池无空闲,显名指派跨片借调班组', actor: '复核主管' } }
       ],
-      title: '抢占③值班长人裁 · 显名指派',
-      say: '前两步不解,才升到人:值班长显名指派,理由进日志,件件可抽审。三步都留痕,是为了让「为什么这一单插了队、谁的单被挤了」在事后能被问出来——过载是常态,失序才是事故。'
+      title: '抢占③主管人裁 · 显名指派',
+      say: '前两步不解,才升到人:当班复核主管显名指派,理由进日志,件件可抽审。三步都留痕,是为了让「为什么这一单插了队、谁的单被挤了」在事后能被问出来——过载是常态,失序才是事故。'
+    },
+
+    /* ============ 支线 H · 加急件超时兜底派单(分岔点 S14,回 S15)============
+       R88 A2⑧:今夜主线上没有件跨过这条线(叙事不被随机打断),专置演示件 CL-0333
+       (路面急修 · 人工确认档 18:50 已过)由本镜直调 auto_overdue_dispatch 演示。 */
+    {
+      sid: 'H1', br: 'H', back: 'S15', ref: 'T10', axis: '支线·异常', stage: '分级路由',
+      route: '#/m1/clue/CL-0333', focus: ['text:超时兜底', 'text:CL-0333', '.objcard'],
+      lane: '机器直派', laneNote: '超时兜底派单(定性仍悬)', graph: 'rd', node: 'rd_urgent',
+      acts: [{ action: 'auto_overdue_dispatch', params: { clueId: 'CL-0333', actor: '规则引擎' } }],
+      title: '超时兜底派单 · 宁可多看一眼,不漏掉',
+      say: '池子里还压着一件路面急修 CL-0333,人工确认档 18:50 就该给结论,三级升级走完仍然没人接。系统这时候不再等:自动派一个可用班组先把人送过去。要点在它没做什么——告警仍未成立、定性仍然悬着,系统只是把处置提前了,没有替人签字。代价明写在件上:这类兜底件全量拘进主管抽审,复核员事后必须补审。这是「先派尽派」的同一条哲学:宁可多看一眼,不漏掉。'
     }
   ];
+
+  /* R88 A6⑲ · 每镜的操作视角(role):进镜自动 S.setRole,导览条显示「当前视角」。
+     判据 = 这一镜要看的那个动作由谁落锤:主管落锤的镜(驳回 / 裁定 / 抽审 / 提级 / 参数变更 / 抢占仲裁 /
+     兜底件抽审)= 复核主管,其余 = 区复核员;班组镜的现场视角由手机浮窗承载,工作台身份不跟着变。
+     写成一张表而不是逐镜手抄同一个字符串:漏一镜就是一次「按钮为什么是灰的」的误会(⑨ 的病根)。 */
+  var SUPERVISOR_SIDS = ['S13', 'S15', 'M1', 'M2', 'F0', 'F3', 'R1', 'R3', 'P3', 'P5', 'O1', 'O2', 'O3', 'H1'];
+  STORY.forEach(function (sc) {
+    if (!sc.role) sc.role = SUPERVISOR_SIDS.indexOf(sc.sid) >= 0 ? '复核主管' : '区复核员';
+  });
 
   /* ---------------- 索引与树结构 ---------------- */
   var N = STORY.length;
@@ -441,6 +504,10 @@
       '.tour-row{display:flex;align-items:center;gap:10px;padding:7px 14px;flex-wrap:nowrap;overflow-x:auto}',
       '.tour-axis{flex:none;display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#fff;border-radius:20px;padding:2px 10px;white-space:nowrap}',
       '.tour-pos{flex:none;color:var(--shell-mute,#98a29b);white-space:nowrap}',
+      '.tour-role{flex:none;white-space:nowrap;border:1px solid var(--shell-line,#252d28);border-radius:20px;',
+      'padding:2px 9px;color:var(--shell-mute,#98a29b);cursor:help}',
+      '.tour-role b{color:#fff;font-weight:600}',
+      '.tour-role.is-off{border-color:#7a6a33;color:var(--gold,#c9c57e)}',
       '.tour-say{flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}',
       '.tour-say.is-open{white-space:normal;overflow:visible;line-height:1.7}',
       '.tour-say b{color:#fff}',
@@ -482,6 +549,13 @@
       '.fg-node.is-jump{cursor:pointer}',
       '.fg-node.is-jump:hover rect.fg-box{stroke-width:2.4}',
       '.fg-legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;font-size:12px;color:#5b6b7c}',
+      '.fg-rule{cursor:pointer}',
+      '.fg-rule:hover text{fill:#0d3f7d;font-weight:700}',
+      '.fg-rulecard{margin-top:8px;padding:9px 11px;border:1px solid var(--line,#e4e7e2);border-left:3px solid #1a5fb4;',
+      'border-radius:6px;background:#f7fafd}',
+      '.fg-rules{margin-top:10px;border:1px solid var(--line,#e4e7e2);border-radius:6px;padding:6px 10px;background:#fbfcfa}',
+      '.fg-rules>summary{cursor:pointer;font-size:12.5px;color:#243342;font-weight:600;list-style:revert}',
+      '.fg-rules[open]>summary{margin-bottom:6px}',
       '.fg-key{display:inline-flex;align-items:center;gap:5px}',
       '.fg-swatch{width:12px;height:12px;border-radius:3px;display:inline-block}',
       /* 本镜数据浮卡(R87 A7):z-index 44 —— 压在导览条(40)之上、浮层遮罩(50)之下 */
@@ -644,6 +718,21 @@
     return cs.length ? cs[0].name : '—';
   }
 
+  /* R88 A8⑮ · 关阀试验数据的来源行:这两个数不是画出来的示意,是系统里两条采集腿合出来的 ——
+     一条自动(DMA 流量计按固定粒度上报),一条人工(班组每关一段回传一次作业记录)。
+     核查工单号:调查案上挂到工单就写工单号,还没挂到就写任务包本身(不编号)。 */
+  function flowMeterOf(k) {
+    var ss = (S.get().sensors || []).filter(function (x) { return x.dma === k.dma && String(x.type || '').indexOf('流量') >= 0; });
+    return ss.length ? ss[0].id : 'DMA 流量计';
+  }
+  function valveSourceHtml(k) {
+    var wo = k.ticketId ? ('核查工单 ' + k.ticketId) : ('核查任务包 ' + k.id + '(未转工单)');
+    return '<div class="tiny" style="margin-top:6px;padding-top:5px;border-top:1px dashed var(--line,#e4e7e2)">' +
+      '数据源:' + esc(flowMeterOf(k)) + '(自动采集,' +
+      UI.assume('15min 粒度', '采集粒度 = 假设值,试点接入 SCADA 后按实际配置') + ')+ 班组分段关阀作业回传(' + esc(wo) + ')' +
+      ' —— 系统内两条采集腿合出来的数,不是外部示意图。</div>';
+  }
+
   /* P1 · 核查任务包详情卡:从 investigation.survey 渲染(段 / 方法 / 状态 / 承办) */
   function surveyCardHtml(caseId) {
     var k = caseFind(caseId);
@@ -664,7 +753,10 @@
     return '<div class="tiny" style="margin-bottom:6px">' + esc(k.id + ' · ' + k.dma + ' · 开包 ' + sv.t) +
       ' · 分 ' + sv.segments + ' 段</div>' +
       '<table class="tb"><thead><tr><th style="width:120px">管段</th><th>方法</th>' +
-      '<th style="width:76px">状态</th><th style="width:88px">承办</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      '<th style="width:76px">状态</th><th style="width:88px">承办</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      /* R88 A8⑮:这张表的段状态就是关阀试验数据卡的点亮依据 —— 一段作业回传,一段数据才有 */
+      '<div class="tiny" style="margin-top:6px">每完成一段关阀作业,班组回传一次读数,下一镜的「关阀试验」数据卡上该段才点亮;' +
+      '没关过的段不预先画数。</div>';
   }
 
   /* P2 · 关阀试验夜间最小流量对比(SVG 小卡):逐段关阀前后对比,不降的那一段即渗漏段 */
@@ -673,11 +765,14 @@
     var k = caseFind(caseId);
     if (!k || !k.survey) return '';
     var n = k.survey.segments || 4, leak = segNo(k.leak && k.leak.segment);
+    /* R88 A8⑮ 联动:P1 任务包推到第几段,P2 数据卡就只点亮到第几段 ——
+       关阀数据是班组作业回传出来的,没关过的段没有数,不预先画好。 */
+    var lit = Math.max(k.survey.done || 0, leak || 0);
     var seed = seedOf(k.id + k.dma), data = [], i;
     for (i = 1; i <= n; i++) {
       var b = Math.round((10.5 + ((seed >> (i * 3)) % 40) / 10) * 10) / 10;
       var drop = (leak && i === leak) ? 0.04 : (0.62 + ((seed >> (i * 2)) % 14) / 100);
-      data.push({ seg: i, before: b, after: Math.round(b * (1 - drop) * 10) / 10, drop: drop });
+      data.push({ seg: i, before: b, after: Math.round(b * (1 - drop) * 10) / 10, drop: drop, lit: i <= lit });
     }
     var max = 0;
     data.forEach(function (x) { if (x.before > max) max = x.before; });
@@ -694,6 +789,16 @@
     data.forEach(function (x, idx) {
       var gx = 32 + idx * gw, bw = Math.min(24, gw / 2.6);
       var hot = leak && x.seg === leak;
+      if (!x.lit) {
+        /* 未关阀的段:留位不留数(虚线空框 + 待关阀),避免把没做过的作业画成已有数据 */
+        svg.push('<rect x="' + gx + '" y="' + (y1 - 26) + '" width="' + (bw * 2 + 5) + '" height="26" fill="none" ' +
+          'stroke="#cfd6dc" stroke-dasharray="4 3"></rect>');
+        svg.push('<text x="' + (gx + bw + 2) + '" y="' + (y1 - 32) + '" text-anchor="middle" font-size="9.5" ' +
+          'font-family="sans-serif" fill="#a8b0b8">待关阀</text>');
+        svg.push('<text x="' + (gx + bw + 2) + '" y="' + (y1 + 14) + '" text-anchor="middle" font-size="10.5" ' +
+          'font-family="sans-serif" fill="#a8b0b8">第 ' + x.seg + ' 段</text>');
+        return;
+      }
       svg.push('<rect x="' + gx + '" y="' + Y(x.before) + '" width="' + bw + '" height="' + (y1 - Y(x.before)) +
         '" fill="#9db4c8"></rect>');
       svg.push('<rect x="' + (gx + bw + 5) + '" y="' + Y(x.after) + '" width="' + bw + '" height="' + (y1 - Y(x.after)) +
@@ -709,16 +814,32 @@
     svg.push('<text x="106" y="' + (H - 6) + '" font-size="10" font-family="sans-serif" fill="#5b6b7c">关阀后</text>');
     svg.push('</svg>');
     var hotRow = leak ? data[leak - 1] : null;
-    var others = data.filter(function (x) { return !leak || x.seg !== leak; });
+    var others = data.filter(function (x) { return x.lit && (!leak || x.seg !== leak); });
     var avg = others.length ? Math.round(others.reduce(function (a, x) { return a + x.drop; }, 0) / others.length * 100) : 0;
     var line = hotRow
       ? '第 ' + hotRow.seg + ' 段 ' + hotRow.before + ' → ' + hotRow.after + ' m³/h(降 ' + Math.round(hotRow.drop * 100) +
-        '%)· 其余 ' + others.length + ' 段平均降 ' + avg + '%'
-      : '共 ' + n + ' 段 · 平均降 ' + avg + '%';
-    return '<div class="tiny" style="margin-bottom:4px">' + esc(k.id + ' · ' + k.dma + ' · 夜间最小流量 m³/h') + '</div>' +
+        '%)· 其余已关 ' + others.length + ' 段平均降 ' + avg + '%'
+      : (lit ? '已关 ' + lit + '/' + n + ' 段 · 平均降 ' + avg + '%' : '任务包已开,尚无分段关阀数据回传');
+    return '<div class="tiny" style="margin-bottom:4px">' + esc(k.id + ' · ' + k.dma + ' · 夜间最小流量 m³/h · 已回传 ' +
+      lit + '/' + n + ' 段') + '</div>' +
       svg.join('') +
       '<div class="tiny" style="margin-top:4px">' + esc(line) + '</div>' +
-      '<div class="tiny">' + UI.assume('流量数值为假设值', '关阀试验流量 = 假设值,试点接入 SCADA 后取实测') + '</div>';
+      '<div class="tiny">' + UI.assume('流量数值为假设值', '关阀试验流量 = 假设值,试点接入 SCADA 后取实测') + '</div>' +
+      valveSourceHtml(k);
+  }
+
+  /* R88 A6⑲ · 进镜自动切到本镜的操作视角。
+     必须排在 applyState 之后:回跳 / 进支线时 S.tourGoto(0) 会重新播种,role 跟着回落坐席默认。
+     下车之后不改回(用户自己切过的身份留着),所以 reboard() 不调用它。 */
+  function applyRole(sc) {
+    var want = sc.role;
+    if (!want || !S.setRole) return;
+    var roles = (S.dict && S.dict().roles) || [];
+    if (roles.indexOf(want) < 0) {
+      if (w.console && w.console.warn) w.console.warn('[tour] 未知角色', sc.sid, want);
+      return;
+    }
+    if (S.get().role !== want) S.setRole(want);
   }
 
   function goTo(i, opts) {
@@ -728,6 +849,7 @@
     riding = true;
     sayOpen = false;
     if (!(opts && opts.keepState)) applyState(sc);
+    applyRole(sc);
     renderDock();
     navigate(sc);
     syncPhone(sc);
@@ -752,7 +874,7 @@
   }
   var FLOWGRAPH = {
     mh: {
-      name: '井盖线', vb: [1040, 376], start: 'mh_find',
+      name: '井盖线', line: '井盖', vb: [1040, 376], start: 'mh_find',
       nodes: [
         nd('mh_find', '发现', '传感器报警 / 视觉过检', 16, 20, 190, null, 'S1'),
         nd('mh_gate', '规则校验', '机械四项 · 双闸硬条件', 16, 110, 190, null, 'S2'),
@@ -795,7 +917,7 @@
       note: '判据句:双传感器互证(MH-R01)才走先派后审;单一传感器越限只能先审后派。'
     },
     rd: {
-      name: '路面线', vb: [1040, 356], start: 'rd_find',
+      name: '路面线', line: '路面', vb: [1040, 356], start: 'rd_find',
       nodes: [
         nd('rd_find', '发现', '车载过检 / 固定相机', 16, 20, 190, null, 'S9'),
         nd('rd_gate', '规则校验', '机械五项逐项打钩', 16, 110, 190, null, 'S9'),
@@ -826,7 +948,7 @@
         { from: 'rd_reject', to: 'rd_arch' },
         { from: 'rd_plan', to: 'rd_do' },
         { from: 'rd_do', to: 'rd_spot', type: 'v', label: '完工后' },
-        { from: 'rd_normal', to: 'rd_urgent', type: 'vu', dash: true, label: '催办提级' }
+        { from: 'rd_normal', to: 'rd_urgent', type: 'vu', dash: true, label: '主管提级' }
       ],
       pre: {
         rd_gate: 'rd_find', rd_route: 'rd_gate',
@@ -837,7 +959,7 @@
       note: '判据句:置信只决定进哪一档,不决定要不要人看;低置信高危仍强制人核。'
     },
     pl: {
-      name: '管网线', vb: [1040, 340], start: 'pl_alarm',
+      name: '管网线', line: '管网', vb: [1040, 340], start: 'pl_alarm',
       nodes: [
         nd('pl_alarm', '发现 · 规则报警', '水量平衡越限(非 AI)', 16, 20, 190, null, 'S11'),
         nd('pl_typing', '规则校验 + AI 判型', '判型只作嫌疑排序', 16, 110, 190, null, 'S11'),
@@ -878,7 +1000,7 @@
       note: '判据句:复验不是照片,是流量回归基线;系统只出建议,结案签字仍在人。'
     },
     dp: {
-      name: '派单与调度', vb: [1040, 376], start: 'dp_in',
+      name: '派单与调度', line: '派单', vb: [1040, 376], start: 'dp_in',
       nodes: [
         nd('dp_in', '派工请求', '三来源:机器 / 人 / 计划', 16, 20, 190, null, null),
         nd('dp_filter', '持证与技能过滤', '不符者不进候选', 16, 110, 190, null, null),
@@ -890,7 +1012,7 @@
         nd('dp_yield', '抢占①让位', '最低优先级件挂起', 616, 200, 190, null, 'O1'),
         nd('dp_borrow', '抢占②借调', '跨片调人 · 持证硬校验', 616, 276, 190, null, 'O2'),
         nd('dp_recon', '对账与镜像', '处置状态以客户系统为准', 846, 20, 178, null, 'S15'),
-        nd('dp_arb', '抢占③人裁', '值班长显名指派', 846, 238, 178, null, 'O3')
+        nd('dp_arb', '抢占③人裁', '复核主管显名指派', 846, 238, 178, null, 'O3')
       ],
       edges: [
         { from: 'dp_in', to: 'dp_filter', type: 'v', label: 'DP-R02' },
@@ -988,9 +1110,15 @@
       if (e.label) {
         var lx = (pts[1][0] + pts[2][0]) / 2, ly = (pts[1][1] + pts[2][1]) / 2;
         var wdt = textW(e.label) + 8;
+        /* R88 A6⑩:边上的判据编号(MH-R01 等)是规则表里的真规则 —— hover 出判据原文,点开出规则卡 */
+        var rl = ruleOf(e.label);
+        if (rl) out.push('<g class="fg-rule" data-fgrule="' + esc(rl.id) + '"><title>' +
+          esc(rl.id + ' · ' + rl.name + '\n判据:' + rl.when + '\n(点开看参数与版本)') + '</title>');
         out.push('<rect x="' + (lx - wdt / 2) + '" y="' + (ly - 15) + '" width="' + wdt + '" height="16" fill="#ffffff"></rect>');
         out.push('<text x="' + lx + '" y="' + (ly - 3) + '" text-anchor="middle" font-size="12" font-family="sans-serif" fill="' +
-          (hot ? '#243342' : '#8e968f') + '">' + esc(e.label) + '</text>');
+          (rl ? '#1a5fb4' : (hot ? '#243342' : '#8e968f')) + '"' + (rl ? ' text-decoration="underline"' : '') + '>' +
+          esc(e.label) + '</text>');
+        if (rl) out.push('</g>');
       }
     });
 
@@ -1017,13 +1145,71 @@
     return out.join('');
   }
 
+  /* ================================================================
+     R88 A6⑩ · 流程浮层里的规则卡 —— 分支边上的编号不再是装饰:
+     hover 出判据原文,点开出规则卡(名 / 判据 / 参数当前值与基线 / 版本 / 可改权),
+     浮层底部再挂一张「本线规则表」折叠区(该线全部规则,复用同一份 S.rules())。
+     一切取自 S.rules()/S.ruleParams()(数据层同一份 RULES),不在导览层抄第二遍。
+     ================================================================ */
+  function ruleOf(id) {
+    if (!id || !S.rule) return null;
+    try { return S.rule(id) || null; } catch (e) { return null; }
+  }
+  function ruleParamRows(r) {
+    var eff = (S.ruleParams && S.ruleParams(r.id)) || [];
+    if (!eff.length) return '<div class="tiny">本条无可配参数。</div>';
+    return '<table class="tb" style="margin-top:4px"><thead><tr>' +
+      '<th>参数</th><th style="width:120px">当前生效值</th><th style="width:100px">基线值</th></tr></thead><tbody>' +
+      eff.map(function (pm) {
+        return '<tr><td>' + esc(pm.label) + '<div class="tiny mono">' + esc(pm.key) + '</div></td>' +
+          '<td>' + esc(String(pm.val) + (pm.unit || '')) + (pm.shadow ? ' ' + UI.badge('影子值', 'amber') : '') + '</td>' +
+          '<td class="tiny">' + esc(String(pm.base) + (pm.unit || '')) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function ruleCardHtml(id) {
+    var r = ruleOf(id);
+    if (!r) return '';
+    return '<div class="fg-rulecard">' +
+      '<div class="row wrap" style="justify-content:space-between;gap:8px;align-items:flex-start">' +
+      '<div><span class="mono">' + esc(r.id) + '</span> <b>' + esc(r.name) + '</b></div>' +
+      '<div>' + (r.lane ? UI.laneBadge(r.lane) : '') +
+      '<button type="button" class="btn btn-sm" data-tour="fgruleoff" style="margin-left:6px">收起规则卡</button></div></div>' +
+      '<div class="small" style="margin-top:4px">判据:' + esc(r.when) + '</div>' +
+      (r.action ? '<div class="tiny" style="margin-top:3px">路由去向:' + esc(r.action) + '</div>' : '') +
+      ruleParamRows(r) +
+      '<div class="tiny" style="margin-top:4px">版本 <span class="mono">' + esc(r.version) + '</span> · 可改权:' +
+      esc((r.editableBy || []).join(' / ') || '不可改') + ' · 改参数走影子试算,正式生效需审批(系统管理 → 规则引擎)。</div>' +
+      '</div>';
+  }
+  /* 本线规则表(折叠):按 FLOWGRAPH[gid].line 取该线全部规则 */
+  function lineRulesHtml(gid) {
+    var G = FLOWGRAPH[gid];
+    if (!G || !G.line || !S.rules) return '';
+    var rs = S.rules(G.line) || [];
+    if (!rs.length) return '';
+    var rows = rs.map(function (r) {
+      var eff = (S.ruleParams && S.ruleParams(r.id)) || [];
+      var pv = eff.map(function (pm) { return pm.label + ' ' + pm.val + (pm.unit || ''); }).join(' · ') || '无可配参数';
+      return '<tr><td class="mono">' + esc(r.id) + '</td><td><b>' + esc(r.name) + '</b>' +
+        '<div class="tiny">' + esc(r.when) + '</div></td>' +
+        '<td class="tiny">' + esc(pv) + '</td>' +
+        '<td>' + (r.lane ? UI.laneBadge(r.lane) : '<span class="tiny faint">—</span>') + '</td></tr>';
+    }).join('');
+    return '<details class="fg-rules"><summary>本线规则表 · ' + esc(G.line) + ' ' + rs.length + ' 条(点开)</summary>' +
+      '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
+      '<th style="width:80px">编号</th><th>规则与判据</th><th style="width:200px">参数当前值</th><th style="width:100px">路由去向</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="tiny" style="margin-top:5px">同一份规则表在「系统管理 → 规则引擎」可查可配(参数改动走影子试算)。</div></details>';
+  }
+
   function graphLegend() {
     var L = w.LANES || [];
     return '<div class="fg-legend">' +
       L.map(function (x) {
         return '<span class="fg-key"><i class="fg-swatch" style="background:' + x.color + '"></i>' + esc(x.name) + ' · ' + esc(x.kind) + '</span>';
       }).join('') +
-      '<span class="fg-key">深色描边 = 已走过的路径 · 虚线 = 例外分支 · 方框可点则跳到对应分镜</span></div>';
+      '<span class="fg-key">深色描边 = 已走过的路径 · 虚线 = 例外分支 · 方框可点则跳到对应分镜 · ' +
+      '<b style="color:#1a5fb4">蓝色下划线的判据编号</b>可 hover 看判据、点开看规则卡</span></div>';
   }
 
   function laneBadgeOf(sc) {
@@ -1032,6 +1218,7 @@
   }
 
   var flowTab = null;   // 流程浮层里手动切过的线(null = 跟着当前镜)
+  var flowRule = null;  // 流程浮层里点开的规则编号(null = 未点开)
   function stageModal(sc) {
     var gid = flowTab || sc.graph || 'mh';
     var G = FLOWGRAPH[gid];
@@ -1045,7 +1232,9 @@
       '<button type="button" class="btn btn-sm" data-tour="close">关闭(Esc)</button></div>' +
       '<div class="fg-tabs">' + tabs + '</div>' +
       '<div class="fg-wrap">' + graphSvg(gid, curId) + '</div>' +
+      (flowRule ? ruleCardHtml(flowRule) : '') +
       graphLegend() +
+      lineRulesHtml(gid) +
       '<div class="tour-meta">' +
       '<span class="badge" style="background:' + color + ';color:#fff;border-color:' + color + '">' + esc(sc.axis) + '</span>' +
       '<span class="tiny">五段骨架:' + STAGES.join(' → ') + '</span>' +
@@ -1096,11 +1285,14 @@
     maskEl.addEventListener('click', function (e) {
       if (e.target === maskEl) { closeModal(); return; }
       var t = e.target;
-      while (t && t !== maskEl && !(t.getAttribute && (t.getAttribute('data-tour') || t.getAttribute('data-fgsid')))) t = t.parentNode;
+      while (t && t !== maskEl && !(t.getAttribute &&
+        (t.getAttribute('data-tour') || t.getAttribute('data-fgsid') || t.getAttribute('data-fgrule')))) t = t.parentNode;
       if (!t || t === maskEl || !t.getAttribute) return;
       var act = t.getAttribute('data-tour');
       if (act === 'close') closeModal();
-      else if (act === 'fgtab') { flowTab = t.getAttribute('data-g'); openModal(stageModal(STORY[cur]), true); }
+      else if (act === 'fgtab') { flowTab = t.getAttribute('data-g'); flowRule = null; openModal(stageModal(STORY[cur]), true); }
+      else if (act === 'fgruleoff') { flowRule = null; openModal(stageModal(STORY[cur]), true); }
+      else if (t.getAttribute('data-fgrule')) { flowRule = t.getAttribute('data-fgrule'); openModal(stageModal(STORY[cur]), true); }
       else if (t.getAttribute('data-fgsid')) {
         var sid = t.getAttribute('data-fgsid');
         if (IDX[sid] !== undefined) { closeModal(); goTo(IDX[sid]); }
@@ -1160,6 +1352,16 @@
   /* 当前所在的主线镜(在支线上时 = 其分岔点) */
   function curMain() { return STORY[cur].br ? brParent(STORY[cur].br) : cur; }
 
+  /* R88 A6⑲ · 视角徽章:显示的是**当前真实身份**(不是分镜声明值)——
+     进镜会自动切到本镜的视角,但用户下车后自己切过的身份仍要如实显示,不一致时把差异写出来。 */
+  function roleBadge(sc) {
+    var now = S.get().role;
+    var same = now === sc.role;
+    return '<span class="tour-role' + (same ? '' : ' is-off') + '"' +
+      ' title="' + esc('进镜自动切到该镜的操作视角(本镜:' + sc.role + ');下车后可在顶栏自己切,导览不改回。') + '">' +
+      '当前视角:<b>' + esc(now) + '</b>' + (same ? '' : esc('(本镜视角 ' + sc.role + ')')) + '</span>';
+  }
+
   function renderDock() {
     if (!dock) return;
     var sc = STORY[cur];
@@ -1186,6 +1388,7 @@
       '<div class="tour-row">' +
       '<span class="tour-axis" style="background:' + color + '">' + esc(sc.axis) + (sc.br ? ' · 支线' : '') + '</span>' +
       '<span class="tour-pos">' + esc(posText(cur)) + '</span>' +
+      roleBadge(sc) +
       '<span class="tour-say' + (sayOpen ? ' is-open' : '') + '" data-tour="say" title="点开/收起全文">' + say + '</span>' +
       brBtns + nav +
       '<button type="button" class="tour-btn" data-tour="stage">流程位置</button>' +
@@ -1214,7 +1417,7 @@
       else if (act === 'jump') goTo(parseInt(t.getAttribute('data-i'), 10) || 0);
       else if (act === 'jumpsid') goTo(idxOf(t.getAttribute('data-sid')));
       else if (act === 'reboard') reboard();
-      else if (act === 'stage') { flowTab = null; openModal(stageModal(STORY[cur]), true); }
+      else if (act === 'stage') { flowTab = null; flowRule = null; openModal(stageModal(STORY[cur]), true); }
       else if (act === 'backend') openModal(backendModal(STORY[cur]));
       else if (act === 'phone') {
         if (UI.phoneSim.isOpen()) UI.phoneSim.close();
@@ -1236,17 +1439,23 @@
     sub: '导览条是解说层,不是业务界面的一部分;它只做三件事:推进状态、跳到该看的位置、把当前所在的流程节点说清楚。',
     body: [
       '<b>主线</b>:「▶ 下一镜」按主线 ' + MAIN_N + ' 镜依次推进,页面自动跳到该镜要看的位置并高亮焦点。点色块可直接跳镜。',
-      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(人裁闭环 / 驳回落锤与误报回流 / 催办与抽查 / 立案之后 / 抢占三步),走到尽头自动回主线,也可以随时点「↩ 回主线」。色块里缩进的半色小格就是支线镜。',
+      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(人裁闭环 / 驳回落锤与误报回流 / 主管提级与抽查 / 立案之后 / 抢占三步 / 超时兜底),走到尽头自动回主线,也可以随时点「↩ 回主线」。色块里缩进的半色小格就是支线镜。',
       '<b>状态是重放出来的</b>:状态机不可逆,所以往回跳或进支线时会重新播种再静默连推到位——同一镜任何时候点到,看到的都是同一份状态。',
-      '<b>两枚浮层</b>:「流程位置」= 当前镜落在本线流程图的哪个节点(已走路径加深,分支节点可点着跳镜);「后端发生了什么」= 这一镜落了哪些动作记录。',
+      '<b>两枚浮层</b>:「流程位置」= 当前镜落在本线流程图的哪个节点(已走路径加深,分支节点可点着跳镜;分支边上的判据编号 hover 出判据、点开出规则卡,底部还挂一张本线规则表);「后端发生了什么」= 这一镜落了哪些动作记录。',
       '<b>数据卡</b>:少数镜(管网核查任务包、关阀试验对比)会在右侧弹一张实时数据卡,内容取自当前世界状态,点右上 × 收起。',
-      '<b>手机浮窗</b>:涉现场端的镜会自动弹出班组 / 公众那一屏,与工作台共用同一份状态;也可以随时点导览条上的「📱 现场端」自己唤起或收起,浮窗可拖动、可另开新窗。'
+      '<b>手机浮窗</b>:涉现场端的镜会自动弹出班组那一屏,与工作台共用同一份状态;也可以随时点导览条上的「📱 现场端」自己唤起或收起,浮窗可拖动、可另开新窗。班组段拆成三镜(接单 / 到场+前照 / 后照+完工),推一镜浮窗跟着走一格。',
+      '<b>当前视角</b>:每一镜声明了它该由谁来看 —— 进镜自动把顶栏身份切成该镜的视角(主管落锤的镜切「复核主管」,其余「区复核员」),导览条上的「当前视角」就是此刻的真实身份。下车后自己切过的身份导览不改回,与本镜视角不一致时徽章会标出来。'
     ],
     foot: '时钟是随处置步进的工作时钟,不按现实秒走;界面里的数字与阈值为假设值,试点首周按实测标定。'
   });
 
   /* 外部驱动(评审控制台 iframe 直接调 S.nextStep)也让导览条跟上:
      导览自己推进时走的是 quiet 通道,不会发 scenario 事件,所以收到这个事件必然来自外部驱动。 */
+  /* 顶栏自己切角色时视角徽章跟着变(setRole 走 render 事件;导览自己切也会经过这里) */
+  w.addEventListener('render', function (e) {
+    if (e && e.detail && e.detail.role) renderDock();
+  });
+
   w.addEventListener('scenario', function () {
     var next = deriveCur();
     if (next === cur) return;

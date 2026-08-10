@@ -56,7 +56,7 @@
     if (!d.ruleShadow) d.ruleShadow = [];     // A2 影子试算留痕
     if (!d.feedbacks) d.feedbacks = [];       // A5 误报原因回流
     if (!d.stepLog) d.stepLog = {};
-    /* R87 A2:待裁定卡(抢占第三步交到值班长手上的建议方案 + 后果) */
+    /* R87 A2:待裁定卡(抢占第三步交到复核主管(值班)手上的建议方案 + 后果) */
     if (!d.pendingRulings) d.pendingRulings = [];
     /* R87:工单事项一句话 + 挂起恢复条件位;告警申诉/裁定位;班组坐标与在途目标 —— 老快照缺字段时补齐 */
     (d.tickets || []).forEach(function (t) {
@@ -68,6 +68,15 @@
       if (a.ruling === undefined) a.ruling = null;
       if (a.misfire === undefined) a.misfire = false;
     });
+    /* R88 A5⑭ / A1⑳:老快照补抽审行的被抽对象与触发 rid;gov 的气象预警位 */
+    ((d.gov && d.gov.auditQueue) || []).forEach(function (a) {
+      if (a.targetKind === undefined) {
+        a.targetKind = '线索'; a.targetId = a.clueId || '';
+        a.targetRoute = a.clueId ? ('#/m1/clue/' + a.clueId) : null;
+      }
+      if (a.srcRid === undefined) a.srcRid = null;
+    });
+    if (d.gov && d.gov.weatherAlert === undefined) d.gov.weatherAlert = null;
     (d.crews || []).forEach(function (c) {
       if (!c.xy) {
         var seedCrew = byId((w.DATA && w.DATA.crews) || [], c.id);
@@ -151,21 +160,21 @@
   }
 
   /* R87 A2 · 挂起件的恢复条件:每个挂起原因都写清「等什么、谁来解、大概多久」,
-     两个出口固定 —— 班组端「条件解除,恢复作业」(crew_resume)/ 值班长「强制回队重派」(resume_requeue)。 */
+     两个出口固定 —— 班组端「条件解除,恢复作业」(crew_resume)/ 复核主管(值班)「强制回队重派」(resume_requeue)。 */
   var RESUME_COND = {
-    '抢占调度': { cond: '被让位的高优先级件处置完毕、班组释放', owner: '区值班长', wait: 60 },
-    '待条件(审批/物料/装备)': { cond: '审批下达 / 物料到场 / 装备释放,三者中缺的那一项到位', owner: '区值班长', wait: 90 },
-    '联动处置等待': { cond: '联动单位(警察 / 民防 / 产权单位)到场并交出作业面', owner: '区值班长', wait: 60 },
+    '抢占调度': { cond: '被让位的高优先级件处置完毕、班组释放', owner: '复核主管(值班)', wait: 60 },
+    '待条件(审批/物料/装备)': { cond: '审批下达 / 物料到场 / 装备释放,三者中缺的那一项到位', owner: '复核主管(值班)', wait: 90 },
+    '联动处置等待': { cond: '联动单位(警察 / 民防 / 产权单位)到场并交出作业面', owner: '复核主管(值班)', wait: 60 },
     '交通导改审批未下': { cond: '交管导改批文下达', owner: '交管对接岗', wait: 90 },
     '物料未到': { cond: '物料送达现场', owner: '仓储调度岗', wait: 60 },
-    '大型设备占用': { cond: '设备从上一处作业面释放', owner: '区值班长', wait: 120 },
+    '大型设备占用': { cond: '设备从上一处作业面释放', owner: '复核主管(值班)', wait: 120 },
     '作业许可未批': { cond: '作业许可(密闭空间 / 带压)批复下达', owner: '安全岗', wait: 60 }
   };
   function resumeCondOf(reason, now) {
-    var d = RESUME_COND[reason] || { cond: '挂起原因消除', owner: '区值班长', wait: 60 };
+    var d = RESUME_COND[reason] || { cond: '挂起原因消除', owner: '复核主管(值班)', wait: 60 };
     return {
       reason: reason || '', cond: d.cond, owner: d.owner, eta: addMin(now, d.wait),
-      exits: ['班组端「条件解除,恢复作业」', '区值班长「强制回队重派」']
+      exits: ['班组端「条件解除,恢复作业」', '复核主管(值班)「强制回队重派」']
     };
   }
 
@@ -199,10 +208,17 @@
     w.CLUE_OBS.sync(c);
     return o;
   }
-  function hold(src, clueId, reason) {
+  /* R88 A5⑭:每条抽审记录都带「被抽的是谁」(targetKind / targetId / targetRoute,m4 行内可点跳)
+     与「哪条动作把它拘进来的」(srcRid,由 doCommit 在本次动作落日志后回填)。
+     target 省略时默认被抽对象=线索;连线索都没有的(纯动作类)由 doCommit 回落到动作日志本身。 */
+  function hold(src, clueId, reason, target) {
+    var tg = target || { kind: '线索', id: clueId || '' };
+    var rk = tg.kind === '工单' ? 'ticket' : (tg.kind === '线索' ? 'clue' : (tg.kind === '告警' ? 'alert' : null));
     state.gov.auditQueue.push({
       id: 'AU-' + (1300 + state.gov.auditQueue.length), src: src, clueId: clueId,
-      reason: reason, t: state.now, status: '待抽审'
+      reason: reason, t: state.now, status: '待抽审',
+      targetKind: tg.kind, targetId: tg.id || '',
+      targetRoute: (rk && tg.id) ? routeOf(rk, tg.id) : null, srcRid: null
     });
   }
   function codeOk(code) {
@@ -391,7 +407,7 @@
   };
 
   A.dispatch_manual = {
-    label: '改派', actors: ['复核主管', '区值班长'], hint: '理由码必填;改派 ≠ 撤回(事件不动,单子换承接方)',
+    label: '改派', actors: ['复核主管'], hint: '理由码必填;改派 ≠ 撤回(事件不动,单子换承接方)',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
       if (!p.crew || !crewOf(p.crew)) return '未选择承接班组';
@@ -408,7 +424,7 @@
   };
 
   A.merge = {
-    label: '合并', actors: ['复核主管', '区值班长'], hint: '同点位/同时窗多单合并;理由码必填',
+    label: '合并', actors: ['复核主管'], hint: '同点位/同时窗多单合并;理由码必填',
     v: function (s, p) {
       var ids = p.ticketIds || []; if (ids.length < 2) return '至少选择 2 张工单';
       if (!p.reason) return '理由码必填';
@@ -422,7 +438,7 @@
   };
 
   A.split = {
-    label: '拆单', actors: ['复核主管', '区值班长'], hint: '跨线联动事件拆主责;理由码必填',
+    label: '拆单', actors: ['复核主管'], hint: '跨线联动事件拆主责;理由码必填',
     v: function (s, p) { var t = tkOf(p.ticketId); if (!t) return '工单不存在'; if (!p.reason) return '理由码必填'; return null; },
     run: function (s, p) {
       var t = tkOf(p.ticketId);
@@ -434,7 +450,7 @@
   };
 
   A.suspend = {
-    label: '挂起', actors: ['规则引擎', '区值班长', '复核主管'], hint: '原因码入日志;挂起期 SLA 停表,条件解除后原单回队重派',
+    label: '挂起', actors: ['规则引擎', '复核主管'], hint: '原因码入日志;挂起期 SLA 停表,条件解除后原单回队重派',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
       if (t.suspended) return '工单已处于挂起态';
@@ -449,12 +465,12 @@
       var cw = t.crew ? crewOf(t.crew) : null;
       if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); crewMove(cw, null, 'free'); t.crewReleased = true; }
       banner('amber', '挂起回补卡:' + t.id + ' 因「' + p.reason + '」挂起,SLA 停表;等「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + ',预计 ' + t.resumeCond.eta + ')。', 'm2', routeOf('ticket', t.id));
-      return '挂起 ' + t.id + ':原因「' + p.reason + '」;SLA 停表,班组释放;恢复条件「' + t.resumeCond.cond + '」,两个出口=班组报条件解除 / 值班长强制回队重派';
+      return '挂起 ' + t.id + ':原因「' + p.reason + '」;SLA 停表,班组释放;恢复条件「' + t.resumeCond.cond + '」,两个出口=班组报条件解除 / 复核主管(值班)强制回队重派';
     }
   };
 
   A.override_emergency = {
-    label: '紧急 override', actors: ['复核主管', '区值班长'], hint: '红色动作:双确认;跳闸直接行动 + 强制事后审计 + 双人知悉',
+    label: '紧急 override', actors: ['复核主管'], hint: '红色动作:双确认;跳闸直接行动 + 强制事后审计 + 双人知悉',
     v: function (s, p, actor) {
       if (rank(actor) < 2) return '需主管以上权限';
       if (!p.confirm2) return '需红色确认弹层双确认';
@@ -498,9 +514,9 @@
     }
   };
 
-  /* W3 整合补(指挥官):公众上报人工甄别驳回——设计档 §0.9 E3 无效分支;W1-E 报缺 */
+  /* W3 整合补(指挥官):热线上报人工甄别驳回——设计档 §0.9 E3 无效分支;W1-E 报缺 */
   A.public_reject = {
-    label: '甄别驳回', actors: ['区复核员', '复核主管'], hint: '人工甄别判无效:驳回,上报人可见理由',
+    label: '甄别驳回', actors: ['区复核员', '复核主管'], hint: '人工甄别判无效:驳回,来电人可见理由',
     v: function (s, p) {
       var r = byId(s.publicReports, p.reportId); if (!r) return '上报不存在';
       if (r.status === '已并入') return '已并入件不走驳回(随线索侧流程)';
@@ -511,12 +527,12 @@
     run: function (s, p) {
       var r = byId(s.publicReports, p.reportId);
       r.status = '已驳回'; r.rejectReason = p.reason;
-      return '公众上报 ' + r.id + ' 甄别驳回:理由「' + p.reason + '」;上报人可见,联系方式仍列级脱敏';
+      return '热线上报 ' + r.id + ' 甄别驳回:理由「' + p.reason + '」;来电人可见,联系方式仍列级脱敏';
     }
   };
 
   A.freeze_evidence = {
-    label: '证据冻结', actors: ['复核主管', '区值班长'], hint: '涉事故/索赔件:全证据链快照锁定 + 哈希锚定,可导出法务包',
+    label: '证据冻结', actors: ['复核主管'], hint: '涉事故/索赔件:全证据链快照锁定 + 哈希锚定,可导出法务包',
     v: function (s, p, actor) {
       if (rank(actor) < 2) return '需主管以上权限';
       if (!p.targetId) return '未指定冻结对象';
@@ -565,7 +581,7 @@
   };
 
   A.appeal_fastlane = {
-    label: '区申诉', actors: ['复核主管', '区值班长'], hint: '关车道后的区申诉通道:上级主管部门复议并留痕',
+    label: '区申诉', actors: ['复核主管'], hint: '关车道后的区申诉通道:上级主管部门复议并留痕',
     v: function (s, p) { if (!p.cat) return '未指定类目'; if (!p.reason) return '申诉理由必填'; return null; },
     run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」机器直派关闭;理由「' + p.reason + '」→ 转上级主管部门复议(留痕)'; }
   };
@@ -674,11 +690,11 @@
     }
   };
   A.crew_safety = {
-    label: '安全上报', actors: ['班组账号'], hint: '置顶通道:区值班长即时通知',
+    label: '安全上报', actors: ['班组账号'], hint: '置顶通道:复核主管(值班)即时通知',
     v: function (s, p) { if (!p.note) return '需填写现场情况'; return null; },
     run: function (s, p) {
-      banner('danger', '现场安全上报(置顶通道):' + p.note + ' —— 已即时通知区值班长。', 'global', '#/m2/dispatch');
-      return '安全上报:' + p.note + ';置顶通道 → 区值班长即时通知';
+      banner('danger', '现场安全上报(置顶通道):' + p.note + ' —— 已即时通知复核主管(值班)。', 'global', '#/m2/dispatch');
+      return '安全上报:' + p.note + ';置顶通道 → 复核主管(值班)即时通知';
     }
   };
   A.crew_report_new = {
@@ -725,27 +741,29 @@
     }
   };
 
-  /* ---- 公众上报(public.html) ---- */
+  /* ---- 热线上报(R88 A1⑬:市民渠道 = 12345 市政热线,接线员录入;actors 保持 '*',
+     留仓的 public.html 传什么 actor 都仍能提交,不因角色收缩而失效)---- */
   A.public_report = {
-    label: '公众上报提交', actors: ['*'], hint: '三步提交 → 受理编号回执;联系方式列级脱敏',
+    label: '热线上报受理', actors: ['*'], hint: '接线员录入 → 受理编号回执;联系方式列级脱敏',
     v: function (s, p) { if (!p.cat) return '未选类目'; if (!p.block && !p.facility) return '未定位'; return null; },
     run: function (s, p) {
       var id = p.reportId || ('PR-0' + (400 + s.publicReports.length));
       var tpl = w.UNLOCKS.publicReports[id];
       var r = tpl ? clone(tpl) : {
         id: id, t: s.now, cat: p.cat, block: p.block || '', facility: p.facility || null,
+        source: '12345 热线', takenBy: p.actor || '热线接线员',
         contact: '05****' + (1000 + s.publicReports.length), status: '已受理', receipt: 'RC-' + id,
         mergedInto: null, urges: 0, evidence: [{ kind: 'field', label: 'AI 生成示意' }]
       };
       r.t = s.now;
       if (!byId(s.publicReports, r.id)) s.publicReports.push(r);
-      return '公众上报受理 ' + r.id + ':回执编号 ' + r.receipt + ';联系方式列级脱敏;进兜底并入队列人工甄别(不直接进紧急)';
+      return '热线上报受理 ' + r.id + '(12345 热线 · 接线员录入):回执编号 ' + r.receipt + ';联系方式列级脱敏;进兜底并入队列人工甄别(不直接进紧急)';
     }
   };
   A.public_urge = {
-    label: '催办', actors: ['*'], hint: '催办计数可见',
+    label: '重复来电登记', actors: ['*'], hint: '同一问题的重复来电只累计数,不另开记录(字段名 urges 保持不变)',
     v: function (s, p) { return byId(s.publicReports, p.reportId) ? null : '上报记录不存在'; },
-    run: function (s, p) { var r = byId(s.publicReports, p.reportId); r.urges++; return '公众催办 ' + r.id + ':催办计数 ' + r.urges; }
+    run: function (s, p) { var r = byId(s.publicReports, p.reportId); r.urges++; return '热线重复来电 ' + r.id + ':同一问题重复来电计数 ' + r.urges + '(只累计,不另开记录,也不构成自动提级)'; }
   };
 
   /* ============ 规则引擎 / AI 服务自动步(机械不豁免审计,每步一条日志)============ */
@@ -817,7 +835,7 @@
     function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '复核窗:线索不存在';
       c.reviewEnd = addMin(s.now, p.mins || 15); c.slaDeadline = c.reviewEnd;
-      return '并行复核窗开启 ' + c.id + ':截止 ' + c.reviewEnd + '(15 分钟,假设值);确认=告警追认,撤回=召回班组;超时→复核员→主管→区值班长';
+      return '并行复核窗开启 ' + c.id + ':截止 ' + c.reviewEnd + '(15 分钟,假设值);确认=告警追认,撤回=召回班组;超时→复核员→主管→复核主管(值班)';
     });
 
   A.auto_create_clue = autoDef('创建线索', 'AI 服务账号仅「创建线索/提出建议」两动作,无定性权',
@@ -928,27 +946,27 @@
       var c = clueOf(p.clueId); if (!c) return '过载分诊:线索不存在';
       c.lane = '批量加急分诊(显名降级)'; c.degraded = true;
       c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
-      /* R87 A2:辖区零可用班组 = 抢占程序;前两步系统先算好方案,第三步把待裁定卡放到值班长面前。
+      /* R87 A2:辖区零可用班组 = 抢占程序;前两步系统先算好方案,第三步把待裁定卡放到复核主管(值班)面前。
          只写数据不改本步的日志摘要与横幅 —— 主线 auto 行为不变。 */
       openPendingRuling(s, c);
       hold('降级件抽审', c.id, '过载降级件件件可抽审(区别于常态批量确认)');
-      banner('warn', '承接池无可派:' + c.id + ' 显名降级进「批量加急分诊」,降级原因入动作日志;区值班长可启动临时借调 + SLA 延展档。', 'm1', routeOf('clue', c.id));
-      return '过载三步 ' + c.id + ':①只读预警先喊现场 ②显名降级进批量加急分诊(件件可抽审)③待区值班长临时借调/抢占仲裁';
+      banner('warn', '承接池无可派:' + c.id + ' 显名降级进「批量加急分诊」,降级原因入动作日志;复核主管(值班)可启动临时借调 + SLA 延展档。', 'm1', routeOf('clue', c.id));
+      return '过载三步 ' + c.id + ':①只读预警先喊现场 ②显名降级进批量加急分诊(件件可抽审)③待复核主管(值班)临时借调/抢占仲裁';
     });
 
-  A.auto_dedupe = autoDef('多源同点去重合并', '公众上报与传感器线索同点位合并,证据叠加;防抖冷却',
+  A.auto_dedupe = autoDef('多源同点去重合并', '热线上报与传感器线索同点位合并,证据叠加;防抖冷却',
     function (s, p) {
       var r = byId(s.publicReports, p.reportId), c = clueOf(p.clueId);
       if (!r || !c) return '去重合并:对象不存在';
       r.mergedInto = c.id; r.status = '已并入';
       c.publicRefs.push(r.id);
-      /* R86 A3:并入 = 给这条线索追加一次「公众上报」观测(不新开线索) */
+      /* R86 A3:并入 = 给这条线索追加一次「热线上报」观测(不新开线索) */
       addObservation(c, {
-        t: r.t || s.now, source: '公众上报 ' + r.id, conf: null, kind: '公众',
+        t: r.t || s.now, source: '热线上报 ' + r.id + '(12345 热线)', conf: null, kind: '热线',
         note: '一处设施上的同类异常并进原线索(CL-R01);回执 ' + (r.receipt || '') + ' 状态同步可查',
         evidence: (r.evidence || []).map(function (e) { return { kind: e.kind, label: e.label, from: r.id }; })
       });
-      return '多源同点合并:公众上报 ' + r.id + ' 并入线索 ' + c.id + ' 作第 ' + c.obsCount + ' 次观测;证据叠加,回执状态同步可查;双单竞态收敛';
+      return '多源同点合并:热线上报 ' + r.id + ' 并入线索 ' + c.id + ' 作第 ' + c.obsCount + ' 次观测;证据叠加,回执状态同步可查;双单竞态收敛';
     });
 
   A.auto_recon = autoDef('对账不一致', '每日比对镜像与客户系统;处置状态以客户系统为准,巡检定性以我方为准',
@@ -972,26 +990,104 @@
       return '系统建议结案 ' + k.id + ':流量回归绿标已亮 → 待人签字结案(定性权在人)';
     });
 
-  A.auto_storm_on = autoDef('暴雨模式启动', '井盖线整体升档;液位计转先导预警源',
+  /* R88 A1⑳ rollback:推翻「模式化升档」那一套(旧 auto_storm_on + auto_storm_tasks 两步合一)。
+     气象预警接入只做一件事 —— 起一个雨前清掏专项任务包并下发。
+     它是纯计划性任务:不改任何在池件的分级,不改机器直派准入,不改任何 SLA 档。 */
+  A.auto_weather_tasks = autoDef('气象预警接入 · 雨前清掏专项任务包',
+    '按预警提前量起专项任务包并与客户清掏计划对接;计划性任务,不动在池件分级、不动派单准入标准',
     function (s, p) {
-      s.gov.stormMode = true;
-      var n = 0;
-      s.clues.forEach(function (c) {
-        if (c.line === '井盖' && c.level === '养护' && c.status === 'open') { c.level = '急修'; c.stormUp = true; n++; }
-      });
-      banner('warn', '暴雨模式已启动:井盖线整体升档(养护件 ' + n + ' 条 → 急修档);液位计转先导预警源;雨前清掏任务包已下发。', 'global', '#/m1/line/mh');
-      return '暴雨模式启动:全线升档,井盖线 ' + n + ' 条养护件升「急修」;暴雨预案 SLA 延展档待区值班长启用(留痕)';
-    });
-
-  A.auto_storm_tasks = autoDef('雨前清掏任务包', '井筒淤积对视觉与液位皆盲 → 任务型兜底,与客户清掏计划对接',
-    function (s, p) {
+      var r = ruleById('MH-R07');
+      var lead = r ? (r.params || []).filter(function (x) { return x.key === 'leadHours'; })[0] : null;
+      s.gov.weatherAlert = { level: p.level || '强对流预警', leadHours: lead ? lead.val : 6, t: s.now, taskTicketId: p.ticketId || null };
       var tk = tkOf(p.ticketId);
       if (!tk) { var tpl = w.UNLOCKS.tickets[p.ticketId]; if (tpl) { tk = clone(tpl); tk.createdT = s.now; s.tickets.push(tk); } }
-      return '雨前清掏核查任务包 ' + p.ticketId + ' 下发:箅面干净 ≠ 过水能力在(井筒淤积视觉与液位皆盲)——沙漠城市雨前最该查的一件';
+      banner('warn', '气象预警接入:已按预警提前量(' + (lead ? lead.val : 6) + ' 小时,假设值)下发「雨前清掏专项任务包」' +
+        (tk ? (tk.id + ' · ' + (tk.summary || '')) : (p.ticketId || '')) +
+        ';这是计划性任务 —— 在池件分级不变,派单准入标准不变。', 'global', routeOf('ticket', p.ticketId) || '#/m2/tickets');
+      return '气象预警接入(' + (p.level || '强对流预警') + '):起雨前清掏专项任务包 ' + (p.ticketId || '') +
+        ' 下发 —— 箅面干净 ≠ 过水能力在(井筒淤积对视觉与液位皆盲),沙漠城市雨前最该查的一件;' +
+        '在池件分级不变、机器直派准入不变、SLA 档不变(MH-R07 v2.0)';
+    });
+
+  /* R88 A5⑱ · AI 服务的「提出建议」第四落点:抢占第三步的调度建议(方案 + 后果),
+     建议不是决定 —— 采纳与否在复核主管(值班)手上,本动作只负责把它记成一条账。 */
+  A.dispatch_suggest = autoDef('调度建议(抢占方案)',
+    'AI 服务两动作之「提出建议」:辖区零可用班组时算出让位 / 借调方案与后果,交复核主管(值班)裁定;无定性权、无派单权',
+    function (s, p) {
+      return '调度建议 ' + (p.rulingId || '') + '(线索 ' + (p.clueId || '') + '):' + (p.text || '已生成抢占方案') +
+        ';AI 服务只提建议不做决定,采纳 / 改派由复核主管(值班)拍板';
     });
 
   A.auto_audit_hold = autoDef('拘进抽审', '高危件与自动处置件拘进主管抽审队列',
     function (s, p) { hold('自动拘审', p.clueId || '', p.reason || '高危件拘进主管抽审'); return '拘进主管抽审:' + (p.clueId || '') + ';' + (p.reason || ''); });
+
+  /* ============ R88 A2 · 加急人工超时兜底派单 ============
+     与「先派尽派」同源:派单是处置调度,不是定性。加急人工件的人工确认档到期、
+     再等一个兜底等待期(三级升级已走完)仍无人给结论 —— 系统把单先发出去,
+     告警不成立、定性仍悬,复核员事后补审,件全量拘抽审(自动派不豁免审计)。
+     判据条:井盖线 MH-R08 / 路面线 RD-R07,参数区可配。 */
+  function overdueRuleOf(line) { return ruleById(line === '路面' ? 'RD-R07' : 'MH-R08'); }
+  function paramVal(rule, key, dflt) {
+    if (!rule) return dflt;
+    var pm = (rule.params || []).filter(function (x) { return x.key === key; })[0];
+    return pm ? pm.val : dflt;
+  }
+  /* 兜底派单的承接方:先取本线空闲班组,没有空闲就取本线在办最少的一个(先派尽派,不压单) */
+  function fallbackCrew(s, line) {
+    var list = (s.crews || []).filter(function (cw) { return (cw.lines || []).indexOf(line) >= 0; });
+    var idle = list.filter(function (cw) { return cw.status === '空闲'; });
+    if (idle.length) return idle[0];
+    return list.slice().sort(function (a, b) { return (a.load || 0) - (b.load || 0); })[0] || null;
+  }
+
+  A.auto_overdue_dispatch = autoDef('超时兜底派单',
+    '加急人工件 SLA 到期 + 兜底等待期内三级升级仍无人给结论 → 系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审,件全量拘抽审',
+    function (s, p) {
+      var c = clueOf(p.clueId);
+      var cw = (p.crew ? crewOf(p.crew) : null) || fallbackCrew(s, c.line);
+      var tk = {
+        id: nextId('WO-', s.tickets), type: c.level === '紧急' ? '紧急工单' : '急修工单',
+        clueId: c.id, facility: c.facility, crew: cw ? cw.id : null,
+        state: cw ? '已派工' : '待改派', source: w.DATA.dict.ticketSources.overdue,
+        createdT: s.now, line: c.line, mirror: 'MUN-WO-' + (77300 + s.tickets.length),
+        sla: { accept: addMin(s.now, w.DATA.dict.sla.accept), arrive: addMin(s.now, w.DATA.dict.sla.arrive), done: addMin(s.now, 120) },
+        suspended: false, resumeCond: null, photos: [], overdueFallback: true,
+        note: '超时兜底派(来源④):加急人工档到期无人审 → 先把单发出去;定性仍悬,复核员事后补审'
+      };
+      s.tickets.push(tk);
+      c.ticketId = tk.id;
+      c.overdueFallback = { ticketId: tk.id, t: s.now, deadline: c.slaDeadline || null, crew: cw ? cw.id : null };
+      if (cw) { cw.load++; if (cw.status === '空闲') cw.status = '待接单'; crewMove(cw, c.facility, 'enroute'); }
+      hold('超时兜底派单件全量抽审', c.id, '超时兜底自动派件全量拘抽审(自动派不豁免审计);定性仍悬,需复核员补审',
+        { kind: '工单', id: tk.id });
+      banner('warn', '超时兜底派单:宁可多看一眼,不漏掉 —— ' + c.id + '(' + (c.kindText || '') + ' · ' + (c.block || '') + ' ' + c.facility +
+        ')人工确认档已过仍无人给结论,系统已自动派 ' + (cw ? cw.name : '(无可用班组,进待改派)') + '(工单 ' + tk.id +
+        ');告警仍未成立、定性仍悬,请复核员补审。', 'm1', routeOf('clue', c.id));
+      return '超时兜底派单 ' + c.id + ' → ' + (cw ? cw.name : '(无可用班组,单进待改派队列)') + '(工单 ' + tk.id + '):' +
+        '人工确认档截止 ' + (c.slaDeadline || '—') + ' 已过、三级升级走完仍无结论 → 先派后审;' +
+        '告警未成立、定性仍悬,复核员事后补审;件全量拘抽审';
+    },
+    function (s, p) {
+      var c = clueOf(p.clueId); if (!c) return '线索不存在';
+      if (c.lane !== '加急人工') return '仅「加急人工」车道在池件适用超时兜底(当前车道:' + (c.lane || '—') + ')';
+      if (c.status !== 'open') return '线索非「待核查」态,不需兜底';
+      if (c.ticketId) return '本件已有工单 ' + c.ticketId + ',不重复派单';
+      if (!c.slaDeadline) return '本件无人工确认档截止点';
+      if (slaDiff(c.slaDeadline) >= 0) return '人工确认档未到期(截止 ' + c.slaDeadline + ')';
+      return null;
+    });
+
+  /* 每次假时钟步进时扫一遍在池的加急人工件:过了「SLA 截止 + 兜底等待」还没人给结论就自动兜底。
+     ⚠ 今夜主线(T1-T12,推到 21:30)上没有件跨过这条线 —— 叙事不被随机打断;
+        专置演示件 CL-0333(18:50 到期)可由导览支线直调 S.commit('auto_overdue_dispatch', { clueId: 'CL-0333' }) 演示。 */
+  function sweepOverdue() {
+    (state.clues || []).slice().forEach(function (c) {
+      if (c.lane !== '加急人工' || c.status !== 'open' || c.ticketId || !c.slaDeadline) return;
+      var grace = paramVal(overdueRuleOf(c.line), 'graceMin', 180);
+      if (slaDiff(c.slaDeadline) > -grace) return;
+      doCommit('auto_overdue_dispatch', { actor: '规则引擎', clueId: c.id }, true);
+    });
+  }
 
   /* ============================================================
      R86 增补动作族(A2 规则参数 / A5 支线 / A9 横幅)
@@ -1007,8 +1103,8 @@
 
   /* ============ R87 A2 · 抢占第三步的待裁定卡 ============
      先派尽派的另一面:辖区真的一个能接单的班组都没有时,系统不把单压着等人想办法,
-     而是把前两步(在办件让位 / 跨班组借调)算好的结果连同后果一起交到值班长手上,
-     值班长只做「采纳」(= preempt_arbitrate)或「改派」。 */
+     而是把前两步(在办件让位 / 跨班组借调)算好的结果连同后果一起交到复核主管(值班)手上,
+     复核主管(值班)只做「采纳」(= preempt_arbitrate)或「改派」。 */
   var TICKET_PRIORITY = {
     '养护批量工单': 1, '设备工单': 1, '传感器复检工单': 1, '雨前专项任务': 2, '核查任务': 2,
     '管网维修工单': 3, '急修工单': 3, '紧急工单': 4
@@ -1036,8 +1132,10 @@
     var borrow = borrowCandidates(s, c.line);
     var pr = {
       id: 'RL-' + (100 + s.pendingRulings.length), t: s.now, status: '待裁定',
+      /* R88 A5⑱:方案是 AI 服务算的 —— 卡上标源头,日志里也留一条(AI 两动作之「提出建议」第四落点) */
+      suggestedBy: 'AI 服务',
       clueId: c.id, facility: c.facility, block: c.block, line: c.line, level: c.level, topic: c.kindText,
-      step: '第三步 · 值班长裁定',
+      step: '第三步 · 复核主管(值班)裁定',
       tried: [
         { no: 1, name: '在办件让位', result: yt ? ('可让位:' + yt.id + '(' + yt.type + ',承办 ' + (cw ? cw.name : '—') + ')') : '辖区内没有可让位的在办件' },
         { no: 2, name: '跨班组借调', result: borrow.length ? ('可借调:' + borrow.map(function (x) { return x.name; }).join(' / ')) : '相邻责任区与相邻班次都没有持证可胜任的班组' }
@@ -1059,8 +1157,12 @@
       ]
     };
     s.pendingRulings.push(pr);
-    /* 只落数据不发横幅:主线 T9 的 auto 行为(日志条数 / 摘要 / 横幅)保持逐字不变;
-       醒目横幅与调度视图置顶卡由 X2 从 S.pendingRulings() 渲染。 */
+    /* R88 A5⑱:建议本身也是一条动作 —— AI 服务提出建议,记账不豁免(机械与模型都不豁免审计)。
+       只发日志不发横幅:醒目横幅与调度视图置顶卡由渲染层从 S.pendingRulings() 出。 */
+    doCommit('dispatch_suggest', {
+      actor: 'AI 服务', rulingId: pr.id, clueId: c.id,
+      crew: pr.proposal.crew, yieldTicketId: pr.proposal.yieldTicketId, text: pr.proposal.text
+    }, true);
     return pr;
   }
 
@@ -1088,14 +1190,15 @@
       var r = ruleById(p.ruleId); if (!r) return '规则不存在:' + (p.ruleId || '');
       if (!p.key) return '未指定参数项';
       var pm = (r.params || []).filter(function (x) { return x.key === p.key; })[0];
-      if (!pm) return '本条规则无参数项「' + p.key + '」';
+      if (!pm && !(p.key === 'promptTpl' && r.promptTpl)) return '本条规则无参数项「' + p.key + '」';
       if (p.val === undefined || p.val === null || p.val === '') return '未填写新值';
       if ((r.editableBy || []).indexOf(actor) < 0) return '本条规则参数变更权在:' + (r.editableBy || []).join(' / ');
       return null;
     },
     run: function (s, p, actor) {
       var r = ruleById(p.ruleId);
-      var pm = (r.params || []).filter(function (x) { return x.key === p.key; })[0];
+      var pm = (r.params || []).filter(function (x) { return x.key === p.key; })[0]
+        || (p.key === 'promptTpl' ? { key: 'promptTpl', label: '复验提示词模板', val: r.promptTpl, unit: '' } : null);
       if (!s.ruleParams[r.id]) s.ruleParams[r.id] = {};
       s.ruleParams[r.id][p.key] = { val: p.val, by: actor, t: s.now, shadow: true };
       s.ruleShadow.push({
@@ -1114,7 +1217,7 @@
 
   /* ---- A5 · 管网支线:核查任务包 → 现场确认渗漏 → 转维修 → 复验回归 → 结案归档 ---- */
   A.pl_survey_start = {
-    label: '开核查任务包', actors: ['区复核员', '复核主管', '区值班长'],
+    label: '开核查任务包', actors: ['区复核员', '复核主管'],
     hint: '立案后的定位主手段:听漏 + 分段关阀试验,按段收敛嫌疑区间',
     v: function (s, p) {
       var k = caseOf(p.caseId); if (!k) return '调查案不存在';
@@ -1149,7 +1252,7 @@
   };
 
   A.pl_to_repair = {
-    label: '转维修工单', actors: ['区复核员', '复核主管', '区值班长'],
+    label: '转维修工单', actors: ['区复核员', '复核主管'],
     hint: '确认渗漏后开维修工单(带压作业);调查案不关,等复验回归',
     v: function (s, p) {
       var k = caseOf(p.caseId); if (!k) return '调查案不存在';
@@ -1190,7 +1293,7 @@
   };
 
   A.pl_close = {
-    label: '结案归档', actors: ['复核主管', '区值班长'],
+    label: '结案归档', actors: ['复核主管'],
     hint: '人签字结案 + 归档:证据链与规则版本一并留痕',
     v: function (s, p) {
       var k = caseOf(p.caseId); if (!k) return '调查案不存在';
@@ -1251,36 +1354,34 @@
     }
   };
 
-  /* ---- A5 · 路面支线:公众催办提级 / 完工抽查 ---- */
-  A.rd_urge_boost = {
-    label: '公众催办提级', actors: ['区复核员', '复核主管'],
-    hint: '催办计数达阈值 → 优先级提升一档并显名留痕(不是自动定性)',
+  /* ---- R88 A1⑬ rollback:删「催办计数达阈值 → 自动提级」那条(rd_urge_boost 整条推翻)。
+     重复来电只是排序的输入,不构成提级理由;提级改为复核主管主动做的显名动作,原因必填。---- */
+  A.clue_escalate = {
+    label: '提级', actors: ['复核主管'],
+    hint: '主管主动把养护 / 观察件提为急修:原因必填,显名留痕;提级是人做的动作,不是系统按计数自动定性',
     v: function (s, p) {
       var c = p.clueId ? clueOf(p.clueId) : null;
-      var r = p.reportId ? byId(s.publicReports, p.reportId) : null;
-      if (!c && r && r.mergedInto) c = clueOf(r.mergedInto);
-      if (!c) return '未定位到线索(需 clueId,或已并入线索的 reportId)';
+      if (!c) return '线索不存在(需 clueId)';
       if (c.status !== 'open') return '线索非「待核查」态,不再提级';
-      if (c.level === '急修' || c.level === '紧急') return '已在最高档,无可提级';
+      if (c.level === '急修' || c.level === '紧急') return '已在最高档(' + c.level + '),无可提级';
+      if (!p.reason) return '提级原因必填(进动作日志,可回查)';
       return null;
     },
     run: function (s, p, actor) {
-      var c = p.clueId ? clueOf(p.clueId) : null;
-      var r = p.reportId ? byId(s.publicReports, p.reportId) : null;
-      if (!c && r && r.mergedInto) c = clueOf(r.mergedInto);
-      var order = ['观察', '养护', '急修'], i = order.indexOf(c.level);
-      var from = c.level;
-      c.level = i >= 0 && i < order.length - 1 ? order[i + 1] : '急修';
-      c.urgeBoost = { from: from, to: c.level, by: actor, t: s.now, urges: r ? r.urges : (p.urges || 0) };
-      if (c.level === '急修' && (c.lane === '批量半审' || c.lane === '记账' || c.lane === '批量')) c.lane = '单条必审';
-      banner('amber', '公众催办提级:' + c.id + ' 由「' + from + '」升「' + c.level + '」,提级人 ' + actor + ',留痕可回查。', 'm1', routeOf('clue', c.id));
-      return '公众催办提级 ' + c.id + ':' + from + ' → ' + c.level + '(催办 ' + (r ? r.urges : (p.urges || 0)) + ' 次,阈值为假设值);' +
-        '提级是人做的显名动作,不是系统自动定性';
+      var c = clueOf(p.clueId), from = c.level;
+      c.level = '急修';
+      c.escalate = { from: from, to: '急修', by: actor, t: s.now, reason: p.reason };
+      if (['批量半审', '记账', '批量', '自动升格'].indexOf(c.lane) >= 0) c.lane = '单条必审';
+      c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
+      banner('amber', '线索提级:' + c.id + '(' + (c.kindText || '') + ' · ' + (c.block || '') + ' ' + c.facility + ')由「' + from +
+        '」提为「急修」,提级人 ' + actor + ',原因「' + p.reason + '」,留痕可回查。', 'm1', routeOf('clue', c.id));
+      return '提级 ' + c.id + ':' + from + ' → 急修;原因「' + p.reason + '」;车道转「' + c.lane +
+        '」,SLA 按急修档重算;提级是人做的显名动作,不是系统自动定性';
     }
   };
 
   A.rd_spot_check = {
-    label: '完工抽查', actors: ['复核主管', '区值班长'],
+    label: '完工抽查', actors: ['复核主管'],
     hint: '批量养护完工件按比例现场抽查;抽查结果进班组考核与规则评估',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
@@ -1291,14 +1392,14 @@
     run: function (s, p, actor) {
       var t = tkOf(p.ticketId);
       t.spotCheck = { result: p.result || '合格', by: actor, t: s.now, note: p.note || '' };
-      hold('完工抽查', t.clueId || '', '批量养护完工件抽查(工单 ' + t.id + ')');
+      hold('完工抽查', t.clueId || '', '批量养护完工件抽查(工单 ' + t.id + ')', { kind: '工单', id: t.id });
       return '完工抽查 ' + t.id + ':结果「' + t.spotCheck.result + '」;进班组考核与规则评估统计,抽查记录入动作日志';
     }
   };
 
   /* ---- A5 · 抢占调度三步(让位 / 借调 / 人裁;auto_overload 只做②显名降级,三步由人逐级执行)---- */
   A.preempt_yield = {
-    label: '抢占①让位', actors: ['区值班长', '复核主管'],
+    label: '抢占①让位', actors: ['复核主管'],
     hint: '占用中最低优先级件让位:原单挂起,SLA 停表,条件解除后回队重派',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
@@ -1313,14 +1414,14 @@
       t.resumeCond = resumeCondOf('抢占调度', s.now);
       var cw = t.crew ? crewOf(t.crew) : null;
       if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); crewMove(cw, null, 'free'); t.crewReleased = true; }
-      banner('amber', '抢占①让位:' + t.id + ' 因高优先级件让位挂起,SLA 停表;等「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + '),或由值班长强制回队重派。', 'm2', routeOf('ticket', t.id));
+      banner('amber', '抢占①让位:' + t.id + ' 因高优先级件让位挂起,SLA 停表;等「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + '),或由复核主管(值班)强制回队重派。', 'm2', routeOf('ticket', t.id));
       return '抢占①让位 ' + t.id + ':' + actor + ' 判定该单优先级最低 → 挂起让位' +
         (p.forClueId ? '(为 ' + p.forClueId + ' 腾班组)' : '') + ';班组 ' + (cw ? cw.name : '—') + ' 释放,SLA 停表';
     }
   };
 
   A.preempt_borrow = {
-    label: '抢占②跨班组借调', actors: ['区值班长', '复核主管'],
+    label: '抢占②跨班组借调', actors: ['复核主管'],
     hint: '本线无人可派时跨线借调;借调资质不符者不进候选(DP-R02 硬性持证)',
     v: function (s, p) {
       var cw = crewOf(p.crew); if (!cw) return '班组不存在';
@@ -1339,8 +1440,8 @@
   };
 
   A.preempt_arbitrate = {
-    label: '抢占③值班长人裁', actors: ['区值班长'],
-    hint: '前两步不解时升值班长人裁:显名指派,理由入日志,件件可抽审',
+    label: '抢占③复核主管(值班)人裁', actors: ['复核主管'],
+    hint: '前两步不解时升复核主管(值班)人裁:显名指派,理由入日志,件件可抽审',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
       if (!p.crew || !crewOf(p.crew)) return '未选择承接班组';
@@ -1355,7 +1456,7 @@
         state: '已派工', source: w.DATA.dict.ticketSources.human, createdT: s.now, line: c.line,
         mirror: 'MUN-WO-' + (77300 + s.tickets.length),
         sla: { accept: addMin(s.now, w.DATA.dict.sla.accept), arrive: addMin(s.now, w.DATA.dict.sla.arrive), done: addMin(s.now, 120) },
-        suspended: false, photos: [], note: '抢占③值班长人裁指派(来源② 人确认派);理由「' + p.reason + '」'
+        suspended: false, photos: [], note: '抢占③复核主管(值班)人裁指派(来源② 人确认派);理由「' + p.reason + '」'
       };
       s.tickets.push(tk); c.ticketId = tk.id; c.degraded = false;
       cw.load++; cw.status = '待接单'; crewMove(cw, c.facility, 'enroute');
@@ -1378,7 +1479,7 @@
       });
       hold('抢占人裁件抽审', c.id, '抢占调度人裁指派件件可抽审');
       banner('info', '抢占③人裁:' + c.id + ' 由 ' + actor + ' 指派 ' + cw.name + '(工单 ' + tk.id + '),理由入动作日志。', 'm2', routeOf('ticket', tk.id));
-      return '抢占③值班长人裁 ' + c.id + ' → ' + cw.name + '(工单 ' + tk.id + '):理由「' + p.reason + '」;显名指派,件件可抽审';
+      return '抢占③复核主管(值班)人裁 ' + c.id + ' → ' + cw.name + '(工单 ' + tk.id + '):理由「' + p.reason + '」;显名指派,件件可抽审';
     }
   };
 
@@ -1404,13 +1505,13 @@
       var al = byId(s.alerts, p.alertId);
       al.status = '申诉复核中';
       al.appeal = { by: actor, t: s.now, reason: p.reason, note: p.note || '' };
-      banner('warn', '误报申诉待裁定:' + al.id + '(' + al.facility + ')理由「' + p.reason + '」—— 复核主管 / 区值班长裁定后才改状态。', 'm2', routeOf('alert', al.id));
+      banner('warn', '误报申诉待裁定:' + al.id + '(' + al.facility + ')理由「' + p.reason + '」—— 复核主管(值班)裁定后才改状态。', 'm2', routeOf('alert', al.id));
       return '误报申诉 ' + al.id + ':' + actor + ' 提出「' + p.reason + '」→ 告警转「申诉复核中」;原记录不删,待主管裁定';
     }
   };
 
   A.misfire_ruling = {
-    label: '误报裁定', actors: ['复核主管', '区值班长'],
+    label: '误报裁定', actors: ['复核主管'],
     hint: '裁定申诉是否成立:成立 → 告警置「误报撤销」+ 班组白跑不计考核 + 误报原因回流 + 开传感器复检工单',
     v: function (s, p) {
       var al = byId(s.alerts, p.alertId); if (!al) return '告警不存在';
@@ -1476,7 +1577,7 @@
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
       if (!t.suspended) return '该单未处于挂起态';
-      if (!t.crew) return '该单已释放班组,须由区值班长「强制回队重派」';
+      if (!t.crew) return '该单已释放班组,须由复核主管(值班)「强制回队重派」';
       return null;
     },
     run: function (s, p, actor) {
@@ -1500,7 +1601,7 @@
   };
 
   A.resume_requeue = {
-    label: '强制回队重派', actors: ['区值班长', '复核主管'],
+    label: '强制回队重派', actors: ['复核主管'],
     hint: '挂起件出口二:不等条件解除,直接把单收回待改派队列重新派',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
@@ -1515,7 +1616,7 @@
       if (old) crewMove(old, null, 'free');
       t.suspended = false; t.crewReleased = false; t.crew = null; t.state = '待改派';
       t.requeue = { by: actor, t: s.now, reason: p.reason || '不等条件解除,回队重派', fromCond: cond };
-      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '值班长强制回队重派', cond: cond }]);
+      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '复核主管(值班)强制回队重派', cond: cond }]);
       t.resumeCond = null;
       banner('amber', '强制回队重派:' + t.id + ' 不再等「' + cond + '」,已收回进待改派队列,请指派新承接班组。', 'm2', routeOf('ticket', t.id));
       return '强制回队重派 ' + t.id + ':' + actor + ' 判定不再等「' + cond + '」→ 收回工单进「待改派」;原承接班组释放,SLA 续计不清零';
@@ -1526,7 +1627,7 @@
   function auditOf(s, id) { return byId(s.gov.auditQueue, id); }
 
   A.spot_pass = {
-    label: '抽审通过', actors: ['复核主管', '区值班长'],
+    label: '抽审通过', actors: ['复核主管'],
     hint: '抽审结论:复看后认为原处置站得住;结论入动作日志,原件不动',
     v: function (s, p) {
       var a = auditOf(s, p.auditId); if (!a) return '抽审记录不存在';
@@ -1541,7 +1642,7 @@
   };
 
   A.spot_return = {
-    label: '抽审打回', actors: ['复核主管', '区值班长'],
+    label: '抽审打回', actors: ['复核主管'],
     hint: '抽审结论:原处置不成立 —— 原件回队重看,原处置人收到通知',
     v: function (s, p) {
       var a = auditOf(s, p.auditId); if (!a) return '抽审记录不存在';
@@ -1615,7 +1716,7 @@
         var agree = Math.min(0.95, 0.5 + 0.15 * (c.obsCount || 1));  // 演示口径:观测越多帧间越一致
         return (c.conf >= P.conf && agree >= P.agree && frames >= P.frames) ? '机器直派' : '加急人工';
       },
-      /* 本条是「升档」规则,三项判据是与关系:今天这批画面识别件的置信全部低于阈值,
+      /* 本条是「升级到机器直派」的规则,三项判据是与关系:今天这批画面识别件的置信全部低于阈值,
          所以先卡在置信线上,一致率与帧数还轮不到起作用 —— 调这两个参数确实一件都不会动。
          这不是试算失灵,是试算给出的真实答案,旁白照此讲即可。 */
       why: function (items, base, key) {
@@ -1629,10 +1730,37 @@
         return '';
       }
     },
+    /* R88 A1⑳:MH-R07 已改为纯计划性任务包规则 —— 回放的是「哪些雨水口点位进本轮任务包」,
+       不再回放任何分级变动(升档口径整条推翻)。 */
     'MH-R07': {
-      what: '井盖线上受暴雨升档影响的养护件',
-      pick: function (s) { return lineClues(s, '井盖').filter(function (c) { return c.level === '养护' || c.stormUp; }); },
-      decide: function (c, P) { return P.leadHours >= 6 ? '整体升一档(急修)+ 雨前清掏' : '维持养护档,不提前起清掏'; }
+      what: '井盖线上的雨水口点位(雨前清掏专项任务包的取件范围)',
+      pick: function (s) { return lineClues(s, '井盖').filter(function (c) { return /^GR-/.test(c.facility || ''); }); },
+      decide: function (c, P) { return P.leadHours >= 6 ? '进本轮雨前清掏专项任务包' : '不进本轮任务包(预警提前量不足,留到下一轮)'; }
+    },
+    /* R88 A2:兜底线在哪,今天哪几件会被系统自己派出去 —— 逐件真回放,不是示意 */
+    'MH-R08': {
+      what: '井盖线上还在「加急人工」车道等人给结论的件',
+      pick: function (s) {
+        return lineClues(s, '井盖').filter(function (c) { return c.lane === '加急人工' && c.status === 'open' && c.slaDeadline; });
+      },
+      decide: function (c, P) {
+        return (-slaDiff(c.slaDeadline)) >= P.graceMin ? '超时兜底派单(先派后审,定性仍悬)' : '继续等人审(未到兜底线)';
+      }
+    },
+    'RD-R07': {
+      what: '路面线上还在「加急人工」车道等人给结论的件',
+      pick: function (s) {
+        return lineClues(s, '路面').filter(function (c) { return c.lane === '加急人工' && c.status === 'open' && c.slaDeadline; });
+      },
+      decide: function (c, P) {
+        return (-slaDiff(c.slaDeadline)) >= P.graceMin ? '超时兜底派单(先派后审,定性仍悬)' : '继续等人审(未到兜底线)';
+      }
+    },
+    /* R88 A3:采集侧的频率也是可试算的 —— 今夜由固定相机产出的观测,调频率会影响谁 */
+    'OB-R01': {
+      what: '今夜由固定相机产出的线索',
+      pick: function (s) { return (s.clues || []).filter(function (c) { return /相机/.test(c.source || ''); }); },
+      decide: function (c, P) { return P.interval <= 5 ? '按当前频率可覆盖(漏检窗 ≤ 5 分钟)' : '降频后该点位复现变慢,漏检窗拉长到 ' + P.interval + ' 分钟'; }
     },
     'MH-R05': {
       what: '井盖线在池件的台账点位比对',
@@ -1796,6 +1924,8 @@
       return { ok: false, reason: chk.reason };
     }
     var def = A[action], p = params || {}, actor = actorOf(p);
+    var aq = (state.gov && state.gov.auditQueue) || [];
+    var aqFrom = aq.length;
     var sum = def.run(state, p, actor) || def.label;
     state.seq++;
     var log = {
@@ -1806,6 +1936,11 @@
       quiet: !!def.quiet
     };
     state.actionLog.push(log);
+    /* R88 A5⑭:本次动作新拘的抽审记录回填触发它的动作日志 rid;没有被抽对象的回落到动作日志本身 */
+    for (var qi = aqFrom; qi < aq.length; qi++) {
+      if (!aq[qi].srcRid) aq[qi].srcRid = log.rid;
+      if (!aq[qi].targetId) { aq[qi].targetKind = '动作日志'; aq[qi].targetId = log.rid; }
+    }
     fillSummaries(state);   // R87:任何路径新建的工单都补上事项一句话
     save();
     emit('render', { action: action, log: log });
@@ -1844,6 +1979,7 @@
       var r = doCommit(e.action, e.params, true);
       if (r.ok) ran.push(e.action);
     });
+    sweepOverdue();                     // R88 A2:假时钟每步进一次,扫一遍加急人工件的超时兜底
     /* 本步产生的日志区间(R85⑤「后端发生了什么」浮层的数据来源;不改 actionLog 结构,只记游标) */
     if (!state.stepLog) state.stepLog = {};
     if (!state.stepLog[step.id] || state.actionLog.length > logFrom) {
@@ -1991,7 +2127,7 @@
     /* A3 影子试算回放:这个参数改成 newVal,今天已经过这条规则的件会有什么不同。
        → { ruleId, ruleName, key, label, unit, from, to, scope, total, changed:[{id,from,to}], note } */
     shadowReplay: shadowReplay,
-    /* A2 待裁定卡:抢占第三步交到值班长手上的建议方案与后果(默认只给待裁定的) */
+    /* A2 待裁定卡:抢占第三步交到复核主管(值班)手上的建议方案与后果(默认只给待裁定的) */
     pendingRulings: function (status) {
       var list = state.pendingRulings || [];
       return list.filter(function (x) { return status === '*' ? true : x.status === (status || '待裁定'); });

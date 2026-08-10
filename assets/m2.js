@@ -6,7 +6,8 @@
    - 施工图 §7 m2 清单:告警列表 / 工单镜像(状态机五格)/ 对账异常队列 / 调度视图(班组负载+改派/合并/拆单)
    - 设计档 §2.3b 工单系统对接契约(状态机五格映射 / 对账裁决规则)
    - 设计档 §0.8.3(在途抢占)/ §0.8.5(调度职能与调度视图;撤回≠改派概念分立)
-   - 设计档 §0.6(角色权限:复核主管=复核员权限+抽审/撤销;调度职能落在复核主管+区值班长,不新增调度员角色)
+   - 设计档 §0.6(角色权限:复核主管=复核员权限+抽审/撤销;调度职能落在复核主管一位上,不新增调度员角色)
+     R88 A1④ 角色三值(区复核员/复核主管/上级主管部门):原第四个身份值并入复核主管,夜间只是文案「复核主管(值班)」
    - R87 A5:工单卡信息补全(线路/设施/地点/事项一句话/状态/承办班组/SLA)· 全链跳转(线索/设施/班组)
      · 班组详情子路由 #/m2/crew/CR-xx · 工单镜像筛选条与分组折叠 · 告警状态筛选
      · 调度视图三件(班组位置地图 / 最近调度动作流 / 待裁定卡置顶 + 全局横幅)
@@ -67,8 +68,16 @@
   window.M2 = M2;
 
   /* ---------------- 视图态(只在本模块内存里,不写 store;改后重绘并保持滚动位置)---------------- */
-  var VS = { line: '', state: '', crew: '', group: 'line', open: {}, alStatus: '' };
+  /* R88 布局靶单①⑥ + A5⑦ 新增视图态:
+     rulingOpen = 待裁定横条是否展开(默认收成一行)· seg = 调度视图两段的开合(总览默认开、操作台默认收)
+     done = 工单镜像各分组「已完结(已完工/已验收)」紧凑行是否展开(默认收) */
+  var VS = {
+    line: '', state: '', crew: '', group: 'line', open: {}, alStatus: '',
+    rulingOpen: false, seg: { ov: true, ops: false }, done: {}
+  };
   var FOLD = 5;
+  var DONE_STATES = ['已完工', '已验收'];
+  function isDone(t) { return !t.suspended && DONE_STATES.indexOf(t.state) >= 0; }
   function rerender() {
     var y = window.scrollY || 0;
     try { window.dispatchEvent(new CustomEvent('render', { detail: { ui: 'm2' } })); }
@@ -80,11 +89,57 @@
   M2.setF = function (k, v) { VS[k] = v; rerender(); };
   M2.setGroup = function (g) { VS.group = g; rerender(); };
   M2.toggleOpen = function (k) { VS.open[k] = !VS.open[k]; rerender(); };
+  M2.toggleDone = function (k) { VS.done[k] = !VS.done[k]; rerender(); };
+  M2.toggleRuling = function () { VS.rulingOpen = !VS.rulingOpen; rerender(); };
+  M2.toggleSeg = function (k) { VS.seg[k] = !VS.seg[k]; rerender(); };
   M2.jump = function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { el.scrollIntoView(); }
   };
+  /* 待裁定卡的备选动作要跳到改派表 —— 表在「操作台」段里,段可能是收着的:先展开再跳 */
+  M2.openOps = function (id) {
+    if (!VS.seg.ops) { VS.seg.ops = true; rerender(); }
+    window.setTimeout(function () { M2.jump(id || 'm2-dispatch-table'); }, 0);
+  };
+
+  /* ---------------- 本模块布局样式(R88 布局靶单①⑥ + A5⑦;页级注入,不动 tokens.css / ui.js 他人分区) ---------------- */
+  (function injectM2Css() {
+    if (!document || document.getElementById('origen-m2-css')) return;
+    var css = [
+      /* 待裁定醒目横条(地图上方,默认收成一行) */
+      '.m2-strip{border:1px solid #e6bfb8;border-left:4px solid #c0392b;background:#fdf3f1;border-radius:8px;margin-bottom:10px}',
+      '.m2-strip-hd{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;',
+      'font-family:inherit;font-size:13px;color:#8d2f22;padding:9px 12px;cursor:pointer;text-align:left}',
+      '.m2-strip-hd:hover{background:#fbe9e5}',
+      '.m2-strip-ico{flex:none;width:17px;height:17px;line-height:17px;text-align:center;border-radius:50%;',
+      'background:#c0392b;color:#fff;font-size:11px;font-weight:700}',
+      '.m2-strip-t{flex:1 1 auto;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.m2-strip-n{flex:none;font-size:11.5px;color:#a4685c;font-weight:400}',
+      '.m2-strip-body{padding:0 10px 10px}',
+      /* 调度视图分段(总览 / 操作台) */
+      '.m2-seg{display:flex;align-items:center;gap:8px;width:100%;background:#f7f9f5;border:1px solid var(--line,#e4e7e2);',
+      'border-radius:8px;font-family:inherit;font-size:13px;color:var(--ink,#1b231f);padding:8px 12px;cursor:pointer;',
+      'text-align:left;margin:12px 0 8px}',
+      '.m2-seg:hover{border-color:#1a5fb4}',
+      '.m2-seg-cev{flex:none;color:#7b8794;font-size:11px}',
+      '.m2-seg-t{font-weight:700}',
+      '.m2-seg-d{flex:1 1 auto;font-size:11.5px;color:var(--faint,#8e968f);font-weight:400}',
+      '.m2-seg-n{flex:none;font-size:11.5px;color:var(--faint,#8e968f)}',
+      /* 工单镜像:已完结紧凑行 */
+      '.m2-done{display:flex;flex-direction:column;gap:0;border:1px solid var(--line,#e4e7e2);border-radius:8px;',
+      'background:#fbfcfa;margin:4px 0 2px;overflow:hidden}',
+      '.m2-done-row{display:flex;align-items:center;gap:10px;padding:5px 10px;font-size:12.5px;border-top:1px solid #eef1ec}',
+      '.m2-done-row:first-child{border-top:0}',
+      '.m2-done-id{flex:none;width:82px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}',
+      '.m2-done-s{flex:1 1 auto;color:var(--mute,#5c6660);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.m2-done-st{flex:none}'
+    ].join('');
+    var s = document.createElement('style');
+    s.id = 'origen-m2-css';
+    s.textContent = css;
+    (document.head || document.documentElement).appendChild(s);
+  })();
 
   /* ---------------- 小工具 ---------------- */
   function sourceBadge(src) {
@@ -138,6 +193,8 @@
     if (t.suspended) b += ' ' + UI.badge('挂起', 'amber');
     if (t.grade === '灰档') b += ' ' + UI.badge('灰档', 'grey');
     if (t.kpiExempt) b += ' ' + UI.badge('白跑不计考核', 'grey');
+    /* R88 A2:超时兜底自动派的单要一眼看出来源 —— 定性仍悬,复核员事后补审 */
+    if (t.overdueFallback) b += ' ' + UI.badge('超时兜底派单', 'amber');
     return b;
   }
   var AL_TONE = { '成立': 'green', '申诉复核中': 'amber', '误报撤销': 'grey', '已撤销': 'grey' };
@@ -176,10 +233,11 @@
       '<p><b>与客户系统的关系:</b>处置的记录系统是区市政工单系统 —— 本模块的工单是<b>只读镜像 + 写回动作</b>:派工、改派、挂起等动作写回客户系统,状态回读展示;巡检定性(线索 / 告警)的记录系统才是本平台。</p>' +
       '<p><b>对账裁决:</b>处置状态以客户系统为准,巡检定性以我方为准;不一致进对账异常队列,由主管在时限内人工裁定,裁定动作入日志。</p>' +
       '<p><b>撤回 ≠ 改派:</b>撤回 = 事件不成立(线索转驳回流,召回班组);改派 = 事件成立但派错了承接方(单子换人,事件不动)。两者都是显名动作,理由码入日志。</p>' +
-      '<p><b>误报申诉:</b>并行复核窗过后仍可提「判定异常申诉」,由复核主管 / 区值班长裁定;裁定成立则告警置「误报撤销」,记录保留、班组白跑不计考核、原因回流规则引擎、该设施开传感器复检工单。</p>' +
-      '<p><b>不新增调度员角色:</b>调度职能落在复核主管(常规改派)与区值班长(抢占仲裁);撤回 / 改派 / 合并 / 拆单均为显名动作,理由码入动作日志。</p>' +
-      '<p><b>抢占调度三步:</b>承接池无空闲班组时 —— ① 在办件让位 ② 跨班组借调 ③ 值班长裁定(前两步的结果连同建议方案与后果一起交到值班长手上,一键采纳或改派);挂起使 SLA 停表,恢复条件解除后回队重派。</p>' +
-      '<p><b>挂起件两个出口:</b>班组端「条件解除,恢复作业」(班组账号在手机端发起)/ 区值班长「强制回队重派」(不等条件解除,收回工单重新指派)。</p>'
+      '<p><b>误报申诉:</b>并行复核窗过后仍可提「判定异常申诉」,由复核主管裁定;裁定成立则告警置「误报撤销」,记录保留、班组白跑不计考核、原因回流规则引擎、该设施开传感器复检工单。</p>' +
+      '<p><b>不新增调度员角色:</b>调度职能(常规改派与抢占仲裁)都落在复核主管一位上;撤回 / 改派 / 合并 / 拆单均为显名动作,理由码入动作日志。</p>' +
+      '<p><b>超时兜底派单:</b>加急人工件人工确认档到期、三级升级走完仍无人给结论 —— 系统先把单发出去(工单标「超时兜底派单」来源徽章),告警仍未成立、定性仍悬,复核员事后补审,件全量拘抽审。宁可多看一眼,不漏掉。</p>' +
+      '<p><b>抢占调度三步:</b>承接池无空闲班组时 —— ① 在办件让位 ② 跨班组借调 ③ 复核主管(值班)裁定;前两步的结果连同建议方案与后果由 <b>AI 服务</b>算好一起交到复核主管手上(卡上标「AI 服务 · 建议」),人只做一键采纳或改派。挂起使 SLA 停表,恢复条件解除后回队重派。</p>' +
+      '<p><b>挂起件两个出口:</b>班组端「条件解除,恢复作业」(班组账号在手机端发起)/ 复核主管(值班)「强制回队重派」(不等条件解除,收回工单重新指派)。</p>'
   };
 
   /* ---------------- ① 告警列表 ---------------- */
@@ -215,7 +273,7 @@
     var pYes = { alertId: al.id, upheld: true, code: '', note: '' };
     var pNo = { alertId: al.id, upheld: false, note: '' };
     var cY = S.check('misfire_ruling', pYes), cN = S.check('misfire_ruling', pNo);
-    return UI.secTitle('误报裁定(复核主管 / 区值班长)', 'alert') +
+    return UI.secTitle('误报裁定(复核主管)', 'alert') +
       '<div class="small">申诉人 ' + UI.esc((al.appeal || {}).by || '') + ' · ' + UI.esc((al.appeal || {}).t || '') +
       ' · 理由「' + UI.esc((al.appeal || {}).reason || '') + '」' +
       ((al.appeal || {}).note ? ' · ' + UI.esc(al.appeal.note) : '') + '</div>' +
@@ -390,7 +448,9 @@
         ['设施', facLink(t.facility), true],
         ['承办班组', crewLink(t.crew), true],
         ['客户系统镜像号', t.mirror || '—'],
-        ['派单来源', t.source || '—'],
+        ['派单来源', UI.esc(t.source || '—') +
+          (t.overdueFallback ? ' ' + UI.badge('超时兜底派单', 'amber') +
+            ' <span class="tiny">加急人工档到期无人给结论,系统先派;告警未成立、定性仍悬,复核员事后补审</span>' : ''), true],
         ['灰档说明', t.greyNote || '']
       ]) + '</div>';
     var hist = (t.resumeHistory || []).map(function (h) {
@@ -436,6 +496,20 @@
     if (VS.group === 'line') return UI.lineColor(key);
     if (VS.group === 'state') return key === '挂起中' ? '#9a6b00' : '#1a5fb4';
     return key === '待派' ? '#c0392b' : '#1a5fb4';
+  }
+  /* A5⑦ 已完结紧凑行:一行 = 工单号 + 事项一句话 + 状态;点号进详情 */
+  function ticketDoneRow(t) {
+    return '<div class="m2-done-row">' +
+      '<span class="m2-done-id">' + ticketLink(t.id) + '</span>' +
+      '<span class="m2-done-s">' + UI.esc(t.summary || S.ticketSummary(t)) + '</span>' +
+      '<span class="m2-done-st">' + stateBadge(t) + '</span></div>';
+  }
+  function doneBlock(key, done) {
+    if (!done.length) return '';
+    var on = !!VS.done[key];
+    var btn = '<button type="button" class="fold-more" onclick="M2.toggleDone(\'' + key.replace(/'/g, "\\'") + '\')">' +
+      (on ? '收起已完结(' + done.length + ')' : '显示已完结(' + done.length + ')') + '</button>';
+    return btn + (on ? '<div class="m2-done">' + done.map(ticketDoneRow).join('') + '</div>' : '');
   }
   function renderTickets() {
     var all = S.get().tickets.slice().reverse();
@@ -485,14 +559,20 @@
     });
     var body = groupOrder(keys).map(function (k) {
       var g = groups[k];
+      /* R88 A5⑦:已完工 / 已验收 的单默认不占卡位 —— 收进节内紧凑行,「显示已完结(N)」才展开 */
+      var live = g.filter(function (t) { return !isDone(t); });
+      var done = g.filter(isDone);
       var openKey = VS.group + ':' + k;
       var expanded = !!VS.open[openKey];
-      var shown = expanded ? g : g.slice(0, FOLD);
-      var hidden = g.length - shown.length;
-      var fold = UI.foldMore(expanded ? Math.max(0, g.length - FOLD) : hidden,
+      var shown = expanded ? live : live.slice(0, FOLD);
+      var hidden = live.length - shown.length;
+      var fold = UI.foldMore(expanded ? Math.max(0, live.length - FOLD) : hidden,
         "M2.toggleOpen('" + openKey.replace(/'/g, "\\'") + "')", expanded, FOLD);
-      return UI.groupHead(k, g.length, groupColor(k)) +
-        '<div class="grid2">' + shown.map(ticketCard).join('') + '</div>' + fold;
+      var headExtra = done.length ? '<span class="grp-n">已完结 ' + done.length + ' 条(已折叠)</span>' : '';
+      return UI.groupHead(k, g.length, groupColor(k), headExtra) +
+        (shown.length ? '<div class="grid2">' + shown.map(ticketCard).join('') + '</div>' + fold
+          : '<div class="tiny faint">本组无在办工单</div>') +
+        doneBlock(openKey, done);
     }).join('');
     return bar + body;
   }
@@ -586,14 +666,16 @@
     var cons = (pr.consequence || []).map(function (x) { return '<li>' + UI.esc(x) + '</li>'; }).join('');
     var alts = (pr.alts || []).map(function (a) {
       if (a.action === 'dispatch_manual') {
-        return '<div class="act-item"><button type="button" class="btn btn-sm" onclick="M2.jump(\'m2-dispatch-table\')">' +
-          UI.esc(a.text) + '</button><span class="act-why">到下方改派表选班组与理由码</span></div>';
+        return '<div class="act-item"><button type="button" class="btn btn-sm" onclick="M2.openOps()">' +
+          UI.esc(a.text) + '</button><span class="act-why">到「操作台」段的改派表选班组与理由码</span></div>';
       }
       return '<div class="act-item"><span class="tiny">备选:' + UI.esc(a.text) + '</span></div>';
     }).join('');
+    /* R88 A5⑱:方案是 AI 服务算的,卡上标源头 —— 建议不是决定,拍板在复核主管(值班) */
+    var aiBadge = pr.suggestedBy ? UI.badge(pr.suggestedBy + ' · 建议', 'blue') : '';
     return '<div' + UI.cardAttrs('alert', { cls: 'card' }) + ' id="m2-ruling-' + UI.esc(pr.id) + '">' +
       '<div class="card-hd"><h3>待裁定 · ' + UI.esc(pr.id) + '</h3>' +
-      '<span class="row" style="gap:6px;align-items:center">' + UI.badge(pr.step || '值班长裁定', 'red') +
+      '<span class="row" style="gap:6px;align-items:center">' + UI.badge(pr.step || '复核主管(值班)裁定', 'red') +
       UI.levelBadge(pr.level) + lineBadge(pr.line) + '</span></div>' +
       UI.kv([
         ['待派线索', clueLink(pr.clueId) + ' <span class="faint">· ' + UI.esc(pr.topic || '') + '</span>', true],
@@ -603,6 +685,8 @@
       '<div class="sep"></div>' + UI.secTitle('前两步已试结果', 'alert') +
       '<ul class="small" style="margin:4px 0 0 16px">' + tried + '</ul>' +
       '<div class="sep"></div>' + UI.secTitle('建议方案', 'alert') +
+      (aiBadge ? '<div style="margin:4px 0">' + aiBadge +
+        ' <span class="tiny">前两步的结果与方案由 AI 服务算好并记账(动作「调度建议」);建议不是决定 —— 采纳或改派在复核主管(值班)手上</span></div>' : '') +
       '<div class="oc-t2">' + UI.esc((pr.proposal || {}).text || '') + '</div>' +
       '<div class="sep"></div>' + UI.secTitle('采纳后的后果', 'alert') +
       '<ul class="small" style="margin:4px 0 0 16px">' + cons + '</ul>' +
@@ -613,10 +697,24 @@
       (chk.ok ? '' : '<span class="act-why">未满足:' + UI.esc(chk.reason) + '</span>') + '</div>' +
       alts + '</div></div>';
   }
-  function rulingSection() {
+  /* R88 布局靶单①:待裁定不再是压在地图上面的大卡 —— 收成地图上方一条醒目横条,
+     默认一行(「⚠ 待裁定 RL-100 · 抢占方案等复核主管确认 ▾」),点开才是全卡。 */
+  function rulingStrip() {
     var list = S.pendingRulings();
     if (!list.length) return '';
-    return list.map(rulingPendingCard).join('');
+    var pr = list[0];
+    var on = VS.rulingOpen;
+    var title = '待裁定 ' + pr.id + ' · 抢占方案等复核主管确认 ' + (on ? '▴ 收起' : '▾ 点开看方案与后果');
+    var side = (list.length > 1 ? '共 ' + list.length + ' 件 · ' : '') +
+      (pr.suggestedBy ? pr.suggestedBy + ' · 建议' : '');
+    return '<div class="m2-strip">' +
+      '<button type="button" class="m2-strip-hd" aria-expanded="' + (on ? 'true' : 'false') +
+      '" onclick="M2.toggleRuling()">' +
+      '<span class="m2-strip-ico">!</span>' +
+      '<span class="m2-strip-t">' + UI.esc(title) + '</span>' +
+      '<span class="m2-strip-n">' + UI.esc(side) + '</span></button>' +
+      (on ? '<div class="m2-strip-body">' + list.map(rulingPendingCard).join('') + '</div>' : '') +
+      '</div>';
   }
 
   /* ④-2 班组位置地图(MAPBASE 简化底图 + 班组车辆点 + 在途虚线指向目标设施) */
@@ -678,9 +776,11 @@
   }
 
   /* ④-3 最近调度动作流(派单 / 接单 / 交接 / 抢占 / 挂起恢复 类动作) */
+  /* R88:AI 服务的「调度建议」(dispatch_suggest)与「超时兜底派单」(auto_overdue_dispatch)
+     都是调度线上的动作 —— 进动作流,和人工动作同表可比。 */
   var DISPATCH_ACTIONS = {
     auto_dispatch: 1, auto_plan_ticket: 1, dispatch_manual: 1, crew_accept: 1, crew_handover: 1, crew_reject: 1,
-    preempt_yield: 1, preempt_borrow: 1, preempt_arbitrate: 1,
+    preempt_yield: 1, preempt_borrow: 1, preempt_arbitrate: 1, dispatch_suggest: 1, auto_overdue_dispatch: 1,
     suspend: 1, crew_resume: 1, resume_requeue: 1, merge: 1, split: 1, fastlane_recall: 1
   };
   function dispatchFeed() {
@@ -793,16 +893,32 @@
       '</div></div>';
   }
 
+  /* R88 布局靶单⑥:调度视图分两段 —— 全局态(地图 + 动作流)与操作台(负载 / 单工单抢占 / 改派表)不同层,
+     单工单的抢占卡不再与全局地图平摊在同一层。段头可点收合,总览默认开、操作台默认收。 */
+  function segHead(key, title, desc, right) {
+    var on = !!VS.seg[key];
+    return '<button type="button" class="m2-seg" aria-expanded="' + (on ? 'true' : 'false') +
+      '" onclick="M2.toggleSeg(\'' + key + '\')">' +
+      '<span class="m2-seg-cev">' + (on ? '▾' : '▸') + '</span>' +
+      '<span class="m2-seg-t">' + UI.esc(title) + '</span>' +
+      '<span class="m2-seg-d">' + UI.esc(desc) + '</span>' +
+      '<span class="m2-seg-n">' + UI.esc(right + (on ? '' : ' · 点开')) + '</span></button>';
+  }
   function renderDispatch() {
     var crews = S.get().crews;
-    return rulingSection() +
-      crewMap() +
-      dispatchFeed() +
-      UI.secTitle('班组负载卡(在办 / 在途 / 空闲)', 'ticket') +
-      '<div class="grid3">' + crews.map(crewCard).join('') + '</div>' +
-      '<div style="margin-top:10px">' + preemptCard() + '</div>' +
-      '<div style="margin-top:10px">' + UI.secTitle('改派 / 合并 / 拆单', 'ticket') + '</div>' +
-      dispatchTable();
+    var idle = crews.filter(function (c) { return c.status === '空闲'; }).length;
+    var openN = S.get().tickets.filter(function (t) { return t.state !== '已验收' && t.state !== '已合并'; }).length;
+    return rulingStrip() +
+      segHead('ov', '总览', '班组位置地图 + 最近调度动作流(全区态)', crews.length + ' 班组 · 空闲 ' + idle) +
+      (VS.seg.ov ? (crewMap() + dispatchFeed()) : '') +
+      segHead('ops', '操作台', '班组负载卡 · 抢占调度(单工单)· 改派 / 合并 / 拆单', openN + ' 单可调度') +
+      (VS.seg.ops
+        ? (UI.secTitle('班组负载卡(在办 / 在途 / 空闲)', 'ticket') +
+          '<div class="grid3">' + crews.map(crewCard).join('') + '</div>' +
+          '<div style="margin-top:10px">' + preemptCard() + '</div>' +
+          '<div style="margin-top:10px">' + UI.secTitle('改派 / 合并 / 拆单', 'ticket') + '</div>' +
+          dispatchTable())
+        : '');
   }
 
   /* ---------------- 待裁定的全局横幅(渲染层加,不动 store)----------------
@@ -815,9 +931,12 @@
     if (old && old.parentNode) old.parentNode.removeChild(old);
     var list = S.pendingRulings();
     if (!list.length) return;
+    /* R88 布局靶单⑧:调度视图自己已有醒目横条(地图上方),再插一条全局横幅就是三条横条压内容 —— 本页不插 */
+    if (/^#\/m2\/dispatch/.test(window.location.hash || '')) return;
     var pr = list[0];
     var text = '待裁定 · ' + pr.id + ':' + UI.esc(pr.topic || '') + ' ' + UI.esc(pr.facility || '') +
-      ' 已试「在办件让位 / 跨班组借调」,建议方案与后果在调度视图置顶卡,等区值班长确认' +
+      ' 已试「在办件让位 / 跨班组借调」,' + UI.esc(pr.suggestedBy || 'AI 服务') +
+      '给的方案与后果在调度视图顶部待裁定条,等复核主管(值班)确认' +
       (list.length > 1 ? '(共 ' + list.length + ' 件)' : '');
     var box = document.createElement('div');
     box.id = 'm2-ruling-banner';
