@@ -138,9 +138,14 @@
 
     <div class="roles">
       <div class="role">
-        <div class="r1">区复核员</div>
+        <div class="r1">★ 区复核员</div>
         <div class="r2">Web 工作台 · 坐席</div>
-        <div class="r3">定性签字的人:线索变告警,由他拍。</div>
+        <div class="r3">确认或驳回的人:线索变告警,由他拍。</div>
+      </div>
+      <div class="role">
+        <div class="r1">复核主管 · 区值班长</div>
+        <div class="r2">Web 工作台 · 白/夜两岗</div>
+        <div class="r3">抽审、紧急 override、调度改派/合并/拆单;白班主管、夜班值班长轮值兜底。</div>
       </div>
       <div class="role">
         <div class="r1">市政班组</div>
@@ -148,9 +153,14 @@
         <div class="r3">接单、处置、拍照回传;动作写回客户工单系统。</div>
       </div>
       <div class="role">
-        <div class="r1">管理者与 DMT</div>
+        <div class="r1">上级主管部门</div>
         <div class="r2">桌面 · 治理</div>
-        <div class="r3">看总览、抽审、握快车道开关。</div>
+        <div class="r3">看总览、抽审、握紧急直派开关。</div>
+      </div>
+      <div class="role">
+        <div class="r1">公众</div>
+        <div class="r2">手机 · 上报</div>
+        <div class="r3">上报异常线索,查看回执与去重合并状态。</div>
       </div>
     </div>
 
@@ -161,10 +171,10 @@
       </div>
       <div class="ex">
         <div class="t">看懂 · 双闸</div>
-        <p>AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走快车道。</p>
+        <p>AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走紧急直派。</p>
       </div>
       <div class="ex">
-        <div class="t">看懂 · 快车道「先派后审」</div>
+        <div class="t">看懂 · 紧急直派「先派后审」</div>
         <p>人身安全等不起人审——硬证据应急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
       </div>
     </div>
@@ -172,7 +182,7 @@
     <div class="tip banner banner-info">
       <span class="banner-ico">i</span>
       <div>
-        下面每一幕内嵌的都是同一套系统的实机镜像——先点框内顶栏「▶ 推进剧情」,把假时钟从 19:00 走到 19:02,
+        下面每一幕内嵌的都是同一套系统的实机镜像——先点框内顶栏「▶ 下一步」,把假时钟从 19:00 走到 19:02,
         看那一次自动派单;工作台 / 班组端 / 公众端共享同一份 sessionStorage 演示状态,这里点开的框与全屏打开的页面状态互通,
         继续点按可以把剧情一路推进到 21:30。
       </div>
@@ -197,7 +207,7 @@
     </div>
     <div class="frame-wrap">
       <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线快车道)"></iframe></div>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线紧急直派)"></iframe></div>
     </div>
   </section>
 
@@ -205,22 +215,22 @@
   <section class="act rev" id="act2">
     <div class="frame-wrap">
       <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 快车道并行复核卡"></iframe></div>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 紧急直派并行复核卡"></iframe></div>
     </div>
     <div class="act-body">
       <div class="act-head"><span class="act-no">②</span><span class="act-time">19:03</span></div>
       <h2>十五分钟,人追上机器</h2>
       <p class="quote">「我看下证据——嗯,是真的。确认。」</p>
       <p class="story">
-        复核员屏幕上快车道件置顶:证据卡、机械校验四项打钩、
-        <span class="assume" title="假设值:快车道并行复核窗 15 分钟,区可配">15 分钟</span>
+        复核员屏幕上紧急直派件置顶:证据卡、机械校验四项打钩、
+        <span class="assume" title="假设值:紧急直派并行复核窗 15 分钟,区可配">15 分钟</span>
         倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。
         右侧原型可操作:试试确认,或者试试撤回。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">并行复核 15min</span>
         <span class="pt badge badge-blue">撤回可召回</span>
-        <span class="pt badge badge-blue">快车道件全量抽审</span>
+        <span class="pt badge badge-blue">紧急直派件全量抽审</span>
       </div>
     </div>
   </section>
@@ -266,7 +276,7 @@
       </p>
       <div class="points">
         <span class="pt badge badge-blue">永不默认打回</span>
-        <span class="pt badge badge-blue">低置信不走快车道</span>
+        <span class="pt badge badge-blue">低置信不走紧急直派</span>
         <span class="pt badge badge-blue">驳回拘抽审</span>
       </div>
     </div>
@@ -304,12 +314,12 @@
       <p class="story">
         过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。
         公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;
-        DMT 顺手演示了那把安全侧的刀——关掉一个类目的快车道,该类目立刻回退人审,区可申诉。
+        上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的紧急直派,该类目立刻回退人审,区可申诉。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">过载三步</span>
         <span class="pt badge badge-blue">多源合并回执</span>
-        <span class="pt badge badge-blue">DMT 关车道</span>
+        <span class="pt badge badge-blue">上级主管部门关车道</span>
       </div>
     </div>
     <div class="stage-multi">
@@ -320,7 +330,7 @@
         </div>
         <div class="frame-wrap">
           <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-          <div class="desk-sm"><iframe data-src="app.html#/m6" title="工作台 · 系统管理(类目快车道开关)"></iframe></div>
+          <div class="desk-sm"><iframe data-src="app.html#/m6" title="工作台 · 系统管理(类目紧急直派开关)"></iframe></div>
         </div>
       </div>
       <div class="frame-wrap">
@@ -359,6 +369,7 @@
       <a class="btn" href="Tour-C-Overview.dc.html" target="_blank" rel="noopener">系统全览(一页地图)→</a>
       <a class="btn" href="manual.html" target="_blank" rel="noopener">演示手册(每幕看什么)→</a>
     </div>
+    <p class="lead" style="margin-top:22px">产品协议(页面地图与逐档参数)→ <a class="btn" href="spec.html" target="_blank" rel="noopener">产品协议 →</a></p>
   </div>
 
   <footer class="foot">全站虚构演示数据 · 零真实照片 · 仅供评审</footer>

@@ -44,11 +44,49 @@
     return '<span class="assume" title="' + esc(note || '假设值:试点首周与客户核实后按区可配参数调整') + '">' + esc(text) + '</span>';
   };
 
+  /* ---------------- 五类通道分类学徽章(R85⑤;与 PDF 五类通道分类学同名同色 —— 页级注入,不动 tokens.css) ---------------- */
+  var LANE_CLASS = {
+    '紧急直派':   { name: '紧急直派', tone: 'lane-e' },
+    '应急人审档': { name: '加急人工', tone: 'lane-u', sub: '应急人审档' },
+    '当日队列':   { name: '加急人工 · 当日档', tone: 'lane-u', sub: '当日队列(参数)' },
+    '批量':       { name: '常规人工', tone: 'lane-n', sub: '批量' },
+    '批量加急分诊(显名降级)': { name: '常规人工', tone: 'lane-n', sub: '批量加急分诊 · 显名降级' },
+    '批量半审':   { name: '常规人工', tone: 'lane-n', sub: '批量半审' },
+    '单条必审':   { name: '常规人工', tone: 'lane-n', sub: '单条必审' },
+    '记账':       { name: '自动处理', tone: 'lane-a', sub: '记账' },
+    '自动升格':   { name: '自动处理', tone: 'lane-a', sub: '自动升格' },
+    '机械驳回':   { name: '驳回与转办', tone: 'lane-r', sub: '机械驳回' },
+    '设备维护':   { name: '驳回与转办', tone: 'lane-r', sub: '设备维护' }
+  };
+  U.laneClass = function (laneRaw) { return LANE_CLASS[laneRaw] || null; };
+  /* 主名徽章(五色)+ 原细分名降为副注小字;未在字典内的车道名(如管网调查案)原样徽章不着五色 */
+  U.laneBadge = function (laneRaw) {
+    if (!laneRaw) return '';
+    var def = LANE_CLASS[laneRaw];
+    if (!def) return U.badge(laneRaw, 'blue');
+    var sub = def.sub ? ' <span class="lane-sub">(' + esc(def.sub) + ')</span>' : '';
+    return '<span class="badge lane-badge ' + def.tone + '">' + esc(def.name) + '</span>' + sub;
+  };
+  (function injectLaneCss() {
+    if (!w.document || w.document.getElementById('origen-lane-css')) return;
+    var css = '.lane-badge{font-weight:600;border:1px solid transparent;border-radius:20px;padding:1px 8px;font-size:11.5px;display:inline-block}' +
+      '.lane-e{background:#fbe9e7;color:#c0392b;border-color:#eec2ba}' +   /* 紧急直派 · 红 #c0392b */
+      '.lane-u{background:#faf2df;color:#9a6b00;border-color:#e8d7a6}' +  /* 加急人工 · 橙 #9a6b00 */
+      '.lane-n{background:#e6edfa;color:#1a5fb4;border-color:#bcd1ef}' +  /* 常规人工 · 蓝 #1a5fb4 */
+      '.lane-a{background:#e6f2e7;color:#2e7d32;border-color:#bcdcbf}' +  /* 自动处理 · 绿 #2e7d32 */
+      '.lane-r{background:#eceff1;color:#5b6b7c;border-color:#cfd6dc}' +  /* 驳回与转办 · 灰 #5b6b7c */
+      '.lane-sub{font-size:11px;color:var(--faint,#8e968f);margin-left:2px}';
+    var s = w.document.createElement('style');
+    s.id = 'origen-lane-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  })();
+
   U.sla = function (deadline) {
     if (!deadline) return '<span class="sla faint">—</span>';
     var txt = w.S.fmtSla(deadline), left = w.S.slaLeft(deadline);
     var cls = left < 0 ? 'sla-late' : (left <= 5 ? 'sla-warn' : 'sla-ok');
-    return '<span class="sla ' + cls + '" title="假设值 SLA;假时钟按剧情步进">' + esc(txt) + '</span>';
+    return '<span class="sla ' + cls + '" title="假设值 SLA;假时钟按场景步进">' + esc(txt) + '</span>';
   };
 
   /* ---------------- 证据示意 SVG(kind → 矢量示意 + 「AI 生成示意」角标) ---------------- */
@@ -207,9 +245,9 @@
     var f = obj.facility ? (w.S.find.facility(obj.facility) || null) : null;
     var badges = [];
     if (obj.level) badges.push(U.levelBadge(obj.level));
-    if (obj.lane) badges.push(U.badge(obj.lane, obj.lane.indexOf('快车道') >= 0 ? 'amber' : 'blue'));
+    if (obj.lane) badges.push(U.laneBadge(obj.lane));
     if (obj.status) badges.push(U.statusBadge(obj.status));
-    if (obj.fastlane) badges.push(U.badge('快车道自动派', 'amber'));
+    if (obj.fastlane) badges.push(U.badge('紧急直派自动派', 'amber'));
     if (obj.conf !== undefined && obj.conf !== null) badges.push(U.badge('置信 ' + obj.conf, 'grey'));
 
     var l2 = f ? ('关于:' + esc(f.kind) + ' ' + U.addr(f.id) + (f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : ''))
@@ -314,6 +352,56 @@
     }).join('') + '</ul>';
   };
 
+  /* ---------------- 本体日志(对象-链接-动作 三类记录的日志形态)----------------
+     m6「本体建模」分区与导览「后端发生了什么」浮层共用同一份渲染:一行 = 时刻 · 账号 · 动作 · 对象 · 摘要。
+     只做呈现,不改 actionLog 结构。 */
+  var OBJ_KEYS = ['clueId', 'ticketId', 'alertId', 'caseId', 'reportId', 'reconId', 'sensorId', 'targetId', 'facility', 'dma', 'crew', 'cat', 'scope'];
+  U.logObject = function (g) {
+    var p = g.params || {}, out = [];
+    for (var i = 0; i < OBJ_KEYS.length && out.length < 2; i++) {
+      var v = p[OBJ_KEYS[i]];
+      if (v === undefined || v === null || v === '') continue;
+      out.push(Array.isArray(v) ? v.join(' / ') : String(v));
+    }
+    if (!out.length && p.clueIds) out.push(p.clueIds.join(' / '));
+    if (!out.length && p.ticketIds) out.push(p.ticketIds.join(' / '));
+    return out.join(' · ') || '—';
+  };
+  /* 关键参数:除对象键之外的入参摘要(权限矩阵/理由码/阈值这类「动作的形参」) */
+  U.logParams = function (g) {
+    var p = g.params || {}, out = [];
+    Object.keys(p).forEach(function (k) {
+      if (k === 'actor' || OBJ_KEYS.indexOf(k) >= 0) return;
+      var v = p[k];
+      if (v === undefined || v === null || v === '') return;
+      out.push(k + '=' + (Array.isArray(v) ? v.join('/') : String(v)));
+    });
+    return out.join(' · ');
+  };
+  /* opts: {limit, desc, empty} */
+  U.ontologyLog = function (logs, opts) {
+    opts = opts || {};
+    var list = (logs || w.S.get().actionLog).slice();
+    if (opts.desc) list = list.reverse();
+    if (opts.limit) list = list.slice(0, opts.limit);
+    if (!list.length) return '<div class="tiny">' + esc(opts.empty || '本区间无动作记录。') + '</div>';
+    var rows = list.map(function (g) {
+      var par = U.logParams(g);
+      return '<tr>' +
+        '<td class="mono">' + esc(g.t) + '</td>' +
+        '<td>' + esc(g.actor) + (g.auto ? ' ' + U.badge('自动', 'amber') : '') + '</td>' +
+        '<td><b>' + esc(g.label || g.action) + '</b><div class="tiny mono">' + esc(g.action) + '</div></td>' +
+        '<td class="mono">' + esc(U.logObject(g)) + '</td>' +
+        '<td class="small">' + esc(g.sum || '') + (par ? '<div class="tiny">' + esc(par) + '</div>' : '') + '</td>' +
+        '<td class="tiny mono">' + esc(g.rid) + ' · ' + esc(g.snapshot) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
+      '<th style="width:56px">时刻</th><th style="width:96px">账号</th><th style="width:170px">动作</th>' +
+      '<th style="width:130px">对象</th><th>关键参数 · 摘要</th><th style="width:130px">记录号 · 快照</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  };
+
   /* ---------------- 横幅 ---------------- */
   var ICO = { info: 'i', warn: '!', danger: '!', ok: '✓', amber: '!' };
   U.banner = function (tone, text) {
@@ -325,7 +413,7 @@
     return bs.slice(-6).map(function (b) { return U.banner(b.tone, esc(b.text)); }).join('');
   };
 
-  /* ---------------- toast(剧情叙事 / 动作反馈)---------------- */
+  /* ---------------- toast(动作反馈 / 系统提示)---------------- */
   U.toast = function (text, tone) {
     var box = w.document.querySelector('.toasts');
     if (!box) { box = w.document.createElement('div'); box.className = 'toasts'; w.document.body.appendChild(box); }

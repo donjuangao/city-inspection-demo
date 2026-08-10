@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>公众上报 · 设施智能巡检(演示原型)</title>
+<title>公众上报 · 设施智能巡检</title>
 <link rel="stylesheet" href="assets/tokens.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
   <footer class="mob-foot">
     上报进兜底并入队列人工甄别升格,不直接进应急 · 联系方式列级脱敏<br>
     <span class="tiny">全站虚构演示数据,零真实照片;证据图为矢量示意</span>
-    <span style="float:right"><a href="#" id="btnReset">重置演示</a></span>
+    <span style="float:right"><a href="#" id="btnReset">重置数据</a></span>
   </footer>
 </div>
 
@@ -164,7 +164,7 @@ window.VIEW_PUBLIC = (function (w, d) {
   function renderReceipt(ctx) {
     var r = (ctx.reports || []).filter(function (x) { return x.id === ST.reportId; })[0];
     if (!r) {
-      return UI.banner('warn', '未找到该受理记录(可能刚重置过演示),请重新提交。') +
+      return UI.banner('warn', '未找到该受理记录(可能刚重置过数据),请重新提交。') +
         '<button type="button" class="btn btn-block" style="margin-top:8px" data-nav="new">重新开始</button>';
     }
     var mergedClue = r.mergedInto ? w.S.find.clue(r.mergedInto) : null;

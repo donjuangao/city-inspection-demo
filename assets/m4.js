@@ -20,7 +20,7 @@
     if (src.indexOf('高危') >= 0) return 'red';
     if (src.indexOf('override') >= 0 || src.indexOf('自动拘审') >= 0) return 'red';
     if (src.indexOf('推翻机械判定') >= 0) return 'blue';
-    if (src.indexOf('快车道') >= 0 || src.indexOf('批量') >= 0 || src.indexOf('降级') >= 0 || src.indexOf('自动升格') >= 0) return 'amber';
+    if (src.indexOf('紧急直派') >= 0 || src.indexOf('批量') >= 0 || src.indexOf('降级') >= 0 || src.indexOf('自动升格') >= 0) return 'amber';
     return 'grey';
   }
   // 抽审关联对象的术语分权:已确认成告警的显示「告警」,尚未确认(或已驳回)的仍显示「线索」——按对象当前真实状态判定,不猜
@@ -39,7 +39,7 @@
       '<div class="sec-title">抽审参数(全假设值,冷启动 × 2)</div>' +
       '<div class="small">记账道 ' + UI.assume('5%') + ' · 自动升格道 ' + UI.assume('10%') + ' · 机械驳回 ' + UI.assume('5%') +
       ' · 批量确认件 ' + UI.assume('15%') + ' · 复验通过件 ' + UI.assume('10%') + ' · 抽审时限 ' + UI.assume('48h') + '</div>' +
-      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=DMT 类目开关)。</div>' +
+      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=上级主管部门类目紧急直派开关)。</div>' +
       '</div>';
     if (!au.length) {
       return '<h3>抽审队列</h3>' + rateNote + '<div class="tiny" style="margin-top:8px">暂无抽审件。</div>';
@@ -95,7 +95,7 @@
       '</div>';
     if (!pr.length) {
       return '<h3 style="margin-top:16px">公众上报并入清单</h3>' + note +
-        '<div class="tiny" style="margin-top:8px">暂无公众上报(推进剧情至 T10 可见示例:Zakher 井盖同点位上报,去重合并进既有线索)。</div>';
+        '<div class="tiny" style="margin-top:8px">暂无公众上报。</div>';
     }
     return '<h3 style="margin-top:16px">公众上报并入清单(共 ' + pr.length + ' 条)</h3>' + note +
       '<div class="grid2" style="margin-top:8px">' + pr.map(reportCard).join('') + '</div>';

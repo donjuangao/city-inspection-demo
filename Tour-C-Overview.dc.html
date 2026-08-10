@@ -26,7 +26,7 @@
       <span style="width:1px;height:18px;background:#d8dee6"></span>
       <span style="font-size:13px;font-weight:600;color:#12233a;font-variant-numeric:tabular-nums">演示时刻 {{ clock }}</span>
       <span style="font-size:12px;color:#9a6b00;background:#fdf6e3;border:1px solid #ecdcb0;padding:1px 8px;border-radius:20px">{{ sceneCtx }}</span>
-      <button type="button" onClick="{{ onNext }}" style="padding:5px 12px;border-radius:6px;border:1px solid #1a5fb4;background:#1a5fb4;color:#fff;font-size:12.5px;font-family:inherit;cursor:pointer" style-hover="background:#164e94">▶ 推进剧情</button>
+      <button type="button" onClick="{{ onNext }}" style="padding:5px 12px;border-radius:6px;border:1px solid #1a5fb4;background:#1a5fb4;color:#fff;font-size:12.5px;font-family:inherit;cursor:pointer" style-hover="background:#164e94">▶ 下一步</button>
       <span style="font-size:11.5px;color:#7b8794">{{ stepHint }}</span>
       <span style="flex:1"></span>
       <a href="#matrix" style="font-size:12px;color:#5b6b7c;padding:4px 8px;border-radius:6px" style-hover="background:#eef3fa;color:#1a5fb4;text-decoration:none">三线能力矩阵</a>
@@ -72,7 +72,7 @@
           </div>
           <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342">位移 / 液位传感器触发,设备签名报文;AI 识别为第一闸</div>
           <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342"><b>四项</b>:传感器自检 · 合法作业窗 · 位置一致 · 证据质量。硬失败仍<b>零自动归档</b></div>
-          <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342">双闸过 = 快车道<b>先派后审</b>,人 15 分钟并行复核追认;无硬证据的高危件进 30 分钟人审档</div>
+          <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342">双闸过 = 紧急直派<b>先派后审</b>,人 15 分钟并行复核追认;无硬证据的高危件进 30 分钟人审档</div>
           <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342">自动紧急工单 + 只读预警广播;承接池满时过载三步(广播 / 显名降级 / 值班长抢占)</div>
           <div style="padding:12px;border-left:1px solid #eef1f4;font-size:12.5px;line-height:1.7;color:#243342">AI 复验修复前后配准;<b>判不出转存疑待人裁,永不默认打回</b></div>
         </div>
@@ -134,7 +134,7 @@
               <span style="font-size:11.5px;color:#7b8794;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">m1</span>
               <a href="app.html#/m1" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:700;color:#12233a" style-hover="color:#1a5fb4">复核工作台 →</a>
             </div>
-            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">三线分区队列 + 详情页:对象卡 / 证据卡 / 机械校验卡 / 动作面板 / 时间线。定性签字发生在这里。</div>
+            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">三线分区队列 + 详情页:对象卡 / 证据卡 / 机械校验卡 / 动作面板 / 时间线。确认 / 驳回 / 升格在这里完成。</div>
           </div>
           <div style="position:relative;overflow:hidden;background:#f7f9fb;height:271px">
             <iframe data-src="app.html#/m1" title="m1 复核工作台" style="width:1280px;height:900px;border:0;display:block;transform:scale(.3);transform-origin:top left"></iframe>
@@ -147,7 +147,7 @@
               <span style="font-size:11.5px;color:#7b8794;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">m1 详情</span>
               <a href="app.html#/m1/clue/CL-0417" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:700;color:#12233a" style-hover="color:#1a5fb4">线索 CL-0417 →</a>
             </div>
-            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">主演件详情:快车道并行复核、机械校验四项、复验人裁、主管紧急 override 与证据冻结。</div>
+            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">主演件详情:紧急直派并行复核、机械校验四项、复验人裁、主管紧急 override 与证据冻结。</div>
           </div>
           <div style="position:relative;overflow:hidden;background:#f7f9fb;height:271px">
             <iframe data-src="app.html#/m1/clue/CL-0417" title="m1 线索详情" style="width:1280px;height:900px;border:0;display:block;transform:scale(.3);transform-origin:top left"></iframe>
@@ -225,7 +225,7 @@
               <span style="font-size:11.5px;color:#7b8794;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">m6</span>
               <a href="app.html#/m6" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:700;color:#12233a" style-hover="color:#1a5fb4">系统管理 →</a>
             </div>
-            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">角色权限表(五角色 + 值班长 + 非人三账号)· 参数变更预演 · 类目快车道开关(DMT)· 值班表。</div>
+            <div style="font-size:12px;color:#5b6b7c;line-height:1.6;margin-top:4px">角色权限表(五角色 + 值班长 + 非人三账号)· 参数变更预演 · 类目紧急直派开关(上级主管部门)· 值班表。</div>
           </div>
           <div style="position:relative;overflow:hidden;background:#f7f9fb;height:271px">
             <iframe data-src="app.html#/m6" title="m6 系统管理" style="width:1280px;height:900px;border:0;display:block;transform:scale(.3);transform-origin:top left"></iframe>
@@ -262,7 +262,7 @@
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
         <div style="background:#fdf6e3;border:1px solid #ecdcb0;border-radius:10px;padding:12px 14px">
           <div style="font-size:12.5px;font-weight:700;color:#9a6b00;margin-bottom:4px">时间是假时钟</div>
-          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#9a6b00">不是真实时钟,只在「推进剧情」时步进。SLA 倒计时按场景步进变化,不按现实秒走。</p>
+          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#9a6b00">不是真实时钟,只在「下一步」时步进。SLA 倒计时按场景步进变化,不按现实秒走。</p>
         </div>
         <div style="background:#fdf6e3;border:1px solid #ecdcb0;border-radius:10px;padding:12px 14px">
           <div style="font-size:12.5px;font-weight:700;color:#9a6b00;margin-bottom:4px">没有后端</div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Al Ain 区市政 · 设施智能巡检工作台(演示原型)</title>
+<title>Al Ain 区市政 · 设施智能巡检工作台</title>
 <link rel="stylesheet" href="assets/tokens.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
   <aside class="nav">
     <div class="nav-brand">
       <b>设施智能巡检平台</b>
-      <span class="tiny">Al Ain 区市政 · 演示原型</span>
+      <span class="tiny">Al Ain 区市政</span>
     </div>
     <ul class="nav-list" id="navList"></ul>
     <div class="nav-foot">
@@ -25,16 +25,14 @@
   </aside>
 
   <div class="main">
-    <!-- ============ 顶栏:演示时刻 / 推进剧情 / 重置 / 角色切换器 ============ -->
+    <!-- ============ 顶栏:工作时钟 / 重置 / 角色切换器(推进职责已并入底部分镜导览条 assets/tour.js)============ -->
     <header class="top">
-      <span class="top-clock">演示时刻 <span id="clock">19:00</span></span>
+      <span class="top-clock">系统时刻 <span id="clock">19:00</span></span>
       <span class="top-ctx" id="sceneCtx">暴雨前夜</span>
-      <button type="button" class="btn btn-primary" id="btnNext">▶ 推进剧情</button>
-      <span class="tiny" id="stepHint"></span>
       <span class="top-spacer"></span>
       <label class="tiny" for="roleSel" style="color:var(--faint)">角色</label>
       <select id="roleSel" style="width:auto"></select>
-      <button type="button" class="btn" id="btnReset">重置演示</button>
+      <button type="button" class="btn" id="btnReset">重置数据</button>
     </header>
 
     <main class="view" id="view"></main>
@@ -51,7 +49,7 @@
 /* ============ 模块登记表(路由目标;新增模块必须同时登记,防死链 R70)============ */
 window.MODULES = [
   { id:'m1', no:'1', name:'复核工作台',  owner:'W1-A 工兵',
-    spec:['三线分区 tab(井盖/路面/管网,仲裁序置顶应急件)','队列表 + 详情(对象卡/证据卡/机械校验卡/动作面板/时间线)','快车道并行复核卡','调查案视图(管网线)'] },
+    spec:['三线分区 tab(井盖/路面/管网,仲裁序置顶应急件)','队列表 + 详情(对象卡/证据卡/机械校验卡/动作面板/时间线)','紧急直派并行复核卡','调查案视图(管网线)'] },
   { id:'m2', no:'2', name:'告警与工单',  owner:'W1-B 工兵',
     spec:['告警列表','工单镜像(状态机五格:已派工/已接单/已到场/已完工/已验收)','对账异常队列','调度视图(班组负载卡 + 改派/合并/拆单)'] },
   { id:'m3', no:'3', name:'设施台账',    owner:'W1-D 工兵',
@@ -61,7 +59,7 @@ window.MODULES = [
   { id:'m5', no:'5', name:'统计总览',    owner:'W1-D 工兵',
     spec:['健康总览卡(数字=前面动作的下游,联动 store)','覆盖热区示意 SVG'] },
   { id:'m6', no:'6', name:'系统管理',    owner:'W1-D 工兵',
-    spec:['角色表','参数变更(预演示意)','类目快车道开关(DMT)','值班表'] }
+    spec:['角色表','参数变更(影子试算)','类目紧急直派开关(上级主管部门)','值班表'] }
 ];
 window.VIEWS = {};
 </script>
@@ -117,12 +115,10 @@ window.VIEWS = {};
     var st = w.S.get();
     d.getElementById('clock').textContent = w.S.now();
     d.getElementById('sceneCtx').textContent = st.meta.scene + (st.gov.stormMode ? ' · 暴雨模式已启动' : '');
-    var nx = w.S.step();
-    d.getElementById('stepHint').textContent = nx ? ('下一步 ' + nx.id + ' ' + nx.t + ' ' + nx.title) : '剧情已走完 T12';
-    d.getElementById('btnNext').disabled = !nx;
     var sel = d.getElementById('roleSel');
     if (!sel.options.length) {
-      sel.innerHTML = w.DATA.dict.roles.map(function (r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+      var disp = w.DATA.dict.roleDisplay || {};
+      sel.innerHTML = w.DATA.dict.roles.map(function (r) { return '<option value="' + r + '">' + (disp[r] || r) + '</option>'; }).join('');
     }
     if (w.DATA.dict.roles.indexOf(st.role) < 0) {
       // 从班组端/公众端回来时 role 可能是服务账号语境——工作台无此身份,回落坐席默认(班组账号无 Web 工作台权限)
@@ -143,11 +139,7 @@ window.VIEWS = {};
     d.getElementById('view').innerHTML = UI.banners(ctx.module) + body;
   }
 
-  /* 顶栏交互 */
-  d.getElementById('btnNext').addEventListener('click', function () {
-    var r = w.S.nextStep();
-    if (!r.ok) UI.toast(r.reason, 'warn');
-  });
+  /* 顶栏交互(推进按钮已迁至底部分镜导览条,id=btnNext 由 assets/tour.js 挂「下一镜」) */
   d.getElementById('btnReset').addEventListener('click', function () { w.S.reset(); });
   d.getElementById('roleSel').addEventListener('change', function (e) { w.S.setRole(e.target.value); });
 
@@ -167,5 +159,8 @@ window.VIEWS = {};
   w.ROUTE = { render: render, parse: parseHash };
 })(window, document);
 </script>
+
+<!-- 导览层:分镜导览条 + 两枚说明浮层(必须在壳之后加载,依赖 w.ROUTE 与首屏 DOM) -->
+<script src="assets/tour.js"></script>
 </body>
 </html>

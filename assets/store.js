@@ -53,7 +53,11 @@
   if (!state.now) state = seed();
 
   function save() { writeStore(state); }
+  /* 静默计数器(R85① 导览重放用):>0 时不外发 render/scenario 事件,避免重放 12 步刷 12 次屏。
+     只有 S.tourGoto 会抬高它,既有调用路径 quiet 恒为 0 —— 既有语义不变。 */
+  var quiet = 0;
   function emit(name, detail) {
+    if (quiet) return;
     try { w.dispatchEvent(new CustomEvent(name, { detail: detail || null })); }
     catch (e) { var ev = w.document.createEvent('Event'); ev.initEvent(name, false, false); w.dispatchEvent(ev); }
   }
@@ -124,7 +128,7 @@
       var al = { id: 'AL-0' + (800 + s.alerts.length), clueId: c.id, facility: c.facility, line: c.line, level: c.level, status: '成立', t: s.now, by: actor };
       s.alerts.push(al); c.alertId = al.id;
       if (c.fastlane && c.ticketId) {
-        out.push('快车道件:告警 ' + al.id + ' 成立=人追认(工单 ' + c.ticketId + ' 已在处置中,不重复派工)');
+        out.push('紧急直派件:告警 ' + al.id + ' 成立=人追认(工单 ' + c.ticketId + ' 已在处置中,不重复派工)');
       } else {
         var tk = {
           id: nextId('WO-', s.tickets), type: c.level === '应急' ? '紧急工单' : (c.level === '急修' ? '急修工单' : '养护批量工单'),
@@ -180,10 +184,10 @@
   };
 
   A.fastlane_recall = {
-    label: '快车道撤回', actors: ['区复核员', '复核主管'], hint: '显名 + 理由码;副作用=召回班组 + 线索转驳回流',
+    label: '紧急直派撤回', actors: ['区复核员', '复核主管'], hint: '显名 + 理由码;副作用=召回班组 + 线索转驳回流',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
-      if (!c.fastlane) return '仅快车道自动派单件可撤回';
+      if (!c.fastlane) return '仅紧急直派自动派单件可撤回';
       if (c.status !== 'open') return '线索非「待核查」态,复核窗已闭';
       if (c.reviewEnd && toMin(s.now) > toMin(c.reviewEnd)) return '已超出 15 分钟并行复核窗';
       if (!p.reason) return '理由码必填';
@@ -200,9 +204,9 @@
         if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); }
         tk.recalled = true;
       }
-      hold('快车道件全量抽审', c.id, '快车道撤回件进误派率月报口径');
-      banner('info', '快车道撤回:' + c.id + ' 线索转驳回流;白跑不计班组考核,班组可申诉。', 'm1');
-      return '快车道撤回 ' + c.id + ':理由「' + p.reason + '」;' + br;
+      hold('紧急直派件全量抽审', c.id, '紧急直派撤回件进误派率月报口径');
+      banner('info', '紧急直派撤回:' + c.id + ' 线索转驳回流;白跑不计班组考核,班组可申诉。', 'm1');
+      return '紧急直派撤回 ' + c.id + ':理由「' + p.reason + '」;' + br;
     }
   };
 
@@ -422,7 +426,7 @@
   };
 
   A.toggle_fastlane = {
-    label: '类目快车道开关', actors: ['DMT'], hint: '关 = 安全侧动作即时生效 + 强制通知横幅 + 区申诉通道;开 = 需数据判据',
+    label: '类目紧急直派开关', actors: ['上级主管部门'], hint: '关 = 安全侧动作即时生效 + 强制通知横幅 + 区申诉通道;开 = 需数据判据',
     v: function (s, p) {
       if (!p.cat) return '未指定类目';
       if (p.on && !p.dataBasis) return '重开需按数据判据填写批准依据';
@@ -432,18 +436,18 @@
     run: function (s, p) {
       s.gov.fastlane[p.cat] = !!p.on;
       if (!p.on) {
-        banner('warn', 'DMT 已关闭「' + p.cat + '」类目快车道:该类目回退人审;本区已强制通知,区可发起申诉(申诉由 DMT 复议并留痕)。', 'global');
-        return 'DMT 关闭快车道类目「' + p.cat + '」:理由「' + p.reason + '」;即时生效 + 强制通知该区 + 区申诉通道开启';
+        banner('warn', '上级主管部门已关闭「' + p.cat + '」类目紧急直派:该类目回退人审;本区已强制通知,区可发起申诉(申诉由上级主管部门复议并留痕)。', 'global');
+        return '上级主管部门关闭紧急直派类目「' + p.cat + '」:理由「' + p.reason + '」;即时生效 + 强制通知该区 + 区申诉通道开启';
       }
-      banner('info', 'DMT 已重开「' + p.cat + '」类目快车道:依据「' + p.dataBasis + '」。', 'global');
-      return 'DMT 重开快车道类目「' + p.cat + '」:数据判据「' + p.dataBasis + '」';
+      banner('info', '上级主管部门已重开「' + p.cat + '」类目紧急直派:依据「' + p.dataBasis + '」。', 'global');
+      return '上级主管部门重开紧急直派类目「' + p.cat + '」:数据判据「' + p.dataBasis + '」';
     }
   };
 
   A.appeal_fastlane = {
-    label: '区申诉', actors: ['区巡检管理者', '复核主管', '区值班长'], hint: '关车道后的区申诉通道:DMT 复议并留痕',
+    label: '区申诉', actors: ['复核主管', '区值班长'], hint: '关车道后的区申诉通道:上级主管部门复议并留痕',
     v: function (s, p) { if (!p.cat) return '未指定类目'; if (!p.reason) return '申诉理由必填'; return null; },
-    run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」快车道关闭;理由「' + p.reason + '」→ 转 DMT 复议(留痕)'; }
+    run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」紧急直派关闭;理由「' + p.reason + '」→ 转上级主管部门复议(留痕)'; }
   };
 
   /* ---- 复验人裁(P5;永不默认打回) ---- */
@@ -648,7 +652,7 @@
         (pass === tot ? ' → 全过,双闸硬条件满足' : ' → 存在未过项,证据卡置顶');
     });
 
-  A.auto_dispatch = autoDef('自动派单(紧急快车道)', '提交校验:应急/紧急级 + 双闸硬条件 + 该类目快车道开关开启;产出紧急工单,不产出告警',
+  A.auto_dispatch = autoDef('自动派单(紧急直派)', '提交校验:应急/紧急级 + 双闸硬条件 + 该类目紧急直派开关开启;产出紧急工单,不产出告警',
     function (s, p) {
       var c = clueOf(p.clueId); var cw = crewOf(p.crew);
       var tk = {
@@ -656,20 +660,20 @@
         state: '已派工', source: w.DATA.dict.ticketSources.auto, createdT: s.now, line: c.line,
         mirror: 'MUN-WO-' + (77300 + s.tickets.length),
         sla: { accept: addMin(s.now, w.DATA.dict.sla.accept), arrive: addMin(s.now, w.DATA.dict.sla.arrive), done: addMin(s.now, 120) },
-        suspended: false, photos: [], note: '来源① 快车道自动派:硬证据准入=已认证设备签名报文;时效窗内实时数据;防抖冷却;速率未熔断'
+        suspended: false, photos: [], note: '来源① 紧急直派自动派:硬证据准入=已认证设备签名报文;时效窗内实时数据;防抖冷却;速率未熔断'
       };
       if (!tkOf(tk.id)) s.tickets.push(tk);
       c.ticketId = tk.id; c.reviewEnd = addMin(s.now, w.DATA.dict.sla.fastlaneReview); c.slaDeadline = c.reviewEnd;
       if (cw) { cw.load++; cw.status = '待接单'; }
-      hold('快车道件全量抽审', c.id, '快车道自动派单件全量抽审(误派率月报口径)');
+      hold('紧急直派件全量抽审', c.id, '紧急直派自动派单件全量抽审(误派率月报口径)');
       banner('info', '机器派单,人复核中:' + c.id + ' 已自动派 ' + (cw ? cw.name : p.crew) + '(工单 ' + tk.id + ');复核员 15 分钟内并行复核,可撤回召回。', 'm1');
       return '自动派单 ' + tk.id + ' → ' + (cw ? cw.name : p.crew) + ':产出紧急工单,不产出告警(定性权仍在人);15 分钟并行复核窗开启';
     },
     function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
-      if (c.level !== '应急' && c.level !== '紧急') return '非应急/紧急级,不进快车道';
-      if (!s.gov.fastlane[c.kindText] && !s.gov.fastlane['井盖缺失']) return '该类目快车道开关已关闭';
-      if (s.gov.fastlane[c.kindText] === false) return '该类目快车道开关已关闭(DMT 治理),回退人审';
+      if (c.level !== '应急' && c.level !== '紧急') return '非应急/紧急级,不进紧急直派';
+      if (!s.gov.fastlane[c.kindText] && !s.gov.fastlane['井盖缺失']) return '该类目紧急直派开关已关闭';
+      if (s.gov.fastlane[c.kindText] === false) return '该类目紧急直派开关已关闭(上级主管部门治理),回退人审';
       if (c.checks.some(function (x) { return x.result === 'fail'; })) return '机械校验存在硬失败,不满足双闸硬条件';
       if (c.ticketId) return '本件已有工单,防抖冷却窗内不重复派单';
       return null;
@@ -681,7 +685,7 @@
       return '只读预警广播 @' + (p.scope || '全域') + ':' + p.text + '(聚合抑制:同点位同时窗合并 · 每收件人每小时上限 · 静默窗)';
     });
 
-  A.auto_review_window = autoDef('并行复核窗开启', '快车道 15 分钟并行复核;超时走三级升级',
+  A.auto_review_window = autoDef('并行复核窗开启', '紧急直派 15 分钟并行复核;超时走三级升级',
     function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '复核窗:线索不存在';
       c.reviewEnd = addMin(s.now, p.mins || 15); c.slaDeadline = c.reviewEnd;
@@ -700,7 +704,7 @@
       var c = clueOf(p.clueId); if (!c) return '车道路由:线索不存在';
       c.lane = p.lane;
       c.slaDeadline = addMin(s.now, p.lane === '应急人审档' ? w.DATA.dict.sla.urgentReview : w.DATA.dict.sla.sameDay);
-      return '车道路由 ' + c.id + ' → 「' + p.lane + '」:低置信且无硬证据不进快车道;SLA ' +
+      return '车道路由 ' + c.id + ' → 「' + p.lane + '」:低置信且无硬证据不进紧急直派;SLA ' +
         (p.lane === '应急人审档' ? '30 分钟' : '当日') + '(假设值)+ 三级升级 + 超时只读预警';
     });
 
@@ -918,11 +922,17 @@
     state.stepIdx = Math.max(state.stepIdx, hit.idx + 1);
     state.lastStep = step.id;
     unlock(step);                       // 先解锁对象,再跑自动动作
+    var logFrom = state.actionLog.length;
     var ran = [];
     (step.auto || []).forEach(function (e) {
       var r = doCommit(e.action, e.params, true);
       if (r.ok) ran.push(e.action);
     });
+    /* 本步产生的日志区间(R85⑤「后端发生了什么」浮层的数据来源;不改 actionLog 结构,只记游标) */
+    if (!state.stepLog) state.stepLog = {};
+    if (!state.stepLog[step.id] || state.actionLog.length > logFrom) {
+      state.stepLog[step.id] = { from: logFrom, to: state.actionLog.length };
+    }
     save();
     emit('scenario', { step: step, ran: ran });
     emit('render', { scenario: step.id });
@@ -931,7 +941,7 @@
 
   function nextStep() {
     if (state.stepIdx >= w.SCENARIO.length) {
-      return { ok: false, reason: '剧情已推进到最后一步(T12)。可点「重置演示」回到 T0。' };
+      return { ok: false, reason: '已推进到最后一步,没有更多状态可推进。可点「重置数据」回到初始状态。' };
     }
     return advance(w.SCENARIO[state.stepIdx].id);
   }
@@ -974,6 +984,39 @@
     lastStep: function () { return state.lastStep ? (stepById(state.lastStep) || {}).step : null; },
     setRole: function (r) { state.role = r; save(); emit('render', { role: r }); return r; },
     find: { clue: clueOf, ticket: tkOf, crew: crewOf, facility: facOf, investigation: caseOf, sensor: senOf, alert: function (id) { return byId(state.alerts, id); } },
+
+    /* ---- R85②/⑤ 只读导出与导览辅助(只加不改:不触碰任何既有签名与语义) ---- */
+    /* 动作注册表的本体形态:动作 / 显示名 / 执行角色白名单 / 自动或人工 —— m6「本体建模」动作类型表用 */
+    actionDefs: function () {
+      return Object.keys(A).map(function (k) {
+        var d = A[k];
+        return { action: k, label: d.label || k, actors: (d.actors || ['*']).slice(), auto: !!d.auto, hint: d.hint || '' };
+      });
+    },
+    /* 某场景步产生的动作日志(导览「后端发生了什么」浮层) */
+    stepLog: function (stepId) {
+      var r = state.stepLog && state.stepLog[stepId];
+      if (!r) return [];
+      return state.actionLog.slice(r.from, r.to);
+    },
+    /* 导览跳镜:目标步数 < 当前 → 状态机不可逆,故重播(重新播种后静默连推);≥ 当前 → 静默补推。
+       全程 quiet,结束只发一次 render —— 不改 advance/nextStep 本身的语义。 */
+    tourGoto: function (target) {
+      target = Math.max(0, Math.min(target | 0, w.SCENARIO.length));
+      quiet++;
+      try {
+        if (target < state.stepIdx) {
+          state = seed();
+          w.S.state = state;
+        }
+        while (state.stepIdx < target) {
+          if (!nextStep().ok) break;
+        }
+      } finally { quiet--; }
+      save();
+      emit('render', { tour: target });
+      return { ok: true, stepIdx: state.stepIdx };
+    },
     time: { toMin: toMin, toHHMM: toHHMM, addMin: addMin },
     isHigh: isHigh
   };

@@ -62,14 +62,13 @@
     var nReject = count(log, function (g) { return g.action === 'reject'; });
     var nAuto = count(log, function (g) { return !!g.auto; });
     var rows = UI.kv([
-      ['剧情进度', st.stepIdx + ' / 12 步(演示时刻 ' + st.now + ')'],
       ['累计动作日志', log.length + ' 条'],
       ['人工确认', nConfirm + ' 次'],
       ['人工驳回', nReject + ' 次'],
       ['规则引擎自动步', nAuto + ' 次']
     ]);
     return '<div class="card"><div class="sec-title">管理者三问 · ② 趋势如何</div>' + rows +
-      '<div class="tiny" style="margin-top:6px">趋势口径 = 动作日志累计(时间线唯一数据源);随「▶ 推进剧情」逐步增长。</div></div>';
+      '<div class="tiny" style="margin-top:6px">趋势口径 = 动作日志累计(时间线唯一数据源),随处置动作持续增长。</div></div>';
   }
 
   function q3Gaps() {
@@ -79,7 +78,7 @@
       '<div class="row wrap" style="gap:6px">' + gaps.map(function (f) {
         return '<a class="badge badge-amber" href="#/m3/facility/' + f.id + '">' + UI.esc(f.id) + ' · ' + UI.esc(f.block) + '</a>';
       }).join('') + '</div>'
-      : '<div class="tiny">当前演示数据下全部设施均有观测覆盖。</div>';
+      : '<div class="tiny">当前数据下全部设施均有观测覆盖。</div>';
     return '<div class="card"><div class="sec-title">管理者三问 · ③ 覆盖哪里有洞</div>' + body +
       '<div class="tiny" style="margin-top:6px">点开徽标 → 台账(模块 3)详情核实观测覆盖窗。</div></div>';
   }
@@ -103,7 +102,7 @@
       statTile(alertsOn + ' / ' + st.alerts.length, '告警数(成立 / 总数)', '来自「确认」动作产出') +
       statTile(String(ticketsOpen), '在办工单数', '来自派单三来源(①②③)') +
       statTile(String(closed), '闭环数(已验收)', '来自「复验人裁·合格」动作') +
-      statTile(String(fastlane), '快车道件数', '来自「自动派单」动作(来源①)') +
+      statTile(String(fastlane), '紧急直派件数', '来自「自动派单」动作(来源①)') +
       '</div></div>';
 
     return head + '<div class="grid3">' + q1Worst() + q2Trend() + q3Gaps() + '</div>' + heatMap();

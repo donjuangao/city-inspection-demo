@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>班组处置端 · 设施智能巡检(演示原型)</title>
+<title>班组处置端 · 设施智能巡检</title>
 <link rel="stylesheet" href="assets/tokens.css">
 <style>
 /* ===== 班组处置端 页面级样式(自包含,不改 tokens.css 本体)=====
@@ -151,7 +151,7 @@
   <footer class="mob-foot">
     动作写回客户系统 · 证据双写进证据链——操作界面,不是第二真源<br>
     <span class="tiny">离线/无信号时本地暂存,回连补传 · 全站虚构演示数据,零真实照片</span>
-    <span style="float:right"><a href="#" id="btnReset">重置演示</a></span>
+    <span style="float:right"><a href="#" id="btnReset">重置数据</a></span>
   </footer>
 </div>
 
@@ -455,7 +455,7 @@
   function completionCard(t) {
     var body = '';
     if (t.state === '已完工') {
-      if (!t.verify) body = UI.banner('info', '已提交完工,写回客户工单系统;已触发 AI 复验(修复前后配准判定),结果将在剧情推进后更新。');
+      if (!t.verify) body = UI.banner('info', '已提交完工,写回客户工单系统;已触发 AI 复验(修复前后配准判定),结果将在系统状态推进后更新。');
       else if (t.verify === '存疑待人裁') body = UI.banner('warn', 'AI 复验:配准判不出 → 存疑待人裁(<b>永不默认打回</b>);等待复核员在工作台人工裁定。');
       else if (t.verify === '已打回') body = UI.banner('danger', '复验已打回,详情见上方备注;请核实后重新提交完工。');
     } else if (t.state === '已验收') {
@@ -550,7 +550,7 @@
       }
       if (!pending.length && !active.length) {
         html += '<div class="c-empty"><b>当前没有工单</b>' +
-          '可切顶部班组下拉查看其他班组在办件,或到工作台点「▶ 推进剧情」触发新派单。</div>';
+          '可切顶部班组下拉查看其他班组在办件,或到工作台点「▶ 下一步」触发新派单。</div>';
       }
     } else if (M.tab === 'report') {
       html += reportNewSection(crewObj);
@@ -582,7 +582,7 @@
     },
     handover: function (ticketId) {
       var sel = d.getElementById('ho-' + ticketId), toCrew = sel ? sel.value : '';
-      var r = w.S.commit('crew_handover', { ticketId: ticketId, toCrew: toCrew, actor: '班组账号', note: '跨班次交接(演示)' });
+      var r = w.S.commit('crew_handover', { ticketId: ticketId, toCrew: toCrew, actor: '班组账号', note: '跨班次交接' });
       if (!r.ok) UI.toast('动作未执行:' + r.reason, 'bad'); else if (r.log) UI.toast(r.log.sum, 'ok');
     },
     safety: function () {

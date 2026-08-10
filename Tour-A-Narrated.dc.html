@@ -26,7 +26,7 @@
       <span style="width:1px;height:18px;background:#252d28"></span>
       <span style="font-size:13px;font-weight:700;color:#ffffff;font-variant-numeric:tabular-nums;white-space:nowrap">演示时刻 {{ clock }}</span>
       <span style="font-size:12px;color:#c9c57e;background:rgba(201,197,126,.10);border:1px solid rgba(201,197,126,.30);padding:2px 10px;border-radius:20px;white-space:nowrap;font-weight:600">{{ sceneCtx }}</span>
-      <button type="button" onClick="{{ onNext }}" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #17a05e;background:#17a05e;color:#fff;font-size:12.5px;font-family:inherit;line-height:1.7;cursor:pointer" style-hover="background:#10804a">▶ 推进剧情</button>
+      <button type="button" onClick="{{ onNext }}" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #17a05e;background:#17a05e;color:#fff;font-size:12.5px;font-family:inherit;line-height:1.7;cursor:pointer" style-hover="background:#10804a">▶ 下一步</button>
       <span style="font-size:11.5px;color:#8e968f;white-space:nowrap">{{ stepHint }}</span>
       <span style="flex:1"></span>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -54,7 +54,7 @@
         <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
           <div style="font-size:14.5px;font-weight:700;color:#ffffff">区复核员</div>
           <div style="font-size:11px;color:#17a05e;letter-spacing:.03em;margin-top:2px">Web 工作台 · 坐席</div>
-          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">定性签字的人:线索变告警,由他拍。</div>
+          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">确认或驳回的人:线索变告警,由他拍。</div>
         </div>
         <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
           <div style="font-size:14.5px;font-weight:700;color:#ffffff">市政班组</div>
@@ -62,9 +62,9 @@
           <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">接单、处置、拍照回传;动作写回客户工单系统。</div>
         </div>
         <div style="flex:1;min-width:210px;background:#161b18;border:1px solid #252d28;border-radius:14px;padding:15px 17px">
-          <div style="font-size:14.5px;font-weight:700;color:#ffffff">管理者与 DMT</div>
+          <div style="font-size:14.5px;font-weight:700;color:#ffffff">管理者与上级主管部门</div>
           <div style="font-size:11px;color:#17a05e;letter-spacing:.03em;margin-top:2px">桌面 · 治理</div>
-          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">看总览、抽审、握快车道开关。</div>
+          <div style="font-size:12.5px;color:#98a29b;line-height:1.65;margin-top:8px">看总览、抽审、握紧急直派开关。</div>
         </div>
       </div>
 
@@ -75,17 +75,17 @@
         </div>
         <div style="background:rgba(23,160,94,.10);border:1px solid rgba(23,160,94,.28);border-radius:14px;padding:15px 17px">
           <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 双闸</div>
-          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走快车道。</p>
+          <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走紧急直派。</p>
         </div>
         <div style="background:rgba(23,160,94,.10);border:1px solid rgba(23,160,94,.28);border-radius:14px;padding:15px 17px">
-          <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 快车道「先派后审」</div>
+          <div style="font-size:11px;letter-spacing:.06em;color:#5fd39a;font-weight:700;margin-bottom:7px">看懂 · 紧急直派「先派后审」</div>
           <p style="margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2">人身安全等不起人审——硬证据应急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
         </div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border-radius:6px;border:1px solid rgba(201,197,126,.28);background:rgba(201,197,126,.08);color:#ded9ab;margin-top:26px;max-width:900px;font-size:12.5px;line-height:1.75">
         <span style="flex:none;font-weight:700">i</span>
-        <div>本页左栏是<b>讲稿</b>(口播词 / 台上动作 / 预判追问),右栏是<b>实机镜像</b>——同一份 sessionStorage 演示状态。顶栏「▶ 推进剧情」会推进假时钟并刷新页面上所有实机框;讲一幕、点一幕,12 步从 19:02 走到 21:30。</div>
+        <div>本页左栏是<b>讲稿</b>(口播词 / 台上动作 / 预判追问),右栏是<b>实机镜像</b>——同一份 sessionStorage 演示状态。顶栏「▶ 下一步」会推进假时钟并刷新页面上所有实机框;讲一幕、点一幕,12 步从 19:02 走到 21:30。</div>
       </div>
     </header>
 
@@ -107,11 +107,11 @@
           </div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">点顶栏「▶ 推进剧情」到 19:02 → 指队列顶部的快车道并行复核卡 → 展开机械校验四项。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">点顶栏「▶ 下一步」到 19:02 → 指队列顶部的紧急直派并行复核卡 → 展开机械校验四项。</p>
           </div>
           <div style="padding:12px 14px">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「传感器误报怎么办?」→ 硬证据只是<b>准入</b>条件,不是结论:自检失败的传感器走设备工单(T8 演示),误派由 15 分钟窗内撤回召回,快车道件<b>全量抽审</b>。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「传感器误报怎么办?」→ 硬证据只是<b>准入</b>条件,不是结论:自检失败的传感器走设备工单(T8 演示),误派由 15 分钟窗内撤回召回,紧急直派件<b>全量抽审</b>。</p>
           </div>
         </div>
         </sc-if>
@@ -124,7 +124,7 @@
       <div style="display:flex;flex-direction:column;gap:7px">
         <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 复核工作台 m1</span>
         <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
-          <iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线快车道)" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          <iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线紧急直派)" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
         </div>
       </div>
     </section>
@@ -137,7 +137,7 @@
         </div>
         <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">十五分钟,人追上机器</h2>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「我看下证据——嗯,是真的。确认。」</p>
-        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">复核员屏幕上快车道件置顶:证据卡、机械校验四项打钩、15 分钟倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。右侧原型可操作:试试确认,或者试试撤回。</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">复核员屏幕上紧急直派件置顶:证据卡、机械校验四项打钩、15 分钟倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。右侧原型可操作:试试确认,或者试试撤回。</p>
         <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
         <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
           <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 60 秒</div>
@@ -147,7 +147,7 @@
           </div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 19:03 → 点「查看证据卡」(高危确认的前置)→ 点「快车道撤回」看分支文案,再关掉弹层 → 回到「确认」。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 19:03 → 点「查看证据卡」(高危确认的前置)→ 点「紧急直派撤回」看分支文案,再关掉弹层 → 回到「确认」。</p>
           </div>
           <div style="padding:12px 14px">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
@@ -158,13 +158,13 @@
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">并行复核 15min</span>
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">撤回可召回</span>
-          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">快车道件全量抽审</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">紧急直派件全量抽审</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:7px">
         <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 可操作 · 线索详情 CL-0417</span>
         <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:760px;height:534px">
-          <iframe data-src="app.html#/m1/clue/CL-0417" title="工作台 · 快车道并行复核卡与动作面板" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
+          <iframe data-src="app.html#/m1/clue/CL-0417" title="工作台 · 紧急直派并行复核卡与动作面板" style="width:1280px;height:900px;border:0;display:block;transform:scale(.59375);transform-origin:top left"></iframe>
         </div>
       </div>
     </section>
@@ -223,7 +223,7 @@
           <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 70 秒(本页信息量最大的一幕)</div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「一条主线走完了,我用两条对照线索说明这套设计不是只为顺境写的。<b>0.31 那条</b>——同样是井盖、同样高危,但没有传感器硬证据,它就没有资格进快车道,老老实实排 30 分钟人审。<b>树影那条</b>——机械闸硬失败,但高危件<b>零自动归档</b>,必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。」</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「一条主线走完了,我用两条对照线索说明这套设计不是只为顺境写的。<b>0.31 那条</b>——同样是井盖、同样高危,但没有传感器硬证据,它就没有资格进紧急直派,老老实实排 30 分钟人审。<b>树影那条</b>——机械闸硬失败,但高危件<b>零自动归档</b>,必须由人按六个原因码之一驳回,而且驳回本身会被拘进主管抽审。」</p>
           </div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
@@ -237,7 +237,7 @@
         </sc-if>
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;max-width:560px">
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">永不默认打回</span>
-          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">低置信不走快车道</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">低置信不走紧急直派</span>
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">驳回拘抽审</span>
         </div>
       </div>
@@ -305,17 +305,17 @@
         </div>
         <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">压力测试:调度、公众与治理</h2>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「Zakher 又一口井盖——没有空闲班组了。」</p>
-        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:760px;text-wrap:pretty">过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;DMT 顺手演示了那把安全侧的刀——关掉一个类目的快车道,该类目立刻回退人审,区可申诉。</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:760px;text-wrap:pretty">过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的紧急直派,该类目立刻回退人审,区可申诉。</p>
         <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
         <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06)">
           <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 75 秒</div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">口播</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「最后一段是压力测试。资源不够的时候,系统不装作够——<b>超额件显名降级</b>,写清楚它为什么没被立刻派出去,然后把仲裁权交给值班长。治理侧同理:DMT 手上这把开关能<b>关掉整个类目的快车道</b>,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个可以收回的把手。」</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「最后一段是压力测试。资源不够的时候,系统不装作够——<b>超额件显名降级</b>,写清楚它为什么没被立刻派出去,然后把仲裁权交给值班长。治理侧同理:上级主管部门手上这把开关能<b>关掉整个类目的紧急直派</b>,关了就回退人审,区里可以申诉。自动化的每一寸权限,都留了一个可以收回的把手。」</p>
           </div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:00 → 顶栏角色切「区值班长」→ 调度视图点「挂起 WO-8871(应急抢占)」→ 21:10 看公众端回执与去重合并 → 21:30 角色切「DMT」→ 系统管理里关掉「井盖缺失」快车道。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:00 → 顶栏角色切「区值班长」→ 调度视图点「挂起 WO-8871(应急抢占)」→ 21:10 看公众端回执与去重合并 → 21:30 角色切「上级主管部门」→ 系统管理里关掉「井盖缺失」紧急直派。</p>
           </div>
           <div style="padding:12px 14px">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
@@ -326,7 +326,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px">
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">过载三步</span>
           <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">多源合并回执</span>
-          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">DMT 关车道</span>
+          <span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">上级主管部门关车道</span>
         </div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:22px">
@@ -338,7 +338,7 @@
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:7px">
-            <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 系统管理 m6(快车道开关)</span>
+            <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 系统管理 m6(紧急直派开关)</span>
             <div style="position:relative;overflow:hidden;border-radius:14px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:560px;height:394px">
               <iframe data-src="app.html#/m6" title="工作台 · 系统管理" style="width:1280px;height:900px;border:0;display:block;transform:scale(.4375);transform-origin:top left"></iframe>
             </div>
@@ -409,7 +409,7 @@
         </div>
         <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">兜底的那张网,和管理者的三个问题</h2>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「凡是绕过人的,后面都有一张抽审的网接着。」</p>
-        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">抽审队列是这套自动化的对价:免人工升格件、机械驳回件、快车道件、复验通过件,各有各的抽审率和 48 小时时限,来源标写明它是被谁拘进来的。统计总览只回答管理者的三个问题——哪片最差、趋势如何、覆盖哪里有洞;每个数字都实算自动作日志,不是另编一套报表口径。</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:560px;text-wrap:pretty">抽审队列是这套自动化的对价:免人工升格件、机械驳回件、紧急直派件、复验通过件,各有各的抽审率和 48 小时时限,来源标写明它是被谁拘进来的。统计总览只回答管理者的三个问题——哪片最差、趋势如何、覆盖哪里有洞;每个数字都实算自动作日志,不是另编一套报表口径。</p>
         <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
         <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06);max-width:560px">
           <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 50 秒 · 收尾</div>
@@ -456,7 +456,7 @@
       </ul>
       <div style="display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border-radius:6px;border:1px solid #e6ddb0;background:#faf5e0;color:#8a7420;margin-top:16px;max-width:900px;font-size:12.5px;line-height:1.7">
         <span style="flex:none;font-weight:700">!</span>
-        <div>诚实边界三条:<b>时间是假时钟</b>,只在「推进剧情」时步进;<b>没有后端</b>,全部 mock 在前端 store(sessionStorage),不发出任何网络请求;<b>零真实照片</b>,所有证据图都是代码现场生成的矢量示意,统一带「AI 生成示意」角标。</div>
+        <div>诚实边界三条:<b>时间是假时钟</b>,只在「下一步」时步进;<b>没有后端</b>,全部 mock 在前端 store(sessionStorage),不发出任何网络请求;<b>零真实照片</b>,所有证据图都是代码现场生成的矢量示意,统一带「AI 生成示意」角标。</div>
       </div>
     </section>
 

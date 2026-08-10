@@ -13,9 +13,15 @@ def check(name, ok, detail=""):
 
 print("== print.html 形制自检 ==  文件:%s  字节:%d" % (SRC, len(html.encode("utf-8"))))
 
-# 1 零外链
-links = re.findall(r'https?://[^\s"\'<>)]*', html)
-check("① 零外链(无 http:// 或 https://)", not links, "命中 %r" % (links[:5],))
+# 1 零外链资源(2026-08-10 R85⑥ 收窄:PDF 精简后须以纯文本印出演示站「产品协议」页指路 URL,
+#   原判据「全文零 http」已过时。红线的真实对象是**资源外链**——渲染时会去网上取东西的引用;
+#   印在纸上的一行文字 URL 不发请求、不破坏离线可印性,故豁免,但登记在备注里可见)
+res_links = re.findall(r'(?:href|src|srcset|xlink:href)\s*=\s*["\']?\s*https?://[^\s"\'<>)]*'
+                       r'|url\(\s*["\']?\s*https?://[^\s"\'<>)]*'
+                       r'|@import[^;]*https?://[^\s"\'<>);]*', html, re.I)
+check("① 零外链资源(href/src/url()/@import 无 http)", not res_links, "命中 %r" % (res_links[:5],))
+text_links = re.findall(r'https?://[^\s"\'<>)]*', html)
+notes.append("纯文本 URL(印在纸上,不发请求)%d 处:%r" % (len(text_links), sorted(set(text_links))))
 
 # 2 零 <img>
 imgs = re.findall(r'<img\b', html, re.I)
@@ -82,9 +88,9 @@ check("⑩ 每页 ≥1 处「假设」标注", not lack, "缺失页 %r" % (lack,
 
 # 11 术语纪律(2026-08-10 走查 R83-1/-3:砍术语对照表,全文说人话)
 #    正向:首页有「线索/告警」这对唯一保留术语的定义句;反向:黑话族零残留
-# R83 E4 桥接豁免:术语定义行里「演示界面快车道=本文紧急直派」是唯一许可的交叉命名点,扫描时剔除该行
-html_scan = re.sub(r'<p class="tt">全文只需要记一对词.*?</p>', '', html, flags=re.S)
-jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html_scan)
+# 2026-08-10 R85⑤:demo 界面通道名已统一为五类分类学(「快车道」→「紧急直派」),
+#   桥接句失效已从术语定义行删除,原「桥接豁免剔除该行」的 re.sub 随之删除——全文零豁免扫描
+jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html)
 has_pair = ("线索" in per_page[0]) and ("告警" in per_page[0]) and ("不再定义新词" in per_page[0])
 check("⑪ 术语纪律:线索/告警定义句在 + 黑话族零残留", has_pair and not jargon,
       "定义句 %s;黑话命中 %r" % ("在" if has_pair else "缺", jargon[:8]))

@@ -15,10 +15,12 @@
   var LANDMARKS = ['Al Jimi Mall', 'Qasr Al Muwaiji', 'Hili Fun City', 'Al Ain Mall',
     'Green Mubazzarah', 'Jebel Hafeet'];
 
-  // 设计档 §0.6 角色(人类五角色 + 非人三账号)
-  var ROLES = ['区复核员', '复核主管', '区值班长', '区巡检管理者', '区管理员', 'DMT'];
+  // 设计档 §0.6 角色(R85④ 五行角色口径:区复核员/复核主管(白班)/区值班长(夜班)/上级主管部门 + 非人三账号;
+  // 原「区巡检管理者」「区管理员」并入「复核主管」——身份值仍取不带班次后缀的裸字符串,「(白班)/(夜班)」只在下拉与角色表显示)
+  var ROLES = ['区复核员', '复核主管', '区值班长', '上级主管部门'];
+  var ROLE_DISPLAY = { '复核主管': '复核主管(白班)', '区值班长': '区值班长(夜班)' };
   var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号'];
-  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '区巡检管理者': 2, '区管理员': 2, 'DMT': 2 };
+  var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '区值班长': 3, '上级主管部门': 2 };
 
   // 设计档 §0.5.1/0.5.2/0.5.3 线内分级档名(逐字)
   var LEVELS = {
@@ -30,8 +32,8 @@
   // 设计档 §0.5 各线 to-be 路由车道名(逐字)
   var LANES = {
     '路面': ['记账', '自动升格', '批量半审', '单条必审', '机械驳回'],
-    '井盖': ['紧急快车道', '应急人审档', '当日队列', '批量', '机械驳回'],
-    '管网': ['紧急快车道', '调查案', '设备维护']
+    '井盖': ['紧急直派', '应急人审档', '当日队列', '批量', '机械驳回'],
+    '管网': ['紧急直派', '调查案', '设备维护']
   };
 
   // 设计档 §0.5.1/0.5.2/0.5.3 机械校验项(变长 checks[]:路面 5 / 井盖 4 / 管网 3,名目逐字)
@@ -82,19 +84,19 @@
 
   // 设计档 §0.8.1:派单三来源
   var TICKET_SOURCES = {
-    auto: '① 快车道自动派',
+    auto: '① 紧急直派自动派',
     human: '② 人确认派',
     plan: '③ 计划批量派'
   };
 
   // SLA 假设值(设计档 §0.8.2 第 4 步 / §0.5 线卡;数字=假设值,区可配 R48)
   var SLA = {
-    fastlaneReview: 15,   // 快车道并行复核窗(分)
+    fastlaneReview: 15,   // 紧急直派并行复核窗(分)
     urgentReview: 30,     // 应急人审档(分)
     accept: 10,           // 接单(分)
     arrive: 30,           // 到场(分)
-    sameDay: 240,         // 当日队列/急修 4h
-    roadUrgent: 240       // 路面急修确认 4h
+    sameDay: 240,         // 当日队列(养护档)4h
+    roadUrgent: 30        // 路面急修确认 30 分(假设值;R85⑤ 由 4h 收口;当前未接入计算,仅作口径参照)
   };
 
   /* ============ 1 · 设施台账(≥20,三线都有)============ */
@@ -235,7 +237,7 @@
     auditQueue: [
       { id: 'AU-1201', src: '高危确认拘审', clueId: 'CL-0198', reason: '井盖移位·高危确认件全量拘审', t: '17:42', status: '待抽审' },
       { id: 'AU-1202', src: '批量确认 15% 抽样', clueId: 'CL-0175', reason: '路面养护批量件抽样', t: '17:55', status: '待抽审' },
-      { id: 'AU-1203', src: '快车道件全量抽审', clueId: 'CL-0166', reason: '快车道自动派单件·误派率月报口径', t: '18:10', status: '待抽审' }
+      { id: 'AU-1203', src: '紧急直派件全量抽审', clueId: 'CL-0166', reason: '紧急直派自动派单件·误派率月报口径', t: '18:10', status: '待抽审' }
     ]
   };
 
@@ -278,19 +280,19 @@
     { date: '今夜', role: '复核主管', who: '复核主管', note: '抽审与 override 授权位' }
   ];
   var PARAM_CHANGES = [
-    { id: 'PC-0031', item: '井盖线 应急人审档 SLA', from: '30 分', to: '30 分', status: '现行', by: '区巡检管理者', note: '假设值,区可配' }
+    { id: 'PC-0031', item: '井盖线 应急人审档 SLA', from: '30 分', to: '30 分', status: '现行', by: '复核主管', note: '假设值,区可配' }
   ];
 
   /* ============ 9 · 顶层 DATA(施工图 §4)============ */
   w.DATA = {
     meta: {
       city: 'Al Ain', tenant: 'Al Ain 区市政', t0: '19:00',
-      storm: '今夜有强对流预警(演示背景)',
+      storm: '今夜有强对流预警',
       scene: '暴雨前夜',
       ruleVer: 'rules-2026.08.1', modelVer: 'vision-2026.07.3', paramVer: 'param-AlAin-v4', refVer: 'ref-2026.08.01'
     },
     dict: {
-      blocks: BLOCKS, landmarks: LANDMARKS, roles: ROLES, serviceAccounts: SERVICE_ACCOUNTS,
+      blocks: BLOCKS, landmarks: LANDMARKS, roles: ROLES, roleDisplay: ROLE_DISPLAY, serviceAccounts: SERVICE_ACCOUNTS,
       roleRank: ROLE_RANK, levels: LEVELS, lanes: LANES, checkDefs: CHECK_DEFS,
       rejectCodes: REJECT_CODES, reasonCodes: REASON_CODES,
       ticketStates: TICKET_STATES, ticketSources: TICKET_SOURCES, sla: SLA
@@ -309,7 +311,7 @@
     duty: DUTY,
     paramChanges: PARAM_CHANGES,
     banners: [
-      { id: 'BN-storm', tone: 'warn', text: '今夜有强对流预警(演示背景):井盖线雨水口养护件整体升一档,雨前清掏专项待启。', scope: 'global' }
+      { id: 'BN-storm', tone: 'warn', text: '今夜有强对流预警:井盖线雨水口养护件整体升一档,雨前清掏专项待启。', scope: 'global' }
     ]
   };
 
@@ -330,17 +332,17 @@
         { action: 'auto_dispatch', params: { actor: '规则引擎', clueId: 'CL-0417', crew: 'CR-01' } },
         { action: 'auto_broadcast', params: { actor: '规则引擎', scope: 'Al Jimi', text: 'MH-0417 井盖缺失,已自动派单 排水一班;不定性、不代替复核。' } }
       ],
-      manual: '页面横幅「机器派单,人复核中」;m1 快车道并行复核卡可见。'
+      manual: '页面横幅「机器派单,人复核中」;m1 紧急直派并行复核卡可见。'
     },
     {
       id: 'T2', t: '19:03', figs: 'D1',
       title: '并行复核窗开启 · 15 分钟倒计时',
-      narration: '19:03 快车道并行复核窗开启:15 分钟倒计时 + 撤回按钮可见。确认=告警追认;撤回=召回班组。',
+      narration: '19:03 紧急直派并行复核窗开启:15 分钟倒计时 + 撤回按钮可见。确认=告警追认;撤回=召回班组。',
       unlocks: [],
       auto: [
         { action: 'auto_review_window', params: { actor: '规则引擎', clueId: 'CL-0417', mins: SLA.fastlaneReview } }
       ],
-      manual: '评审者点「确认」= 告警追认;或点「快车道撤回」走召回分支。'
+      manual: '评审者点「确认」= 告警追认;或点「紧急直派撤回」走召回分支。'
     },
     {
       id: 'T3', t: '19:05', figs: 'P1-P4/P8',
@@ -369,7 +371,7 @@
     {
       id: 'T5', t: '19:30', figs: 'D2',
       title: '对照例 · MH-0562 纯视觉 0.31 无硬证据',
-      narration: '19:30 对照例:MH-0562(Hili)纯视觉 0.31、无传感器硬证据 → 不走快车道,进应急人审档 30 分钟倒计时。',
+      narration: '19:30 对照例:MH-0562(Hili)纯视觉 0.31、无传感器硬证据 → 不走紧急直派,进应急人审档 30 分钟倒计时。',
       unlocks: [{ type: 'clue', obj: 'CL-0562' }],
       auto: [
         { action: 'auto_create_clue', params: { actor: 'AI 服务', clueId: 'CL-0562' } },
@@ -455,13 +457,13 @@
     {
       id: 'T12', t: '21:30', figs: 'G4/D10/G1/D5',
       title: '暴雨模式启动 · 全线升档 + 雨前清掏任务包',
-      narration: '21:30 暴雨模式启动:井盖线整体升档横幅 + 雨前清掏任务包卡。DMT 可关「井盖缺失」快车道 → 回退人审 + 区申诉入口;主管详情内紧急 override 红色动作可点。',
+      narration: '21:30 暴雨模式启动:井盖线整体升档横幅 + 雨前清掏任务包卡。上级主管部门可关「井盖缺失」紧急直派 → 回退人审 + 区申诉入口;主管详情内紧急 override 红色动作可点。',
       unlocks: [{ type: 'ticket', obj: 'WO-9012' }],
       auto: [
         { action: 'auto_storm_on', params: { actor: '规则引擎' } },
         { action: 'auto_storm_tasks', params: { actor: '规则引擎', ticketId: 'WO-9012' } }
       ],
-      manual: '切「DMT」→ m6 关「井盖缺失」快车道(强制通知横幅 + 区申诉入口);切「复核主管」→ m1 详情紧急 override(双确认)。'
+      manual: '切「上级主管部门」→ m6 关「井盖缺失」紧急直派(强制通知横幅 + 区申诉入口);切「复核主管」→ m1 详情紧急 override(双确认)。'
     }
   ];
 
@@ -473,7 +475,7 @@
         facility: 'MH-0417', block: 'Al Jimi', kindText: '井盖缺失',
         checks: checks('井盖', ['pass', 'pass', 'pass', 'pass']),
         evidence: [{ kind: 'manhole-missing', label: 'AI 生成示意' }, { kind: 'sensor', label: 'AI 生成示意' }],
-        lane: '紧急快车道', fastlane: true, t: '19:02',
+        lane: '紧急直派', fastlane: true, t: '19:02',
         note: '双闸硬证据齐(传感器硬证据 + 机械四项全过)→ 自动派单,人 15 分钟内并行复核'
       }),
       'CL-0562': clue({
@@ -482,7 +484,7 @@
         checks: checks('井盖', ['pass', 'fail', 'warn', 'pass']),
         evidence: [{ kind: 'manhole-shift', label: 'AI 生成示意' }],
         lane: '应急人审档', t: '19:30',
-        note: '低置信 0.31 且无传感器硬证据 → 不进快车道;加急队列 SLA 30 分钟(假设值)+ 三级升级'
+        note: '低置信 0.31 且无传感器硬证据 → 不进紧急直派;加急队列 SLA 30 分钟(假设值)+ 三级升级'
       }),
       'CL-0588': clue({
         id: 'CL-0588', line: '井盖', level: '应急', conf: 0.44, source: '城市移动传感网(夜间树影)',
@@ -513,7 +515,7 @@
         facility: 'MH-0733', block: 'Zakher', kindText: '井盖缺失',
         checks: checks('井盖', ['pass', 'pass', 'pass', 'pass']),
         evidence: [{ kind: 'manhole-missing', label: 'AI 生成示意' }],
-        lane: '紧急快车道', fastlane: true, t: '21:00',
+        lane: '紧急直派', fastlane: true, t: '21:00',
         note: '承接池无空闲班组 → 过载三步(预警广播 / 显名降级分诊 / 值班长抢占)'
       })
     },

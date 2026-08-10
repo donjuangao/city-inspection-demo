@@ -130,7 +130,7 @@
         '<div style="margin-top:4px">现值 ' + UI.badge(String(last), risky ? 'red' : 'blue') +
         (risky ? '<span class="tiny" style="margin-left:6px">已进入低值区间,建议纳入下一周期养护批量</span>' : '') + '</div>' +
         '<div class="tiny" style="margin-top:6px">' +
-        UI.assume('示意曲线,非实测传感读数', '演示简化生成,非真实检测数据;正式版由记账车道持续写入台账') +
+        UI.assume('示意曲线,非实测传感读数', '简化生成曲线,非真实检测数据;正式版由记账车道持续写入台账') +
         ' —— 免人工「记账」车道自动记入,升级自动触发复报。</div></div>';
     }
 

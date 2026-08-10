@@ -192,7 +192,7 @@
       ' 内主管人工裁定,裁定=动作入日志。M1-3 期以人工日对账清单先行(P0-lite),自动对账 P1。</div>' +
       '</div>';
     if (!items.length) {
-      return head + '<div class="tiny" style="margin-top:8px">暂无对账异常(推进剧情至 T11 可见示例:WO-8863 我方镜像与客户系统状态不一致)。</div>';
+      return head + '<div class="tiny" style="margin-top:8px">暂无对账异常。</div>';
     }
     var cards = items.map(function (rc) {
       return '<div class="card card-tight">' +
@@ -235,7 +235,7 @@
         : '<div class="tiny faint">当前无在办工单</div>') +
       '</div>';
   }
-  // T9 应急抢占演示卡(施工图 §6 T9;设计档 §0.8.3 在途抢占;数据模型标注 WO-8871 = 被抢占对象)
+  // 应急抢占卡(施工图 §6 T9;设计档 §0.8.3 在途抢占;数据模型标注 WO-8871 = 被抢占对象)
   function preemptCard() {
     var t = S.find.ticket('WO-8871');
     if (!t) return '';
@@ -254,7 +254,7 @@
       ? UI.banner('warn', '已挂起:原因「' + UI.esc(t.suspendReason || '') + '」(' + UI.esc(t.suspendT || '') + ');SLA 停表,班组已释放;条件解除后回队重派——下方「改派/合并/拆单」表对本单重新指派班组即完成回补。')
       : ('<div class="sep"></div><div class="sec-title">值班长可抢占:第二井盖应急件承接池无空闲班组时,挂起本单释放班组</div><div class="act-panel">' + btnsHtml + '</div>');
     return '<div class="card" style="border-color:var(--amberw)">' +
-      '<div class="card-hd"><h3>T9 应急抢占演示 · ' + UI.esc(t.id) + '</h3>' + UI.badge(t.type, 'blue') + '</div>' +
+      '<div class="card-hd"><h3>应急抢占 · ' + UI.esc(t.id) + '</h3>' + UI.badge(t.type, 'blue') + '</div>' +
       '<div class="small muted">' + UI.addr(t.facility) + ' · 承接班组 ' + (cw ? UI.esc(cw.name) : '<span class="faint">—</span>') + '</div>' +
       '<div class="tiny" style="margin-top:2px">' + UI.esc(t.note || '') + '</div>' +
       body +
