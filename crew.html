@@ -409,7 +409,13 @@
       '</div>';
 
     if (t.suspended) {
-      html += '<div style="margin-top:10px">' + UI.banner('warn', '已挂起:' + esc(t.suspendReason || '') + '(SLA 停表,条件解除后自动回队)') + '</div>';
+      /* R87 A2:挂起卡三件 —— 挂起原因 · 恢复条件与预计 · 两个出口(本端「条件解除,恢复作业」/ 值班长强制回队重派) */
+      var rc = t.resumeCond || {};
+      html += '<div style="margin-top:10px">' + UI.banner('warn',
+        '已挂起:' + esc(t.suspendReason || '') + '(SLA 停表)' +
+        (rc.cond ? '<br>恢复条件:' + esc(rc.cond) + ' · 由 ' + esc(rc.owner || '') + ' 解除 · 预计 ' + esc(rc.eta || '') : '') +
+        '<br>两个出口:条件解除后本端点「恢复作业」;等不到就由区值班长强制回队重派。') + '</div>';
+      html += UI.actionPanel([{ action: 'crew_resume', params: { ticketId: t.id, actor: '班组账号' }, label: '条件解除,恢复作业', cls: 'btn-primary' }]);
     }
     if (t.rejectNote) {
       html += '<div style="margin-top:10px">' + UI.banner('danger', '<b>复验打回</b>:' + esc(t.rejectNote) + ' —— 请核实现场后重新提交;如有异议可联系复核主管申诉。') + '</div>';

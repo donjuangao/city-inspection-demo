@@ -100,7 +100,7 @@
       sid: 'S8', ref: 'T6', axis: '支线·异常', stage: '规则校验', route: '#/m1/clue/CL-0588',
       focus: ['text:机械校验硬失败', 'text:零自动归档'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
-      branches: [{ label: '↳ 深入:误报回流与规则调参', sid: 'F1' }],
+      branches: [{ label: '↳ 深入:驳回落锤与误报回流', sid: 'F0' }],
       title: '树影误报 · 机械驳回也不自动归档',
       say: '19:40,一件树影造成的持续假目标,机械校验硬失败。系统没有直接归档——高危件零自动归档是硬线,证据卡置顶转人工驳回确认。人也可以反过来推翻机械判定,理由码必填,误杀样本回流规则组。'
     },
@@ -184,12 +184,23 @@
       say: '刚才那一下人裁,落在日志上的形态与前面机器落的每一条完全一样:时刻、账号、动作、对象、参数、快照号。人裁不是「系统外的例外」,它是同一张动作表上的一行——这是后面所有审计、回放、导出的前提。'
     },
 
-    /* ============ 支线 F · 误报回流与规则调参(分岔点 S8,回 S9)============ */
+    /* ============ 支线 F · 驳回落锤与误报回流(分岔点 S8,回 S9)============ */
+    {
+      sid: 'F0', br: 'F', back: 'S9', ref: 'T6', axis: '支线·异常', stage: '分级路由',
+      route: '#/m1/line/mh', focus: ['text:高危驳回已拘主管抽审', 'text:已驳回归档'],
+      lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
+      acts: [{ action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } }],
+      title: '主管初审驳回 · 高危件当场拘抽审',
+      say: '先看另一条路。Hili 那件纯视觉的 CL-0562 交到主管手里,主管初审就落了锤:驳回,原因码④类目误判——盖体在位,是移位不是缺失。高危件一驳回,系统当场把它拘进主管抽审队列,队列里那一行从「待核查」翻成「已驳回归档」。人有权当场结束一件,但结束这个动作本身仍要被复查。'
+    },
     {
       sid: 'F1', br: 'F', back: 'S9', ref: 'T6', axis: '支线·异常', stage: '分级路由',
       route: '#/m1/clue/CL-0588', focus: ['text:已驳回', '.objcard'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
-      acts: [{ action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } }],
+      acts: [
+        { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
+        { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } }
+      ],
       title: '人工驳回确认 · 原因码必填',
       say: '树影这一件由人来落锤:驳回,原因码①拍摄干扰。机械闸拦不住的东西,系统不敢替人归档;但人一旦驳回,这条记录带着原因码进日志——驳回不是终点,是回流的起点。'
     },
@@ -198,6 +209,7 @@
       route: '#/m1', focus: ['text:误报原因回流', '.banner'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_arch',
       acts: [
+        { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } },
         { action: 'fp_feedback', params: { clueId: 'CL-0588', code: '①', ruleId: 'MH-R03', actor: '区复核员' } }
       ],
@@ -209,12 +221,13 @@
       route: '#/m6/rules', focus: ['text:MH-R03', 'text:影子试算'],
       lane: null, laneNote: '判据参数调优(影子试算)', graph: 'mh', node: 'mh_arch',
       acts: [
+        { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } },
         { action: 'fp_feedback', params: { clueId: 'CL-0588', code: '①', ruleId: 'MH-R03', actor: '区复核员' } },
         { action: 'rule_param_change', params: { ruleId: 'MH-R03', key: 'agree', val: 0.88, reason: '树影误杀样本回流(原因码①)', actor: '复核主管' } }
       ],
       title: '规则参数调优 · 走影子试算',
-      say: '回流到判据这一层就成了具体动作:把 MH-R03 的帧间一致率从 0.8 提到 0.88。改法是影子试算——留痕、算影响面,当前运行判定一行不动;要真生效得走审批。判据表里的数字全是假设值,试点首周按实测数据标定。'
+      say: '回流到判据这一层就成了具体动作:把 MH-R03 的帧间一致率从 0.8 提到 0.88。要点是改之前先看它会改变今天的哪几件——试算把今天经过这条规则的件逐件回放,路由会变的当场列出来。这一条的答案是零件改变,原因也直接写出来了:今天这 7 件画面识别件全卡在置信线上,最高一件 0.83 还没到 0.85,一致率根本轮不到起作用。调参的人在生效前就知道自己拧错了旋钮——这比事后看误派率省一整个试点周。提交也只是留痕,当前运行判定一行不动,正式生效仍要走审批。'
     },
 
     /* ============ 支线 R · 路面催办提级与完工抽查(分岔点 S10,回 S11)============ */
@@ -262,26 +275,28 @@
     /* ============ 支线 P · 管网立案下钻(分岔点 S11,回 S12)============ */
     {
       sid: 'P1', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
-      route: '#/m1/line/pl', focus: ['text:核查', 'text:IV-0071'],
+      route: '#/m1/line/pl', focus: ['text:核查工单', 'text:调查案#'],
       lane: '常规人工', laneNote: '立案 / 结案两点拍板', graph: 'pl', node: 'pl_survey',
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } }
       ],
+      card: { title: '核查任务包 · IV-0071', html: function () { return surveyCardHtml('IV-0071'); } },
       title: '立案 · 核查任务包下现场',
-      say: '人在这里落第一锤:立案。立案之后立刻要回答的是「漏在哪一段」——夜间听漏加分段关阀试验,分四段推,按段收敛嫌疑区间。管网这条线的定位主手段是现场核查,不是模型;模型给的是嫌疑排序。'
+      say: '人在这里落第一锤:立案。立案之后立刻要回答的是「漏在哪一段」——夜间听漏加分段关阀试验,分四段推,按段收敛嫌疑区间。右侧卡片就是这个任务包本身:哪几段、用什么方法、谁去、推到第几段。管网这条线的定位主手段是现场核查,不是模型;模型给的是嫌疑排序。'
     },
     {
       sid: 'P2', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
-      route: '#/m1/line/pl', focus: ['text:渗漏', 'text:IV-0071'],
+      route: '#/m1/line/pl', focus: ['text:流量回归', 'text:核查工单'],
       lane: '常规人工', laneNote: '现场核查定性', graph: 'pl', node: 'pl_leak',
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_leak_confirm', params: { caseId: 'IV-0071', segment: 'PL-3007 第 3 段(PV-3021 下游 180 米)', actor: '区复核员' } }
       ],
+      card: { title: '关阀试验 · 夜间最小流量对比', html: function () { return valveCardHtml('IV-0071'); } },
       title: '现场确认渗漏 · 嫌疑转确认',
-      say: '第 3 段关阀之后夜间流量掉下来,听漏点位对上——渗漏确认。调查案由「嫌疑」转「确认」,AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。判不出的那部分不会被悄悄归档,按「不明异常」继续挂着。'
+      say: '关阀试验的数就摆在右边:逐段关阀,别的段一关流量就掉下去,只有第 3 段关了几乎不动——水还在往那一段后面走,这就是渗漏的证据。听漏点位也对上,调查案由「嫌疑」转「确认」。AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。'
     },
     {
       sid: 'P3', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
@@ -468,7 +483,19 @@
       '.fg-node.is-jump:hover rect.fg-box{stroke-width:2.4}',
       '.fg-legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;font-size:12px;color:#5b6b7c}',
       '.fg-key{display:inline-flex;align-items:center;gap:5px}',
-      '.fg-swatch{width:12px;height:12px;border-radius:3px;display:inline-block}'
+      '.fg-swatch{width:12px;height:12px;border-radius:3px;display:inline-block}',
+      /* 本镜数据浮卡(R87 A7):z-index 44 —— 压在导览条(40)之上、浮层遮罩(50)之下 */
+      '.tour-card{position:fixed;right:20px;bottom:118px;z-index:44;width:392px;max-width:calc(100vw - 40px);',
+      'background:#fff;border:1px solid var(--line,#e4e7e2);border-radius:10px;',
+      'box-shadow:0 14px 40px rgba(11,26,18,.24);max-height:62vh;overflow:auto}',
+      '.tour-card-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;',
+      'border-bottom:1px solid var(--line,#e4e7e2);background:#f7f9fb;border-radius:10px 10px 0 0;',
+      'position:sticky;top:0;font-size:13px;color:var(--ink-hi,#0b1a12)}',
+      '.tour-card-x{border:0;background:transparent;color:var(--mute,#5c6660);font-size:15px;line-height:1;',
+      'cursor:pointer;padding:0 2px;font-family:inherit}',
+      '.tour-card-x:hover{color:#0b1a12}',
+      '.tour-card-bd{padding:10px 12px 12px}',
+      '@media (max-height:760px){.tour-card{bottom:96px;max-height:52vh}}'
     ].join('');
     var s = d.createElement('style');
     s.id = 'origen-tour-css';
@@ -570,6 +597,130 @@
     if (sc.phone) UI.phoneSim(sc.phone.src, { title: sc.phone.title });
   }
 
+  /* ================================================================
+     R87 A7 · 本镜数据浮卡(导览层组件)
+     声明了 card 的镜推进时弹一张实时数据卡,数据全部取自当前世界状态(S.get()),
+     不落任何动作、不改 state;换到没声明 card 的镜自动收起。
+     ================================================================ */
+  var cardEl = null;
+  function cardClose() { if (cardEl) cardEl.style.display = 'none'; }
+  function cardBuild() {
+    cardEl = d.createElement('div');
+    cardEl.className = 'tour-card';
+    cardEl.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-tcard') === 'close') cardClose();
+    });
+    d.body.appendChild(cardEl);
+  }
+  function syncCard(sc) {
+    if (!sc.card) { cardClose(); return; }
+    var html = '';
+    try { html = sc.card.html() || ''; }
+    catch (e) {
+      html = '';
+      if (w.console && w.console.warn) w.console.warn('[tour] card render failed', sc.sid, e);
+    }
+    if (!html) { cardClose(); return; }
+    if (!cardEl) cardBuild();
+    cardEl.innerHTML =
+      '<div class="tour-card-hd"><b>' + esc(sc.card.title) + '</b>' +
+      '<button type="button" class="tour-card-x" data-tcard="close" title="收起本镜数据卡">×</button></div>' +
+      '<div class="tour-card-bd">' + html + '</div>';
+    cardEl.style.display = '';
+  }
+
+  function caseFind(id) {
+    var ks = S.get().investigations || [];
+    for (var i = 0; i < ks.length; i++) if (ks[i].id === id) return ks[i];
+    return null;
+  }
+  function segNo(txt) {
+    var m = /第\s*(\d+)\s*段/.exec(String(txt || ''));
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function plCrew() {
+    var cs = (S.get().crews || []).filter(function (c) { return (c.lines || []).indexOf('管网') >= 0; });
+    return cs.length ? cs[0].name : '—';
+  }
+
+  /* P1 · 核查任务包详情卡:从 investigation.survey 渲染(段 / 方法 / 状态 / 承办) */
+  function surveyCardHtml(caseId) {
+    var k = caseFind(caseId);
+    if (!k || !k.survey) return '';
+    var sv = k.survey, done = sv.done || 0, leak = segNo(k.leak && k.leak.segment);
+    var crew = plCrew(), method = (sv.methods || []).join(' + ');
+    var rows = '';
+    for (var i = 1; i <= sv.segments; i++) {
+      var st;
+      if (leak && i === leak) st = UI.badge('渗漏确认', 'red');
+      else if (i < (leak || (done + 1))) st = UI.badge('已完成', 'green');
+      else if (!leak && i === done + 1) st = UI.badge('进行中', 'blue');
+      else st = UI.badge('待排', 'grey');
+      rows += '<tr><td class="mono">' + esc(k.facility + ' 第 ' + i + ' 段') + '</td>' +
+        '<td class="tiny">' + esc(method) + '</td><td>' + st + '</td>' +
+        '<td class="tiny">' + esc(crew) + '</td></tr>';
+    }
+    return '<div class="tiny" style="margin-bottom:6px">' + esc(k.id + ' · ' + k.dma + ' · 开包 ' + sv.t) +
+      ' · 分 ' + sv.segments + ' 段</div>' +
+      '<table class="tb"><thead><tr><th style="width:120px">管段</th><th>方法</th>' +
+      '<th style="width:76px">状态</th><th style="width:88px">承办</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  /* P2 · 关阀试验夜间最小流量对比(SVG 小卡):逐段关阀前后对比,不降的那一段即渗漏段 */
+  function seedOf(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function valveCardHtml(caseId) {
+    var k = caseFind(caseId);
+    if (!k || !k.survey) return '';
+    var n = k.survey.segments || 4, leak = segNo(k.leak && k.leak.segment);
+    var seed = seedOf(k.id + k.dma), data = [], i;
+    for (i = 1; i <= n; i++) {
+      var b = Math.round((10.5 + ((seed >> (i * 3)) % 40) / 10) * 10) / 10;
+      var drop = (leak && i === leak) ? 0.04 : (0.62 + ((seed >> (i * 2)) % 14) / 100);
+      data.push({ seg: i, before: b, after: Math.round(b * (1 - drop) * 10) / 10, drop: drop });
+    }
+    var max = 0;
+    data.forEach(function (x) { if (x.before > max) max = x.before; });
+    max = Math.ceil(max + 1);
+    var W = 356, H = 168, y0 = 18, y1 = 128, gw = (W - 34) / n;
+    function Y(v) { return y1 - (v / max) * (y1 - y0); }
+    var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="分段关阀试验前后夜间最小流量对比" style="width:100%;height:auto">'];
+    svg.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#ffffff"></rect>');
+    svg.push('<path d="M28 ' + y1 + ' H' + (W - 6) + ' M28 ' + y0 + ' V' + y1 + '" stroke="#d8dee6"></path>');
+    [0, max / 2, max].forEach(function (v) {
+      svg.push('<text x="24" y="' + (Y(v) + 3.5) + '" text-anchor="end" font-size="9.5" font-family="sans-serif" fill="#8e968f">' +
+        (Math.round(v * 10) / 10) + '</text>');
+    });
+    data.forEach(function (x, idx) {
+      var gx = 32 + idx * gw, bw = Math.min(24, gw / 2.6);
+      var hot = leak && x.seg === leak;
+      svg.push('<rect x="' + gx + '" y="' + Y(x.before) + '" width="' + bw + '" height="' + (y1 - Y(x.before)) +
+        '" fill="#9db4c8"></rect>');
+      svg.push('<rect x="' + (gx + bw + 5) + '" y="' + Y(x.after) + '" width="' + bw + '" height="' + (y1 - Y(x.after)) +
+        '" fill="' + (hot ? '#c0392b' : '#2e7d32') + '"></rect>');
+      svg.push('<text x="' + (gx + bw + 2) + '" y="' + (Y(Math.max(x.before, x.after)) - 5) + '" text-anchor="middle" font-size="9.5" ' +
+        'font-family="sans-serif" fill="' + (hot ? '#c0392b' : '#5b6b7c') + '">−' + Math.round(x.drop * 100) + '%</text>');
+      svg.push('<text x="' + (gx + bw + 2) + '" y="' + (y1 + 14) + '" text-anchor="middle" font-size="10.5" ' +
+        'font-family="sans-serif" fill="' + (hot ? '#c0392b' : '#243342') + '">第 ' + x.seg + ' 段</text>');
+    });
+    svg.push('<rect x="32" y="' + (H - 14) + '" width="10" height="9" fill="#9db4c8"></rect>');
+    svg.push('<text x="46" y="' + (H - 6) + '" font-size="10" font-family="sans-serif" fill="#5b6b7c">关阀前</text>');
+    svg.push('<rect x="92" y="' + (H - 14) + '" width="10" height="9" fill="#2e7d32"></rect>');
+    svg.push('<text x="106" y="' + (H - 6) + '" font-size="10" font-family="sans-serif" fill="#5b6b7c">关阀后</text>');
+    svg.push('</svg>');
+    var hotRow = leak ? data[leak - 1] : null;
+    var others = data.filter(function (x) { return !leak || x.seg !== leak; });
+    var avg = others.length ? Math.round(others.reduce(function (a, x) { return a + x.drop; }, 0) / others.length * 100) : 0;
+    var line = hotRow
+      ? '第 ' + hotRow.seg + ' 段 ' + hotRow.before + ' → ' + hotRow.after + ' m³/h(降 ' + Math.round(hotRow.drop * 100) +
+        '%)· 其余 ' + others.length + ' 段平均降 ' + avg + '%'
+      : '共 ' + n + ' 段 · 平均降 ' + avg + '%';
+    return '<div class="tiny" style="margin-bottom:4px">' + esc(k.id + ' · ' + k.dma + ' · 夜间最小流量 m³/h') + '</div>' +
+      svg.join('') +
+      '<div class="tiny" style="margin-top:4px">' + esc(line) + '</div>' +
+      '<div class="tiny">' + UI.assume('流量数值为假设值', '关阀试验流量 = 假设值,试点接入 SCADA 后取实测') + '</div>';
+  }
+
   function goTo(i, opts) {
     i = Math.max(0, Math.min(i, N - 1));
     var sc = STORY[i];
@@ -580,6 +731,7 @@
     renderDock();
     navigate(sc);
     syncPhone(sc);
+    syncCard(sc);
   }
 
   /* 回到导览:只重新导航 + 重新聚焦,不动状态 */
@@ -1084,9 +1236,10 @@
     sub: '导览条是解说层,不是业务界面的一部分;它只做三件事:推进状态、跳到该看的位置、把当前所在的流程节点说清楚。',
     body: [
       '<b>主线</b>:「▶ 下一镜」按主线 ' + MAIN_N + ' 镜依次推进,页面自动跳到该镜要看的位置并高亮焦点。点色块可直接跳镜。',
-      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(立案之后 / 误报回流 / 催办与抽查 / 抢占三步),走到尽头自动回主线,也可以随时点「↩ 回主线」。色块里缩进的半色小格就是支线镜。',
+      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(人裁闭环 / 驳回落锤与误报回流 / 催办与抽查 / 立案之后 / 抢占三步),走到尽头自动回主线,也可以随时点「↩ 回主线」。色块里缩进的半色小格就是支线镜。',
       '<b>状态是重放出来的</b>:状态机不可逆,所以往回跳或进支线时会重新播种再静默连推到位——同一镜任何时候点到,看到的都是同一份状态。',
       '<b>两枚浮层</b>:「流程位置」= 当前镜落在本线流程图的哪个节点(已走路径加深,分支节点可点着跳镜);「后端发生了什么」= 这一镜落了哪些动作记录。',
+      '<b>数据卡</b>:少数镜(管网核查任务包、关阀试验对比)会在右侧弹一张实时数据卡,内容取自当前世界状态,点右上 × 收起。',
       '<b>手机浮窗</b>:涉现场端的镜会自动弹出班组 / 公众那一屏,与工作台共用同一份状态;也可以随时点导览条上的「📱 现场端」自己唤起或收起,浮窗可拖动、可另开新窗。'
     ],
     foot: '时钟是随处置步进的工作时钟,不按现实秒走;界面里的数字与阈值为假设值,试点首周按实测标定。'

@@ -546,7 +546,7 @@
         '<span class="tl-b"><b>' + esc(g.label || g.action) + '</b> ' +
         '<span class="tl-actor">· ' + esc(g.actor) + (g.auto ? '(服务账号)' : '') + '</span><br>' +
         '<span class="small">' + esc(g.sum || '') + '</span> ' +
-        '<span class="tl-snap">[' + esc(g.rid) + ' · 世界状态快照 ' + esc(g.snapshot) + ']</span></span></li>';
+        '<span class="tl-snap">[' + esc(g.rid) + ' · 版本组 ' + esc(g.snapshot) + ']</span></span></li>';
     }).join('') + '</ul>';
   };
 
@@ -599,6 +599,278 @@
       '<th style="width:130px">对象</th><th>关键参数 · 摘要</th><th style="width:130px">记录号 · 快照</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   };
+
+  /* ================================================================
+     R87 A6 · 本体日志审计组件(X3 区 · UI.logAudit)
+     筛选(账号 / 动作 / 对象类型 / 时间段)+ 关键字 + 分组(对象 / 账号 / 动作)+ 列排序
+     + CSV 导出(Blob + a[download],零外链)+ 行点击跳该对象(S.route)。
+     数据源 = S.get().actionLog,不改其结构;「后端发生了什么」浮层继续用 U.ontologyLog 精简渲染。
+     ================================================================ */
+  var LA_OBJ = [
+    { key: 'clueId', type: '线索', route: 'clue' },
+    { key: 'ticketId', type: '工单', route: 'ticket' },
+    { key: 'alertId', type: '告警', route: 'alert' },
+    { key: 'caseId', type: '调查案', route: 'case' },
+    { key: 'reconId', type: '对账件', route: 'recon' },
+    { key: 'reportId', type: '公众上报', route: null },
+    { key: 'sensorId', type: '传感器', route: null },
+    { key: 'facility', type: '设施', route: 'facility' },
+    { key: 'crew', type: '班组', route: null },
+    { key: 'dma', type: '计量区', route: null },
+    { key: 'ruleId', type: '规则', route: null },
+    { key: 'cat', type: '类目', route: null },
+    { key: 'targetId', type: '对象', route: null },
+    { key: 'scope', type: '范围', route: null }
+  ];
+  function laObjOf(g) {
+    var p = g.params || {}, i, k, v;
+    for (i = 0; i < LA_OBJ.length; i++) {
+      k = LA_OBJ[i]; v = p[k.key];
+      if (v === undefined || v === null || v === '') continue;
+      if (Array.isArray(v)) return { type: k.type, id: v.join(' / '), href: null };
+      return { type: k.type, id: String(v), href: (k.route && w.S.route) ? w.S.route(k.route, v) : null };
+    }
+    if (p.clueIds && p.clueIds.length) return { type: '线索', id: p.clueIds.join(' / '), href: null };
+    if (p.ticketIds && p.ticketIds.length) return { type: '工单', id: p.ticketIds.join(' / '), href: null };
+    return { type: '—', id: '—', href: null };
+  }
+
+  var LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' };
+  var LA_ROOT = 'la-root';
+
+  function laRows() {
+    return (w.S.get().actionLog || []).map(function (g) {
+      var o = laObjOf(g);
+      return {
+        t: g.t || '', actor: g.actor || '', auto: !!g.auto,
+        action: g.action || '', label: g.label || g.action || '',
+        otype: o.type, oid: o.id, href: o.href,
+        sum: g.sum || '', par: U.logParams(g), rid: g.rid || '', snap: g.snapshot || ''
+      };
+    });
+  }
+  function laMatch(r) {
+    if (LA.actor && r.actor !== LA.actor) return false;
+    if (LA.act && r.action !== LA.act) return false;
+    if (LA.otype && r.otype !== LA.otype) return false;
+    if (LA.t0 && r.t < LA.t0) return false;
+    if (LA.t1 && r.t > LA.t1) return false;
+    var q = LA.q.trim().toLowerCase();
+    if (!q) return true;
+    return [r.t, r.actor, r.action, r.label, r.otype, r.oid, r.sum, r.par, r.rid, r.snap]
+      .join(' ').toLowerCase().indexOf(q) >= 0;
+  }
+  var LA_SORT_KEY = { t: 't', actor: 'actor', action: 'label', obj: 'oid' };
+  function laSorted(rows) {
+    var key = LA_SORT_KEY[LA.sk] || 't', dir = LA.sd === 'asc' ? 1 : -1;
+    return rows.map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) {
+      var x = a.r[key], y = b.r[key];
+      if (x === y) return a.i - b.i;
+      return (x < y ? -1 : 1) * dir;
+    }).map(function (o) { return o.r; });
+  }
+  function laGroupKey(r) {
+    if (LA.group === 'obj') return r.otype + ' ' + r.oid;
+    if (LA.group === 'actor') return r.actor;
+    if (LA.group === 'action') return r.label;
+    return '';
+  }
+
+  function laUniq(rows, pick) {
+    var seen = {}, out = [];
+    rows.forEach(function (r) { var v = pick(r); if (v && !seen[v]) { seen[v] = 1; out.push(v); } });
+    return out.sort();
+  }
+  function laSel(k, list, cur, ph) {
+    return '<select data-la="f" data-k="' + k + '"><option value="">' + esc(ph) + '</option>' +
+      list.map(function (o) {
+        var v = o.v === undefined ? o : o.v, tx = o.t === undefined ? o : o.t;
+        return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(tx) + '</option>';
+      }).join('') + '</select>';
+  }
+  function laTh(k, text, width) {
+    var on = LA.sk === k;
+    return '<th style="width:' + width + 'px"><button type="button" class="la-th' + (on ? ' is-on' : '') +
+      '" data-la="sort" data-k="' + k + '">' + esc(text) + (on ? (LA.sd === 'asc' ? ' ▲' : ' ▼') : ' ↕') + '</button></th>';
+  }
+
+  function laBar(all) {
+    var actors = laUniq(all, function (r) { return r.actor; });
+    var seen = {}, acts = [];
+    all.forEach(function (r) { if (r.action && !seen[r.action]) { seen[r.action] = 1; acts.push({ v: r.action, t: r.label }); } });
+    acts.sort(function (a, b) { return a.t < b.t ? -1 : 1; });
+    var types = laUniq(all, function (r) { return r.otype; });
+    var groups = [['', '不分组'], ['obj', '按对象'], ['actor', '按账号'], ['action', '按动作']];
+    return '<div class="la-bar">' +
+      '<label class="la-f">账号' + laSel('actor', actors, LA.actor, '全部') + '</label>' +
+      '<label class="la-f">动作类型' + laSel('act', acts, LA.act, '全部') + '</label>' +
+      '<label class="la-f">对象类型' + laSel('otype', types, LA.otype, '全部') + '</label>' +
+      '<label class="la-f">时间段<span class="la-range">' +
+      '<input type="text" data-la="i" data-k="t0" value="' + esc(LA.t0) + '" placeholder="19:00" size="5">' +
+      '<span class="la-dash">—</span>' +
+      '<input type="text" data-la="i" data-k="t1" value="' + esc(LA.t1) + '" placeholder="21:30" size="5"></span></label>' +
+      '<label class="la-f la-grow">关键字' +
+      '<input type="text" data-la="i" data-k="q" value="' + esc(LA.q) + '" placeholder="线索号 / 工单号 / 摘要 / 记录号"></label>' +
+      '<span class="la-f">分组<span class="la-gbtns">' + groups.map(function (g) {
+        return '<button type="button" class="la-g' + (LA.group === g[0] ? ' is-on' : '') +
+          '" data-la="g" data-g="' + g[0] + '">' + esc(g[1]) + '</button>';
+      }).join('') + '</span></span>' +
+      '<span class="la-f la-acts">' +
+      '<button type="button" class="btn btn-sm" data-la="csv">导出 CSV</button>' +
+      '<button type="button" class="btn btn-sm" data-la="reset">清空筛选</button></span>' +
+      '</div>';
+  }
+
+  function laTrs(rows) {
+    return rows.map(function (r) {
+      return '<tr' + (r.href ? ' class="la-go" data-la="go" data-h="' + esc(r.href) + '" title="' + esc('跳到 ' + r.oid) + '"' : '') + '>' +
+        '<td class="mono">' + esc(r.t) + '</td>' +
+        '<td>' + esc(r.actor) + (r.auto ? ' ' + U.badge('自动', 'amber') : '') + '</td>' +
+        '<td><b>' + esc(r.label) + '</b><div class="tiny mono">' + esc(r.action) + '</div></td>' +
+        '<td><span class="tiny">' + esc(r.otype) + '</span><div class="mono">' + esc(r.oid) + '</div></td>' +
+        '<td class="small">' + esc(r.sum) + (r.par ? '<div class="tiny">' + esc(r.par) + '</div>' : '') + '</td>' +
+        '<td class="tiny mono">' + esc(r.rid) + ' · ' + esc(r.snap) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function laOut() {
+    var all = laRows();
+    var rows = laSorted(all.filter(laMatch));
+    var head = '<div class="la-count">共 ' + all.length + ' 条 · 当前筛选 <b>' + rows.length + '</b> 条' +
+      (LA.group ? ' · ' + laUniq(rows, laGroupKey).length + ' 组' : '') + '</div>';
+    if (!rows.length) return head + '<div class="tiny">当前筛选条件下无动作记录。</div>';
+    var body;
+    if (LA.group) {
+      var order = [], bag = {};
+      rows.forEach(function (r) {
+        var k = laGroupKey(r) || '—';
+        if (!bag[k]) { bag[k] = []; order.push(k); }
+        bag[k].push(r);
+      });
+      body = order.map(function (k) {
+        return '<tbody><tr class="la-grp"><td colspan="6"><b>' + esc(k) + '</b> · ' + bag[k].length + ' 条</td></tr>' +
+          laTrs(bag[k]) + '</tbody>';
+      }).join('');
+    } else {
+      body = '<tbody>' + laTrs(rows) + '</tbody>';
+    }
+    return head + '<div class="la-scroll"><table class="tb la-tb"><thead><tr>' +
+      laTh('t', '时刻', 62) + laTh('actor', '账号', 104) + laTh('action', '动作', 176) + laTh('obj', '对象', 138) +
+      '<th>摘要 · 关键参数</th><th style="width:132px">记录号 · 快照</th>' +
+      '</tr></thead>' + body + '</table></div>';
+  }
+
+  function laCsv() {
+    var rows = laSorted(laRows().filter(laMatch));
+    function cell(v) { return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"'; }
+    var lines = [['时刻', '账号', '动作', '动作码', '对象类型', '对象', '摘要', '关键参数', '记录号', '版本组']
+      .map(cell).join(',')];
+    rows.forEach(function (r) {
+      lines.push([r.t, r.actor + (r.auto ? '(服务账号)' : ''), r.label, r.action, r.otype, r.oid, r.sum, r.par, r.rid, r.snap]
+        .map(cell).join(','));
+    });
+    var blob = new w.Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    var url = w.URL.createObjectURL(blob);
+    var a = w.document.createElement('a');
+    a.href = url; a.download = 'ontology-log.csv';
+    w.document.body.appendChild(a); a.click();
+    w.setTimeout(function () {
+      if (a.parentNode) a.parentNode.removeChild(a);
+      w.URL.revokeObjectURL(url);
+    }, 200);
+    U.toast('已导出 ' + rows.length + ' 条动作记录(CSV)', 'ok');
+  }
+
+  function laRoot() { return w.document.getElementById(LA_ROOT); }
+  function laPaint(barToo) {
+    var root = laRoot();
+    if (!root) return;
+    var out = root.querySelector('.la-out');
+    if (barToo) {
+      var bar = root.querySelector('.la-bar');
+      if (bar) bar.outerHTML = laBar(laRows());
+    }
+    out = root.querySelector('.la-out');
+    if (out) out.innerHTML = laOut();
+  }
+
+  function laInject() {
+    if (!w.document || w.document.getElementById('origen-la-css')) return;
+    var css = [
+      '.la-bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;padding:10px;border:1px solid var(--line,#e4e7e2);',
+      'border-radius:8px;background:#fbfcfa;margin-bottom:10px}',
+      '.la-f{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--mute,#5c6660)}',
+      '.la-f select,.la-f input{font-family:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line,#e4e7e2);',
+      'border-radius:5px;background:#fff;color:var(--ink,#1b231f)}',
+      '.la-grow{flex:1 1 220px;min-width:180px}',
+      '.la-grow input{width:100%}',
+      '.la-range{display:inline-flex;align-items:center;gap:5px}',
+      '.la-dash{color:var(--faint,#8e968f)}',
+      '.la-gbtns{display:inline-flex;gap:0}',
+      '.la-g{font-family:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line,#e4e7e2);background:#fff;',
+      'color:var(--mute,#5c6660);cursor:pointer}',
+      '.la-g:first-child{border-radius:5px 0 0 5px}.la-g:last-child{border-radius:0 5px 5px 0}',
+      '.la-g+.la-g{border-left:0}',
+      '.la-g.is-on{background:#243342;border-color:#243342;color:#fff;font-weight:600}',
+      '.la-acts{flex-direction:row;gap:6px;align-items:flex-end}',
+      '.la-count{font-size:12px;color:var(--mute,#5c6660);margin-bottom:6px}',
+      '.la-scroll{overflow:auto;max-height:460px}',
+      '.la-th{font-family:inherit;font-size:inherit;font-weight:inherit;color:inherit;background:transparent;border:0;',
+      'padding:0;cursor:pointer;white-space:nowrap}',
+      '.la-th.is-on{color:#243342;font-weight:700}',
+      '.la-grp td{background:#eef2f6;font-size:12px;color:#243342}',
+      '.la-tb tr.la-go{cursor:pointer}',
+      '.la-tb tr.la-go:hover td{background:#f2f6fd}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-la-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+
+  /* opts:{reset:true} —— 每次整段重渲染视图时可要求筛选归零(默认保留用户已选条件) */
+  U.logAudit = function (opts) {
+    opts = opts || {};
+    laInject();
+    if (opts.reset) LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' };
+    return '<div id="' + LA_ROOT + '" class="la">' + laBar(laRows()) + '<div class="la-out">' + laOut() + '</div></div>';
+  };
+  U.logAudit.refresh = function () { laPaint(true); };
+
+  if (w.document) {
+    w.document.addEventListener('input', function (e) {
+      var el = e.target;
+      if (!el || !el.getAttribute || el.getAttribute('data-la') !== 'i') return;
+      var k = el.getAttribute('data-k');
+      if (k === 'q') LA.q = el.value; else if (k === 't0') LA.t0 = el.value.trim(); else if (k === 't1') LA.t1 = el.value.trim();
+      laPaint(false);
+    });
+    w.document.addEventListener('change', function (e) {
+      var el = e.target;
+      if (!el || !el.getAttribute || el.getAttribute('data-la') !== 'f') return;
+      var k = el.getAttribute('data-k');
+      if (k === 'actor') LA.actor = el.value; else if (k === 'act') LA.act = el.value; else if (k === 'otype') LA.otype = el.value;
+      laPaint(false);
+    });
+    w.document.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el.getAttribute && !el.getAttribute('data-la')) el = el.parentNode;
+      if (!el || !el.getAttribute) return;
+      var a = el.getAttribute('data-la');
+      if (a === 'sort') {
+        var k = el.getAttribute('data-k');
+        if (LA.sk === k) LA.sd = LA.sd === 'asc' ? 'desc' : 'asc'; else { LA.sk = k; LA.sd = k === 't' ? 'desc' : 'asc'; }
+        laPaint(false);
+      } else if (a === 'g') { LA.group = el.getAttribute('data-g') || ''; laPaint(true); }
+      else if (a === 'csv') laCsv();
+      else if (a === 'reset') { LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' }; laPaint(true); }
+      else if (a === 'go') {
+        var h = el.getAttribute('data-h');
+        if (h) w.location.hash = h;
+      }
+    });
+  }
 
   /* ---------------- 横幅(R86 A9:右侧 × 关闭 + 主体可点跳对象 + 同类堆叠折叠)---------------- */
   var ICO = { info: 'i', warn: '!', danger: '!', ok: '✓', amber: '!' };
@@ -841,6 +1113,278 @@
   U.phoneSim.close = function () { if (_phone) _phone.wrap.style.display = 'none'; };
   U.phoneSim.isOpen = function () { return !!(_phone && _phone.wrap.style.display !== 'none'); };
   U.phoneSim.src = function () { return _phone ? _phone.src : ''; };
+
+  /* ================================================================
+     R87 X2 · 筛选条 / 分组切换 / 分组折叠(m2 告警与工单镜像用)
+     纯呈现组件:当前选中值由调用方持有并回传,交互回调 = 调用方给的 JS 表达式字符串
+     (与 m2 表单桥接同款:只改本模块视图态,状态变更仍只走 S.commit)。
+     ================================================================ */
+  (function injectFilterCss() {
+    if (!w.document || w.document.getElementById('origen-filter-css')) return;
+    var css = [
+      '.flt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#f7f9f5;',
+      'border:1px solid var(--line,#e4e7e2);border-radius:8px;padding:8px 10px;margin-bottom:10px}',
+      '.flt-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mute,#5c6660)}',
+      '.flt-lb{color:var(--faint,#8e968f)}',
+      '.flt-sel{font-family:inherit;font-size:12px;padding:3px 7px;border:1px solid #dfe3dd;border-radius:6px;',
+      'background:#fff;color:var(--ink,#1b231f)}',
+      '.flt-sp{flex:1 1 auto}',
+      '.flt-n{font-size:11.5px;color:var(--faint,#8e968f)}',
+      '.grp-sw{display:inline-flex;border:1px solid #dfe3dd;border-radius:20px;overflow:hidden;background:#fff}',
+      '.grp-btn{border:0;background:transparent;font-family:inherit;font-size:12px;padding:3px 12px;',
+      'cursor:pointer;color:var(--mute,#5c6660)}',
+      '.grp-btn.is-on{background:#1a5fb4;color:#fff;font-weight:600}',
+      '.grp-head{display:flex;align-items:center;gap:8px;margin:14px 0 6px}',
+      '.grp-head .grp-t{font-size:13px;font-weight:700;color:var(--ink-hi,#0b1a12);border-left:3px solid var(--cat,#1a5fb4);',
+      'padding-left:8px}',
+      '.grp-head .grp-n{font-size:11.5px;color:var(--faint,#8e968f)}',
+      '.fold-more{border:1px dashed var(--line,#e4e7e2);background:#fbfcfa;color:var(--mute,#5c6660);',
+      'border-radius:6px;font-family:inherit;font-size:12px;padding:5px 12px;cursor:pointer;margin:6px 0 2px}',
+      '.fold-more:hover{border-color:#1a5fb4;color:#1a5fb4}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-filter-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  })();
+
+  /* fields = [{label, value, options:[{v,t}|'字符串'], on:'JS 表达式(this.value 可用)', id?}];opts={right:html} */
+  U.filterBar = function (fields, opts) {
+    opts = opts || {};
+    var html = (fields || []).map(function (f) {
+      var cur = (f.value === null || f.value === undefined) ? '' : String(f.value);
+      var os = (f.options || []).map(function (o) {
+        var v = (typeof o === 'string') ? o : o.v;
+        var t = (typeof o === 'string') ? o : (o.t === undefined ? o.v : o.t);
+        return '<option value="' + esc(v) + '"' + (String(v) === cur ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('');
+      return '<label class="flt-item"><span class="flt-lb">' + esc(f.label) + '</span>' +
+        '<select class="flt-sel"' + (f.id ? ' id="' + esc(f.id) + '"' : '') +
+        ' onchange="' + esc(f.on || '') + '">' + os + '</select></label>';
+    }).join('');
+    return '<div class="flt-bar">' + html +
+      (opts.right ? '<span class="flt-sp"></span>' + opts.right : '') + '</div>';
+  };
+
+  /* items = [{v,t,on}];cur = 当前值 */
+  U.groupSwitch = function (items, cur, label) {
+    return '<span class="flt-item">' + (label ? '<span class="flt-lb">' + esc(label) + '</span>' : '') +
+      '<span class="grp-sw">' + (items || []).map(function (it) {
+        return '<button type="button" class="grp-btn' + (String(it.v) === String(cur) ? ' is-on' : '') + '"' +
+          ' onclick="' + esc(it.on || '') + '">' + esc(it.t || it.v) + '</button>';
+      }).join('') + '</span></span>';
+  };
+
+  U.groupHead = function (title, n, color, extra) {
+    return '<div class="grp-head" style="--cat:' + esc(color || '#1a5fb4') + '">' +
+      '<span class="grp-t">' + esc(title) + '</span><span class="grp-n">' + esc(String(n)) + ' 条</span>' +
+      (extra ? '<span class="flt-sp"></span>' + extra : '') + '</div>';
+  };
+
+  /* 折叠按钮:hidden = 折起时被藏起的条数;expanded = 当前是否已展开 */
+  U.foldMore = function (hidden, on, expanded, shown) {
+    if (!hidden) return '';
+    return '<button type="button" class="fold-more" onclick="' + esc(on || '') + '">' +
+      (expanded ? '收起(只看前 ' + esc(String(shown || 5)) + ' 条)' : '展开全部 ' + esc(String(hidden + (shown || 5))) + ' 条') +
+      '</button>';
+  };
+
+  /* ================================================================
+     R87 X1 分区 · 证据卡弹层(UI.evThumb / UI.evidenceModal)+ 手风琴(UI.accordion)
+     —— 本区只归 X1 维护;X2(筛选条)/ X3(日志审计)各有自己的分区,互不越界。
+     弹层定宽 880px 居中(宽屏不缩到角落),横向翻页:按钮 + 键盘 ← →;
+     打开即记 view_evidence(高危确认前置的「已查看」语义不变,按钮态随之变化)。
+     ================================================================ */
+
+  /* 一条线索的全部观测摊平成「一张图 = 一条记录」:{kind, src, srcKind, t, conf, note, obsNo} */
+  function evShots(c) {
+    var out = [];
+    obsList(c).forEach(function (o, i) {
+      var evs = (o.evidence && o.evidence.length) ? o.evidence : [{ kind: 'field' }];
+      evs.forEach(function (e) {
+        out.push({
+          kind: typeof e === 'string' ? e : (e && e.kind) || 'field',
+          src: o.source || o.kind || '—',
+          srcKind: o.kind || '',
+          t: o.t || '—',
+          conf: (typeof o.conf === 'number') ? o.conf : null,
+          note: o.note || '',
+          obsNo: i + 1
+        });
+      });
+    });
+    return out;
+  }
+  U.evShots = evShots;
+
+  /* 列表内缩略行:首图 + 「共 N 张」 + 「查看证据卡」按钮 */
+  U.evThumb = function (c, opts) {
+    opts = opts || {};
+    var shots = evShots(c), first = shots[0] || { kind: 'field', t: '—', src: '—', srcKind: '' };
+    return '<div class="ev-thumb">' +
+      '<div class="ev ev-thumb-img" data-ev="' + esc(c.id) + '" title="点开证据卡大图">' + U.evidenceSvg(first.kind) +
+      (first.srcKind ? '<span class="obs-src">' + esc(first.srcKind) + '</span>' : '') + '</div>' +
+      '<div class="ev-thumb-side">' +
+      '<div class="ev-thumb-n">共 ' + shots.length + ' 张</div>' +
+      '<div class="tiny">首张 ' + esc(first.t) + ' · ' + esc(first.src) + '</div>' +
+      '<div style="margin-top:6px"><button type="button" class="btn btn-sm" data-ev="' + esc(c.id) + '">' +
+      (c.evidenceViewed ? '✓ 证据卡已查看' : '查看证据卡') + '</button></div>' +
+      (opts.note ? '<div class="tiny" style="margin-top:4px">' + opts.note + '</div>' : '') +
+      '</div></div>';
+  };
+
+  var _ev = null;
+
+  function evCss() {
+    if (!w.document || w.document.getElementById('origen-ev-css')) return;
+    var css = [
+      '.ev-thumb{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}',
+      '.ev-thumb-img{width:132px;flex:none;cursor:pointer;position:relative}',
+      '.ev-thumb-side{flex:1 1 110px;min-width:0;overflow-wrap:anywhere}',
+      '.ev-thumb-n{font-weight:700;font-size:13px;color:var(--ink-hi,#0b1a12)}',
+      '.evm-mask{position:fixed;inset:0;background:rgba(11,26,18,.46);display:flex;align-items:center;',
+      'justify-content:center;z-index:90;padding:24px}',
+      '.evm{background:#fff;border-radius:10px;width:880px;max-width:100%;max-height:88vh;overflow:auto;',
+      'padding:16px 18px;box-shadow:0 20px 52px rgba(11,26,18,.3)}',
+      '.evm h3{margin:0}',
+      '.evm-stage{display:flex;align-items:center;gap:10px;margin-top:8px}',
+      '.evm-img{flex:1 1 auto;background:#20303c;border-radius:8px;padding:10px}',
+      '.evm-img svg{display:block;width:100%;height:auto;border-radius:5px;background:#fff}',
+      '.evm-nav{flex:none;width:38px;height:72px;border:1px solid var(--line,#e4e7e2);background:#fff;',
+      'border-radius:8px;font-size:22px;line-height:1;cursor:pointer;color:#3c453f;font-family:inherit}',
+      '.evm-nav[disabled]{opacity:.32;cursor:default}',
+      '.evm-strip{display:flex;gap:8px;overflow-x:auto;margin-top:10px}',
+      '.evm-t{flex:none;width:98px;padding:2px;border:1px solid var(--line,#e4e7e2);background:#fff;',
+      'border-radius:6px;cursor:pointer}',
+      '.evm-t.is-on{border-color:#1a5fb4;box-shadow:0 0 0 2px rgba(26,95,180,.16)}',
+      '.evm-t svg{display:block;width:100%;height:auto}',
+      /* 手风琴 */
+      '.acc{display:flex;flex-direction:column;gap:8px}',
+      '.acc-item{border:1px solid var(--line,#e4e7e2);border-radius:8px;background:#fff;overflow:hidden}',
+      '.acc-item.is-open{border-color:#c7d4e6;box-shadow:0 2px 10px rgba(11,26,18,.06)}',
+      '.acc-hd{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#fbfcfa;',
+      'border:0;border-bottom:1px solid transparent;padding:9px 12px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink,#1b231f)}',
+      '.acc-item.is-open>.acc-hd{background:#f2f6fd;border-bottom-color:var(--line,#e4e7e2)}',
+      '.acc-hd:hover{background:#f2f6fd}',
+      '.acc-cev{flex:none;color:#7b8794;font-size:11px}',
+      '.acc-t{flex:1 1 auto}',
+      '.acc-r{flex:none;text-align:right;font-size:11.5px;color:var(--faint,#8e968f);white-space:nowrap}',
+      '.acc-body{padding:10px 12px 4px}',
+      '.acc-body>.card{box-shadow:none}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-ev-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+
+  function evHtml(c, idx) {
+    var shots = evShots(c);
+    var s = shots[idx] || { kind: 'field', t: '—', src: '—', conf: null, note: '', obsNo: 1 };
+    var strip = shots.map(function (x, i) {
+      return '<button type="button" class="evm-t' + (i === idx ? ' is-on' : '') + '" data-evgo="' + i + '"' +
+        ' title="' + esc('第 ' + (i + 1) + ' 张 · ' + x.t) + '">' + U.evidenceSvg(x.kind) + '</button>';
+    }).join('');
+    return '<div class="evm" role="dialog" aria-label="证据卡大图">' +
+      '<div class="card-hd"><h3>证据卡 · ' + esc(c.id) + ' ' +
+      '<span class="tiny">第 ' + (idx + 1) + ' / ' + shots.length + ' 张</span></h3>' +
+      '<button type="button" class="btn btn-sm" data-evclose="1">关闭(Esc)</button></div>' +
+      '<div class="evm-stage">' +
+      '<button type="button" class="evm-nav" data-evstep="-1" aria-label="上一张"' + (idx <= 0 ? ' disabled' : '') + '>‹</button>' +
+      '<div class="evm-img">' + U.evidenceSvg(s.kind) + '</div>' +
+      '<button type="button" class="evm-nav" data-evstep="1" aria-label="下一张"' + (idx >= shots.length - 1 ? ' disabled' : '') + '>›</button>' +
+      '</div>' +
+      U.kv([
+        ['来源', esc(s.src)],
+        ['时刻', esc(s.t)],
+        ['置信', s.conf === null ? '—' : '<span class="mono">' + esc(String(Math.round(s.conf * 100) / 100)) + '</span>', true],
+        ['观测序', '第 ' + s.obsNo + ' 次观测']
+      ]) +
+      (s.note ? '<div class="small">' + esc(s.note) + '</div>' : '') +
+      '<div class="evm-strip">' + strip + '</div>' +
+      '<div class="tiny" style="margin-top:6px">← → 翻页</div>' +
+      '</div>';
+  }
+
+  function evPaint() {
+    if (!_ev) return;
+    var c = w.S.find.clue(_ev.clueId); if (!c) return;
+    var n = evShots(c).length;
+    if (_ev.idx >= n) _ev.idx = n - 1;
+    if (_ev.idx < 0) _ev.idx = 0;
+    _ev.el.innerHTML = evHtml(c, _ev.idx);
+  }
+
+  U.evidenceModalClose = function () {
+    if (_ev && _ev.el && _ev.el.parentNode) _ev.el.parentNode.removeChild(_ev.el);
+    _ev = null;
+  };
+  U.evidenceModalOpen = function () { return !!_ev; };
+
+  U.evidenceModal = function (clueId, opts) {
+    if (!w.document) return null;
+    var c = w.S.find.clue(clueId);
+    if (!c) { U.toast('证据卡打不开:线索 ' + clueId + ' 不在池内', 'bad'); return null; }
+    evCss();
+    U.evidenceModalClose();
+    var mask = w.document.createElement('div');
+    mask.className = 'evm-mask';
+    _ev = { clueId: clueId, idx: (opts && opts.idx) || 0, el: mask };
+    mask.addEventListener('click', function (e) {
+      if (e.target === mask) { U.evidenceModalClose(); return; }
+      var t = e.target;
+      while (t && t !== mask && !(t.getAttribute &&
+        (t.getAttribute('data-evstep') || t.getAttribute('data-evgo') !== null || t.getAttribute('data-evclose')))) t = t.parentNode;
+      if (!t || t === mask) return;
+      if (t.getAttribute('data-evclose')) { U.evidenceModalClose(); return; }
+      var st = t.getAttribute('data-evstep');
+      if (st) { _ev.idx += parseInt(st, 10); evPaint(); return; }
+      var go = t.getAttribute('data-evgo');
+      if (go !== null && go !== undefined && go !== '') { _ev.idx = parseInt(go, 10); evPaint(); }
+    });
+    w.document.body.appendChild(mask);
+    evPaint();
+    /* 打开即记录「已查看」:弹层挂在 body 上,commit 触发的重绘只换 #view,不影响本层 */
+    if (!c.evidenceViewed && w.S.check('view_evidence', { clueId: clueId }).ok) {
+      w.S.commit('view_evidence', { clueId: clueId });
+    }
+    return mask;
+  };
+
+  if (w.document) {
+    w.document.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el.getAttribute && !el.getAttribute('data-ev')) el = el.parentNode;
+      if (!el || !el.getAttribute) return;
+      var id = el.getAttribute('data-ev');
+      if (!id) return;
+      e.preventDefault();
+      U.evidenceModal(id);
+    });
+    w.document.addEventListener('keydown', function (e) {
+      if (!_ev) return;
+      var k = e.key;
+      if (k === 'Escape' || e.keyCode === 27) { U.evidenceModalClose(); return; }
+      if (k === 'ArrowLeft' || e.keyCode === 37) { _ev.idx -= 1; evPaint(); e.preventDefault(); }
+      else if (k === 'ArrowRight' || e.keyCode === 39) { _ev.idx += 1; evPaint(); e.preventDefault(); }
+    });
+  }
+
+  /* 手风琴(同时只展开一条):开合状态由调用方持有 —— 点 data-acc → 调用方改状态重绘。
+     items = [{id, head(html), right(html), body(html)}];openId = 当前展开的那条 */
+  U.accordion = function (items, openId) {
+    evCss();
+    return '<div class="acc">' + (items || []).map(function (it) {
+      var on = it.id === openId;
+      return '<div class="acc-item' + (on ? ' is-open' : '') + '">' +
+        '<button type="button" class="acc-hd" data-acc="' + esc(it.id) + '" aria-expanded="' + (on ? 'true' : 'false') + '">' +
+        '<span class="acc-cev">' + (on ? '▾' : '▸') + '</span>' +
+        '<span class="acc-t">' + (it.head || '') + '</span>' +
+        '<span class="acc-r">' + (it.right || '') + '</span></button>' +
+        (on ? '<div class="acc-body">' + (it.body || '') + '</div>' : '') +
+        '</div>';
+    }).join('') + '</div>';
+  };
 
   /* ---------------- 小工具 ---------------- */
   U.kv = function (pairs) {

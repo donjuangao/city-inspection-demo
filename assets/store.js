@@ -56,7 +56,46 @@
     if (!d.ruleShadow) d.ruleShadow = [];     // A2 影子试算留痕
     if (!d.feedbacks) d.feedbacks = [];       // A5 误报原因回流
     if (!d.stepLog) d.stepLog = {};
+    /* R87 A2:待裁定卡(抢占第三步交到值班长手上的建议方案 + 后果) */
+    if (!d.pendingRulings) d.pendingRulings = [];
+    /* R87:工单事项一句话 + 挂起恢复条件位;告警申诉/裁定位;班组坐标与在途目标 —— 老快照缺字段时补齐 */
+    (d.tickets || []).forEach(function (t) {
+      if (!t.summary) t.summary = summaryOf(t, d);
+      if (t.resumeCond === undefined) t.resumeCond = null;
+    });
+    (d.alerts || []).forEach(function (a) {
+      if (a.appeal === undefined) a.appeal = null;
+      if (a.ruling === undefined) a.ruling = null;
+      if (a.misfire === undefined) a.misfire = false;
+    });
+    (d.crews || []).forEach(function (c) {
+      if (!c.xy) {
+        var seedCrew = byId((w.DATA && w.DATA.crews) || [], c.id);
+        c.xy = (seedCrew && seedCrew.xy ? seedCrew.xy : [500, 500]).slice();
+      }
+      if (c.enroute === undefined) c.enroute = null;
+    });
     return d;
+  }
+
+  /* R87 · 工单事项一句话:「井盖缺失 · Al Jimi MH-0417」= 关联线索的异常类目(无线索则按工单类型)+ 街区 + 设施号。
+     所有工单都要有(含支线新生成的)—— 创建路径统一在 doCommit / advance 尾部回填一次。 */
+  var TICKET_TOPIC = {
+    '养护批量工单': '周期养护批量', '设备工单': '传感器自检失败', '雨前专项任务': '雨前清掏核查',
+    '核查任务': '渗漏核查(夜间听漏 / 分段关阀)', '管网维修工单': '渗漏点维修', '传感器复检工单': '传感器复检',
+    '紧急工单': '紧急处置', '急修工单': '急修处置'
+  };
+  function summaryOf(tk, d) {
+    if (!tk) return '';
+    d = d || state;
+    var c = tk.clueId && d ? byId(d.clues || [], tk.clueId) : null;
+    var f = tk.facility && d ? byId(d.facilities || [], tk.facility) : null;
+    var topic = (c && c.kindText) || TICKET_TOPIC[tk.type] || tk.type || '处置任务';
+    var where = [(f && f.block) || '', tk.facility || ''].filter(function (x) { return !!x; }).join(' ');
+    return where ? (topic + ' · ' + where) : topic;
+  }
+  function fillSummaries(d) {
+    (d.tickets || []).forEach(function (t) { if (!t.summary) t.summary = summaryOf(t, d); });
   }
 
   var state = hydrate(readStore() || seed());
@@ -109,6 +148,40 @@
     if (kind === 'dispatch') return '#/m2/dispatch';
     if (kind === 'case') return '#/m1/line/pl';
     return null;
+  }
+
+  /* R87 A2 · 挂起件的恢复条件:每个挂起原因都写清「等什么、谁来解、大概多久」,
+     两个出口固定 —— 班组端「条件解除,恢复作业」(crew_resume)/ 值班长「强制回队重派」(resume_requeue)。 */
+  var RESUME_COND = {
+    '抢占调度': { cond: '被让位的高优先级件处置完毕、班组释放', owner: '区值班长', wait: 60 },
+    '待条件(审批/物料/装备)': { cond: '审批下达 / 物料到场 / 装备释放,三者中缺的那一项到位', owner: '区值班长', wait: 90 },
+    '联动处置等待': { cond: '联动单位(警察 / 民防 / 产权单位)到场并交出作业面', owner: '区值班长', wait: 60 },
+    '交通导改审批未下': { cond: '交管导改批文下达', owner: '交管对接岗', wait: 90 },
+    '物料未到': { cond: '物料送达现场', owner: '仓储调度岗', wait: 60 },
+    '大型设备占用': { cond: '设备从上一处作业面释放', owner: '区值班长', wait: 120 },
+    '作业许可未批': { cond: '作业许可(密闭空间 / 带压)批复下达', owner: '安全岗', wait: 60 }
+  };
+  function resumeCondOf(reason, now) {
+    var d = RESUME_COND[reason] || { cond: '挂起原因消除', owner: '区值班长', wait: 60 };
+    return {
+      reason: reason || '', cond: d.cond, owner: d.owner, eta: addMin(now, d.wait),
+      exits: ['班组端「条件解除,恢复作业」', '区值班长「强制回队重派」']
+    };
+  }
+
+  /* R87 · 班组位置与在途目标(调度视图地图用;坐标与设施同一虚拟坐标系) */
+  function crewMove(cw, facilityId, mode) {
+    if (!cw) return;
+    var f = facilityId ? facOf(facilityId) : null;
+    if (mode === 'enroute') {
+      cw.enroute = facilityId ? { to: facilityId } : null;
+      if (f && f.xy && cw.xy) cw.xy = [Math.round((cw.xy[0] + f.xy[0]) / 2), Math.round((cw.xy[1] + f.xy[1]) / 2)];
+    } else if (mode === 'arrive') {
+      cw.enroute = null;
+      if (f && f.xy) cw.xy = [f.xy[0] + 14, f.xy[1] + 14];
+    } else {
+      cw.enroute = null;
+    }
   }
 
   /* R86 A3:向线索追加一次观测(证据同时并入展平 evidence —— 既有渲染读 clue.evidence 的路径不变) */
@@ -328,8 +401,8 @@
     run: function (s, p) {
       var t = tkOf(p.ticketId), old = t.crew, nw = crewOf(p.crew);
       if (old && crewOf(old)) { var o = crewOf(old); o.load = Math.max(0, o.load - 1); o.status = o.load ? o.status : '空闲'; }
-      t.crew = p.crew; t.state = '已派工'; t.suspended = false;
-      nw.load++; nw.status = '待接单';
+      t.crew = p.crew; t.state = '已派工'; t.suspended = false; t.resumeCond = null;
+      nw.load++; nw.status = '待接单'; crewMove(nw, t.facility, 'enroute');
       return '改派 ' + t.id + ':' + (old || '(无)') + ' → ' + nw.name + ';理由「' + p.reason + '」(事件不动,仅换承接方)';
     }
   };
@@ -369,11 +442,14 @@
       return null;
     },
     run: function (s, p) {
-      var t = tkOf(p.ticketId); t.suspended = true; t.suspendReason = p.reason; t.suspendT = s.now;
+      var t = tkOf(p.ticketId);
+      t.stateBeforeSuspend = t.state;
+      t.suspended = true; t.suspendReason = p.reason; t.suspendT = s.now;
+      t.resumeCond = resumeCondOf(p.reason, s.now);
       var cw = t.crew ? crewOf(t.crew) : null;
-      if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); }
-      banner('amber', '挂起回补卡:' + t.id + ' 因「' + p.reason + '」挂起,SLA 停表;条件解除后自动回队重派。', 'm2', routeOf('ticket', t.id));
-      return '挂起 ' + t.id + ':原因「' + p.reason + '」;SLA 停表,班组释放';
+      if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); crewMove(cw, null, 'free'); t.crewReleased = true; }
+      banner('amber', '挂起回补卡:' + t.id + ' 因「' + p.reason + '」挂起,SLA 停表;等「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + ',预计 ' + t.resumeCond.eta + ')。', 'm2', routeOf('ticket', t.id));
+      return '挂起 ' + t.id + ':原因「' + p.reason + '」;SLA 停表,班组释放;恢复条件「' + t.resumeCond.cond + '」,两个出口=班组报条件解除 / 值班长强制回队重派';
     }
   };
 
@@ -527,7 +603,7 @@
     v: function (s, p) { var t = tkOf(p.ticketId); if (!t) return '工单不存在'; if (t.state !== '已派工') return '工单非「已派工」态'; return null; },
     run: function (s, p) {
       var t = tkOf(p.ticketId); t.state = '已接单';
-      var cw = t.crew ? crewOf(t.crew) : null; if (cw) cw.status = '在途';
+      var cw = t.crew ? crewOf(t.crew) : null; if (cw) { cw.status = '在途'; crewMove(cw, t.facility, 'enroute'); }
       return '班组接单 ' + t.id + '(' + (cw ? cw.name : '') + '):状态写回客户工单系统 ' + t.mirror;
     }
   };
@@ -536,7 +612,7 @@
     v: function (s, p) { var t = tkOf(p.ticketId); if (!t) return '工单不存在'; if (t.state !== '已接单') return '工单非「已接单」态'; return null; },
     run: function (s, p) {
       var t = tkOf(p.ticketId); t.state = '已到场';
-      var cw = t.crew ? crewOf(t.crew) : null; if (cw) cw.status = '到场';
+      var cw = t.crew ? crewOf(t.crew) : null; if (cw) { cw.status = '到场'; crewMove(cw, t.facility, 'arrive'); }
       return '班组到场 ' + t.id + ':状态写回客户工单系统 ' + t.mirror;
     }
   };
@@ -588,8 +664,13 @@
     label: '受阻上报', actors: ['班组账号'], hint: '原因码;工单转「待条件」,SLA 停表',
     v: function (s, p) { var t = tkOf(p.ticketId); if (!t) return '工单不存在'; if (!p.code) return '受阻原因码必填'; return null; },
     run: function (s, p) {
-      var t = tkOf(p.ticketId); t.state = '待条件'; t.suspended = true; t.suspendReason = p.code;
-      return '受阻上报 ' + t.id + ':原因码「' + p.code + '」→ 工单转「待条件」(写回客户系统状态机映射);SLA 停表';
+      var t = tkOf(p.ticketId);
+      if (!t.suspended) t.stateBeforeSuspend = t.state;
+      t.state = '待条件'; t.suspended = true; t.suspendReason = p.code;
+      t.suspendT = s.now; t.crewReleased = false;
+      t.resumeCond = resumeCondOf(p.code, s.now);
+      return '受阻上报 ' + t.id + ':原因码「' + p.code + '」→ 工单转「待条件」(写回客户系统状态机映射);SLA 停表;' +
+        '恢复条件「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + ',预计 ' + t.resumeCond.eta + '),条件解除后班组可自行恢复作业';
     }
   };
   A.crew_safety = {
@@ -711,7 +792,7 @@
       };
       if (!tkOf(tk.id)) s.tickets.push(tk);
       c.ticketId = tk.id; c.reviewEnd = addMin(s.now, w.DATA.dict.sla.fastlaneReview); c.slaDeadline = c.reviewEnd;
-      if (cw) { cw.load++; cw.status = '待接单'; }
+      if (cw) { cw.load++; cw.status = '待接单'; crewMove(cw, c.facility, 'enroute'); }
       hold('机器直派件全量抽审', c.id, '机器直派自动派单件全量抽审(误派率月报口径)');
       banner('info', '机器派单,人复核中:' + c.id + ' 已自动派 ' + (cw ? cw.name : p.crew) + '(工单 ' + tk.id + ');复核员 15 分钟内并行复核,可撤回召回。', 'm1', routeOf('clue', c.id));
       return '自动派单 ' + tk.id + ' → ' + (cw ? cw.name : p.crew) + ':产出紧急工单,不产出告警(定性权仍在人);15 分钟并行复核窗开启';
@@ -728,8 +809,8 @@
 
   A.auto_broadcast = autoDef('只读预警广播', '规则引擎副作用:通知值班圈;不定性、不派工',
     function (s, p) {
-      banner('amber', '只读预警广播 · ' + (p.scope || '全域') + ':' + p.text, 'global', routeOf('clue', p.clueId) || '#/m1');
-      return '只读预警广播 @' + (p.scope || '全域') + ':' + p.text + '(聚合抑制:同点位同时窗合并 · 每收件人每小时上限 · 静默窗)';
+      banner('amber', '只读预警广播 · ' + (p.scope || '本区') + ':' + p.text, 'global', routeOf('clue', p.clueId) || '#/m1');
+      return '只读预警广播 @' + (p.scope || '本区') + ':' + p.text + '(聚合抑制:同点位同时窗合并 · 每收件人每小时上限 · 静默窗)';
     });
 
   A.auto_review_window = autoDef('并行复核窗开启', '机器直派 15 分钟并行复核;超时走三级升级',
@@ -847,6 +928,9 @@
       var c = clueOf(p.clueId); if (!c) return '过载分诊:线索不存在';
       c.lane = '批量加急分诊(显名降级)'; c.degraded = true;
       c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
+      /* R87 A2:辖区零可用班组 = 抢占程序;前两步系统先算好方案,第三步把待裁定卡放到值班长面前。
+         只写数据不改本步的日志摘要与横幅 —— 主线 auto 行为不变。 */
+      openPendingRuling(s, c);
       hold('降级件抽审', c.id, '过载降级件件件可抽审(区别于常态批量确认)');
       banner('warn', '承接池无可派:' + c.id + ' 显名降级进「批量加急分诊」,降级原因入动作日志;区值班长可启动临时借调 + SLA 延展档。', 'm1', routeOf('clue', c.id));
       return '过载三步 ' + c.id + ':①只读预警先喊现场 ②显名降级进批量加急分诊(件件可抽审)③待区值班长临时借调/抢占仲裁';
@@ -861,7 +945,7 @@
       /* R86 A3:并入 = 给这条线索追加一次「公众上报」观测(不新开线索) */
       addObservation(c, {
         t: r.t || s.now, source: '公众上报 ' + r.id, conf: null, kind: '公众',
-        note: '同设施同类目活跃期内合并(CL-R01);回执 ' + (r.receipt || '') + ' 状态同步可查',
+        note: '一处设施上的同类异常并进原线索(CL-R01);回执 ' + (r.receipt || '') + ' 状态同步可查',
         evidence: (r.evidence || []).map(function (e) { return { kind: e.kind, label: e.label, from: r.id }; })
       });
       return '多源同点合并:公众上报 ' + r.id + ' 并入线索 ' + c.id + ' 作第 ' + c.obsCount + ' 次观测;证据叠加,回执状态同步可查;双单竞态收敛';
@@ -919,6 +1003,65 @@
     var rs = w.RULES || [];
     for (var i = 0; i < rs.length; i++) if (rs[i].id === id) return rs[i];
     return null;
+  }
+
+  /* ============ R87 A2 · 抢占第三步的待裁定卡 ============
+     先派尽派的另一面:辖区真的一个能接单的班组都没有时,系统不把单压着等人想办法,
+     而是把前两步(在办件让位 / 跨班组借调)算好的结果连同后果一起交到值班长手上,
+     值班长只做「采纳」(= preempt_arbitrate)或「改派」。 */
+  var TICKET_PRIORITY = {
+    '养护批量工单': 1, '设备工单': 1, '传感器复检工单': 1, '雨前专项任务': 2, '核查任务': 2,
+    '管网维修工单': 3, '急修工单': 3, '紧急工单': 4
+  };
+  function yieldCandidate(s) {
+    var cand = (s.tickets || []).filter(function (t) {
+      return t.crew && !t.suspended && ['已派工', '已接单', '已到场'].indexOf(t.state) >= 0;
+    });
+    cand.sort(function (a, b) { return (TICKET_PRIORITY[a.type] || 2) - (TICKET_PRIORITY[b.type] || 2); });
+    return cand[0] || null;
+  }
+  function borrowCandidates(s, line) {
+    var need = line === '井盖' ? '密闭空间作业' : (line === '管网' ? '带压作业' : null);
+    return (s.crews || []).filter(function (cw) {
+      if ((cw.lines || []).indexOf(line) >= 0) return false;           // 本线的不叫借调
+      return !need || (cw.quals || []).indexOf(need) >= 0;
+    });
+  }
+  function openPendingRuling(s, c) {
+    if (!s.pendingRulings) s.pendingRulings = [];
+    var dup = s.pendingRulings.filter(function (x) { return x.clueId === c.id && x.status === '待裁定'; })[0];
+    if (dup) return dup;
+    var yt = yieldCandidate(s);
+    var cw = yt && yt.crew ? crewOf(yt.crew) : null;
+    var borrow = borrowCandidates(s, c.line);
+    var pr = {
+      id: 'RL-' + (100 + s.pendingRulings.length), t: s.now, status: '待裁定',
+      clueId: c.id, facility: c.facility, block: c.block, line: c.line, level: c.level, topic: c.kindText,
+      step: '第三步 · 值班长裁定',
+      tried: [
+        { no: 1, name: '在办件让位', result: yt ? ('可让位:' + yt.id + '(' + yt.type + ',承办 ' + (cw ? cw.name : '—') + ')') : '辖区内没有可让位的在办件' },
+        { no: 2, name: '跨班组借调', result: borrow.length ? ('可借调:' + borrow.map(function (x) { return x.name; }).join(' / ')) : '相邻责任区与相邻班次都没有持证可胜任的班组' }
+      ],
+      proposal: {
+        action: 'preempt_arbitrate', crew: cw ? cw.id : null, crewName: cw ? cw.name : null,
+        yieldTicketId: yt ? yt.id : null,
+        text: cw ? ('挂起 ' + yt.id + ' 让位,指派 ' + cw.name + ' 接 ' + c.id + '(' + c.kindText + ' · ' + (c.block || '') + ' ' + c.facility + ')')
+          : ('辖区无可让位班组:建议向相邻区借调后再指派 ' + c.id)
+      },
+      consequence: [
+        yt ? ('被让位的 ' + yt.id + ' 停表并回队重派,完工时间往后推;班组白跑段不计考核') : '无在办件被打断',
+        cw ? (cw.name + ' 当前在办 ' + cw.load + ' 件,采纳后 ' + (cw.load + 1) + ' 件,派单时按在办上限标黄提醒') : '需先完成借调才能指派',
+        '不采纳:' + c.id + ' 留在批量加急分诊,按延展档计时,件件可抽审'
+      ],
+      alts: [
+        { text: '改派其他班组(理由码必填)', action: 'dispatch_manual' },
+        { text: '维持降级分诊,等下一班次', action: null }
+      ]
+    };
+    s.pendingRulings.push(pr);
+    /* 只落数据不发横幅:主线 T9 的 auto 行为(日志条数 / 摘要 / 横幅)保持逐字不变;
+       醒目横幅与调度视图置顶卡由 X2 从 S.pendingRulings() 渲染。 */
+    return pr;
   }
 
   /* ---- A9 · 横幅关闭 ---- */
@@ -1165,10 +1308,12 @@
     },
     run: function (s, p, actor) {
       var t = tkOf(p.ticketId);
+      t.stateBeforeSuspend = t.state;
       t.suspended = true; t.suspendReason = '抢占调度'; t.suspendT = s.now; t.yieldedTo = p.forClueId || null;
+      t.resumeCond = resumeCondOf('抢占调度', s.now);
       var cw = t.crew ? crewOf(t.crew) : null;
-      if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); }
-      banner('amber', '抢占①让位:' + t.id + ' 因高优先级件让位挂起,SLA 停表;条件解除后回队重派。', 'm2', routeOf('ticket', t.id));
+      if (cw) { cw.status = '空闲'; cw.load = Math.max(0, cw.load - 1); crewMove(cw, null, 'free'); t.crewReleased = true; }
+      banner('amber', '抢占①让位:' + t.id + ' 因高优先级件让位挂起,SLA 停表;等「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + '),或由值班长强制回队重派。', 'm2', routeOf('ticket', t.id));
       return '抢占①让位 ' + t.id + ':' + actor + ' 判定该单优先级最低 → 挂起让位' +
         (p.forClueId ? '(为 ' + p.forClueId + ' 腾班组)' : '') + ';班组 ' + (cw ? cw.name : '—') + ' 释放,SLA 停表';
     }
@@ -1213,12 +1358,382 @@
         suspended: false, photos: [], note: '抢占③值班长人裁指派(来源② 人确认派);理由「' + p.reason + '」'
       };
       s.tickets.push(tk); c.ticketId = tk.id; c.degraded = false;
-      cw.load++; cw.status = '待接单';
+      cw.load++; cw.status = '待接单'; crewMove(cw, c.facility, 'enroute');
+      /* R87 A2:执行本动作 = 采纳待裁定卡上的建议方案;
+         建议若含「在办件让位」,采纳即执行让位挂起(幂等:O 支线已单独走过 preempt_yield 则跳过)。 */
+      (s.pendingRulings || []).forEach(function (x) {
+        if (x.clueId === c.id && x.status === '待裁定') {
+          x.status = '已采纳'; x.adoptedBy = actor; x.adoptedT = s.now; x.adoptedCrew = cw.id; x.adoptedTicketId = tk.id;
+          var yt = x.proposal && x.proposal.yieldTicketId ? tkOf(x.proposal.yieldTicketId) : null;
+          if (yt && !yt.suspended && yt.crew) {
+            yt.stateBeforeSuspend = yt.state;
+            yt.suspended = true; yt.suspendReason = '抢占调度'; yt.suspendT = s.now; yt.yieldedTo = c.id;
+            yt.resumeCond = resumeCondOf('抢占调度', s.now);
+            var ycw = crewOf(yt.crew);
+            if (ycw && ycw.id !== cw.id) { ycw.status = '空闲'; ycw.load = Math.max(0, ycw.load - 1); crewMove(ycw, null, 'free'); yt.crewReleased = true; }
+            else if (ycw) { ycw.load = Math.max(0, ycw.load - 1); yt.crewReleased = true; }
+            banner('amber', '抢占让位:' + yt.id + ' 随人裁采纳挂起,SLA 停表;等「' + yt.resumeCond.cond + '」(' + yt.resumeCond.owner + '),或强制回队重派。', 'm2', routeOf('ticket', yt.id));
+          }
+        }
+      });
       hold('抢占人裁件抽审', c.id, '抢占调度人裁指派件件可抽审');
       banner('info', '抢占③人裁:' + c.id + ' 由 ' + actor + ' 指派 ' + cw.name + '(工单 ' + tk.id + '),理由入动作日志。', 'm2', routeOf('ticket', tk.id));
       return '抢占③值班长人裁 ' + c.id + ' → ' + cw.name + '(工单 ' + tk.id + '):理由「' + p.reason + '」;显名指派,件件可抽审';
     }
   };
+
+  /* ============================================================
+     R87 增补动作族(A1 误报申诉两动作 / A2 挂起两个出口 / A8 抽审两结论)
+     铁律不变:全部走 S.commit,每次一条动作日志;这些动作 **不进 SCENARIO 主线 auto**,
+     主线 T1-T12 行为零变化,只供页面按钮与导览支线直调。
+     ============================================================ */
+
+  /* ---- A1 · 并行复核窗过后的第三条纠错道:误报申诉 → 主管裁定 ---- */
+  A.misfire_appeal = {
+    label: '误报申诉', actors: ['区复核员'],
+    hint: '复核窗过后的纠错道:对已成立的告警提「判定异常」,交主管裁定;记录留痕不删',
+    v: function (s, p) {
+      var al = byId(s.alerts, p.alertId); if (!al) return '告警不存在';
+      if (al.status !== '成立') return '仅「成立」态告警可提误报申诉(当前:' + al.status + ')';
+      var c = al.clueId ? clueOf(al.clueId) : null;
+      if (c && c.reviewEnd && slaDiff(c.reviewEnd) >= 0) return '并行复核窗未过(截止 ' + c.reviewEnd + '):窗内请用「机器直派撤回」召回班组';
+      if (!p.reason) return '申诉理由码必填(传感器读数存疑 / AI 判定存疑 / 现场核实无异常 / 同点位重复报警)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var al = byId(s.alerts, p.alertId);
+      al.status = '申诉复核中';
+      al.appeal = { by: actor, t: s.now, reason: p.reason, note: p.note || '' };
+      banner('warn', '误报申诉待裁定:' + al.id + '(' + al.facility + ')理由「' + p.reason + '」—— 复核主管 / 区值班长裁定后才改状态。', 'm2', routeOf('alert', al.id));
+      return '误报申诉 ' + al.id + ':' + actor + ' 提出「' + p.reason + '」→ 告警转「申诉复核中」;原记录不删,待主管裁定';
+    }
+  };
+
+  A.misfire_ruling = {
+    label: '误报裁定', actors: ['复核主管', '区值班长'],
+    hint: '裁定申诉是否成立:成立 → 告警置「误报撤销」+ 班组白跑不计考核 + 误报原因回流 + 开传感器复检工单',
+    v: function (s, p) {
+      var al = byId(s.alerts, p.alertId); if (!al) return '告警不存在';
+      if (al.status !== '申诉复核中') return '该告警没有待裁定的误报申诉';
+      if (typeof p.upheld !== 'boolean') return '需给出裁定结论(申诉成立 / 申诉不成立)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var al = byId(s.alerts, p.alertId);
+      var c = al.clueId ? clueOf(al.clueId) : null;
+      al.ruling = { by: actor, t: s.now, upheld: !!p.upheld, note: p.note || '' };
+      if (!p.upheld) {
+        al.status = '成立';
+        banner('info', '误报申诉不成立:' + al.id + ' 维持原判,告警回「成立」;裁定说明入动作日志。', 'm2', routeOf('alert', al.id));
+        return '误报裁定 ' + al.id + ':申诉不成立,维持告警成立(裁定人 ' + actor + ')' + (p.note ? ';说明「' + p.note + '」' : '');
+      }
+      al.status = '误报撤销'; al.misfire = true; al.voidT = s.now; al.voidBy = actor;
+      var out = [];
+      /* ① 线索侧:定性推翻,留痕不删;② 按原因码走与驳回件同一条回流通道 */
+      var code = p.code || '④';
+      if (c) {
+        var def = w.DATA.dict.rejectCodes.filter(function (r) { return r.code === code || r.name === code; })[0];
+        c.status = 'rejected'; c.rejectCode = code;
+        c.misfireVoided = { alertId: al.id, by: actor, t: s.now, reason: (al.appeal || {}).reason || '' };
+        s.feedbacks.push({
+          id: 'FB-' + (100 + s.feedbacks.length), clueId: c.id, code: code,
+          name: def ? def.name : '', to: def ? def.to : '人工周审', ruleId: p.ruleId || null,
+          by: actor, t: s.now, note: '误报申诉裁定成立后回流(与驳回件同一条通道)'
+        });
+        out.push('线索 ' + c.id + ' 定性推翻,按原因码 ' + code + ' 回流「' + (def ? def.to : '人工周审') + '」');
+      }
+      /* ③ 工单侧:班组白跑不计考核 */
+      var tk = c && c.ticketId ? tkOf(c.ticketId) : null;
+      if (tk) {
+        tk.kpiExempt = { by: actor, t: s.now, reason: '告警误报撤销,班组白跑段不计考核' };
+        out.push('工单 ' + tk.id + ' 标「白跑不计考核」');
+      }
+      /* ④ 设施侧:开传感器复检工单(灰档:设备侧核查,不计业务处置指标) */
+      var sns = (s.sensors || []).filter(function (x) { return x.facility === al.facility; });
+      var rk = {
+        id: nextId('WO-', s.tickets), type: '传感器复检工单', clueId: null, facility: al.facility, crew: null,
+        state: '已派工', source: w.DATA.dict.ticketSources.plan, createdT: s.now, line: al.line,
+        mirror: 'MUN-WO-' + (77300 + s.tickets.length),
+        sla: { accept: addMin(s.now, 60), arrive: addMin(s.now, 240), done: addMin(s.now, 600) },
+        suspended: false, resumeCond: null, photos: [],
+        grade: '灰档', greyNote: '设备侧核查任务,不计入业务处置指标与班组考核',
+        sensors: sns.map(function (x) { return x.id; }),
+        note: '误报撤销后的传感器复检(承接方=传感网运维方);查读数漂移、安装位移与标定'
+      };
+      rk.summary = summaryOf(rk, s);
+      s.tickets.push(rk);
+      sns.forEach(function (x) { x.recheck = { ticketId: rk.id, t: s.now, by: actor }; });
+      out.push('开传感器复检工单 ' + rk.id + '(灰档)');
+      banner('info', '误报撤销:' + al.id + '(' + al.facility + ')告警状态置「误报撤销」,记录保留;' + out.join(';') + '。', 'm2', routeOf('alert', al.id));
+      return '误报裁定 ' + al.id + ':' + actor + ' 判申诉成立 → 告警「误报撤销」(留痕不删);' + out.join(';');
+    }
+  };
+
+  /* ---- A2 · 挂起件的两个出口 ---- */
+  A.crew_resume = {
+    label: '条件解除,恢复作业', actors: ['班组账号'],
+    hint: '挂起件出口一:现场条件已解除,班组自行恢复作业;SLA 接着算,不重新起算',
+    v: function (s, p) {
+      var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      if (!t.suspended) return '该单未处于挂起态';
+      if (!t.crew) return '该单已释放班组,须由区值班长「强制回队重派」';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var t = tkOf(p.ticketId);
+      var back = t.stateBeforeSuspend || '已到场';
+      var cond = t.resumeCond ? t.resumeCond.cond : (t.suspendReason || '挂起原因');
+      var stop = t.suspendT ? (toMin(s.now) - toMin(t.suspendT)) : 0;
+      if (stop < 0) stop += 1440;
+      t.suspended = false; t.state = back; t.resumedT = s.now;
+      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '班组报条件解除', cond: cond, stopMin: stop }]);
+      t.resumeCond = null;
+      var cw = t.crew ? crewOf(t.crew) : null;
+      if (cw) {
+        if (t.crewReleased) { cw.load++; t.crewReleased = false; }
+        cw.status = (back === '已到场' ? '到场' : '在途');
+        crewMove(cw, t.facility, back === '已到场' ? 'arrive' : 'enroute');
+      }
+      banner('info', '挂起解除:' + t.id + ' 班组报「' + cond + '」已解除,恢复作业;停表 ' + stop + ' 分钟计入档案,SLA 接着算。', 'm2', routeOf('ticket', t.id));
+      return '恢复作业 ' + t.id + ':恢复条件「' + cond + '」已解除 → 回到「' + back + '」;停表 ' + stop + ' 分钟入档,SLA 接着算不重新起算';
+    }
+  };
+
+  A.resume_requeue = {
+    label: '强制回队重派', actors: ['区值班长', '复核主管'],
+    hint: '挂起件出口二:不等条件解除,直接把单收回待改派队列重新派',
+    v: function (s, p) {
+      var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      if (!t.suspended) return '该单未处于挂起态';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var t = tkOf(p.ticketId);
+      var cond = t.resumeCond ? t.resumeCond.cond : (t.suspendReason || '挂起原因');
+      var old = t.crew ? crewOf(t.crew) : null;
+      if (old && !t.crewReleased) { old.load = Math.max(0, old.load - 1); old.status = old.load ? old.status : '空闲'; }
+      if (old) crewMove(old, null, 'free');
+      t.suspended = false; t.crewReleased = false; t.crew = null; t.state = '待改派';
+      t.requeue = { by: actor, t: s.now, reason: p.reason || '不等条件解除,回队重派', fromCond: cond };
+      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '值班长强制回队重派', cond: cond }]);
+      t.resumeCond = null;
+      banner('amber', '强制回队重派:' + t.id + ' 不再等「' + cond + '」,已收回进待改派队列,请指派新承接班组。', 'm2', routeOf('ticket', t.id));
+      return '强制回队重派 ' + t.id + ':' + actor + ' 判定不再等「' + cond + '」→ 收回工单进「待改派」;原承接班组释放,SLA 续计不清零';
+    }
+  };
+
+  /* ---- A8 · 抽审两结论(队列每行可操作)---- */
+  function auditOf(s, id) { return byId(s.gov.auditQueue, id); }
+
+  A.spot_pass = {
+    label: '抽审通过', actors: ['复核主管', '区值班长'],
+    hint: '抽审结论:复看后认为原处置站得住;结论入动作日志,原件不动',
+    v: function (s, p) {
+      var a = auditOf(s, p.auditId); if (!a) return '抽审记录不存在';
+      if (a.status !== '待抽审') return '该件已出抽审结论:' + (a.result || a.status);
+      return null;
+    },
+    run: function (s, p, actor) {
+      var a = auditOf(s, p.auditId);
+      a.status = '已抽审'; a.result = '通过'; a.by = actor; a.ruledT = s.now; a.note = p.note || '';
+      return '抽审通过 ' + a.id + '(' + (a.clueId || '—') + '):' + actor + ' 复看后认为原处置站得住;结论入动作日志,计入抽审完成数';
+    }
+  };
+
+  A.spot_return = {
+    label: '抽审打回', actors: ['复核主管', '区值班长'],
+    hint: '抽审结论:原处置不成立 —— 原件回队重看,原处置人收到通知',
+    v: function (s, p) {
+      var a = auditOf(s, p.auditId); if (!a) return '抽审记录不存在';
+      if (a.status !== '待抽审') return '该件已出抽审结论:' + (a.result || a.status);
+      if (!p.code) return '打回原因码必填';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var a = auditOf(s, p.auditId);
+      a.status = '已抽审'; a.result = '打回'; a.code = p.code; a.by = actor; a.ruledT = s.now; a.note = p.note || '';
+      var c = a.clueId ? clueOf(a.clueId) : null;
+      var who = '';
+      for (var i = s.actionLog.length - 1; i >= 0; i--) {
+        var lg = s.actionLog[i];
+        if (lg.params && lg.params.clueId === a.clueId && ['confirm', 'reject', 'overrule_mech', 'batch_confirm'].indexOf(lg.action) >= 0) { who = lg.actor; break; }
+      }
+      a.checkedActor = who;
+      if (c) {
+        c.spotReturn = { auditId: a.id, by: actor, t: s.now, code: p.code, to: who || '原处置人' };
+        if (['confirmed', 'rejected', 'archived_doubt', 'auto_done'].indexOf(c.status) >= 0) { c.status = 'open'; c.lane = '单条必审'; }
+        c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
+      }
+      banner('warn', '抽审打回:' + (a.clueId || a.id) + ' 原件回队重看,原因「' + p.code + '」;请' + (who ? who : '原处置人') + '复看后重新给结论。',
+        'm1', routeOf('clue', a.clueId) || '#/m4');
+      return '抽审打回 ' + a.id + '(' + (a.clueId || '—') + '):' + actor + ' 判原处置不成立,原因「' + p.code + '」→ 原件回「待核查」进单条必审;' +
+        '通知' + (who ? who : '原处置人') + '复看,打回记录进考核与规则评估统计';
+    }
+  };
+
+  /* ============ R87 A3 · 影子试算回放 ============
+     回答的是「这个参数改成 X,今天已经过这条规则的件会有什么不同」:
+     对当日在池的线索 / 工单 / 调查案回放本条规则的判定,逐件给出改前改后的去向。
+     ⚠ 只读回放:不写任何状态,也不改运行判定(生效仍需审批)。 */
+  function num(v) { var n = parseFloat(v); return (typeof v === 'string' && v !== '' && !isNaN(n)) ? n : (typeof v === 'number' ? v : v); }
+  function passCnt(c) { return (c.checks || []).filter(function (x) { return x.result === 'pass'; }).length; }
+  function chkOf(c, id) { var a = (c.checks || []).filter(function (x) { return x.id === id; })[0]; return a ? a.result : 'na'; }
+  function srcCnt(c) { var k = Object.keys(c.sourceMix || {}); return k.length || 1; }
+  function isSensorClue(c) { return !!((c.sourceMix || {})['传感器']) || /传感器|液位|流量/.test(c.source || ''); }
+  function isVisualClue(c) { return /相机|视觉|移动传感网|车载/.test(c.source || ''); }
+  function lineClues(s, line) { return (s.clues || []).filter(function (c) { return c.line === line; }); }
+  function obsSpanH(c) {
+    var a = toMin(c.firstSeen || c.t), b = toMin(c.lastSeen || c.t), d = b - a;
+    if (d < 0) d += 1440;
+    return Math.round(d / 60 * 10) / 10;
+  }
+
+  var REPLAY = {
+    'MH-R01': {
+      what: '井盖线上带传感器观测的件',
+      pick: function (s) { return lineClues(s, '井盖').filter(isSensorClue); },
+      decide: function (c, P) {
+        var tilt = Math.round(c.conf * 30 * 10) / 10;          // 演示口径:置信映射位移角
+        var jump = Math.round(c.conf * 28);                     // 演示口径:置信映射液位跳变
+        var gap = c.obsCount >= 2 ? 60 : 20;                    // 两次观测的间隔(秒)
+        var cross = (jump >= P.levelJump) && (gap <= P.crossWin);
+        return (tilt >= P.tiltDeg && cross) ? '机器直派' : '加急人工';
+      }
+    },
+    'MH-R02': {
+      what: '井盖线上只有一只传感器报、没有第二只佐证的件',
+      pick: function (s) {
+        return lineClues(s, '井盖').filter(function (c) { return isSensorClue(c) && ((c.sourceMix || {})['传感器'] || 0) < 2; });
+      },
+      decide: function (c, P) { return (Math.round(c.conf * 30 * 10) / 10) >= P.tiltDeg ? '加急人工' : '不进处置(未达位移阈值)'; }
+    },
+    'MH-R03': {
+      what: '井盖线上靠画面识别的件',
+      pick: function (s) { return lineClues(s, '井盖').filter(isVisualClue); },
+      decide: function (c, P) {
+        var frames = (c.obsCount || 1) + 3;                          // 演示口径:观测次数映射可用帧数
+        var agree = Math.min(0.95, 0.5 + 0.15 * (c.obsCount || 1));  // 演示口径:观测越多帧间越一致
+        return (c.conf >= P.conf && agree >= P.agree && frames >= P.frames) ? '机器直派' : '加急人工';
+      },
+      /* 本条是「升档」规则,三项判据是与关系:今天这批画面识别件的置信全部低于阈值,
+         所以先卡在置信线上,一致率与帧数还轮不到起作用 —— 调这两个参数确实一件都不会动。
+         这不是试算失灵,是试算给出的真实答案,旁白照此讲即可。 */
+      why: function (items, base, key) {
+        if (key === 'conf') return '';
+        var blocked = items.filter(function (c) { return c.conf < base.conf; });
+        if (blocked.length === items.length) {
+          return '这 ' + items.length + ' 件今天全部卡在「置信阈值 ' + base.conf + '」上(最高一件 ' +
+            Math.max.apply(null, items.map(function (c) { return c.conf; })) +
+            '),先放宽置信,帧间一致率与连续帧数才轮得到起作用';
+        }
+        return '';
+      }
+    },
+    'MH-R07': {
+      what: '井盖线上受暴雨升档影响的养护件',
+      pick: function (s) { return lineClues(s, '井盖').filter(function (c) { return c.level === '养护' || c.stormUp; }); },
+      decide: function (c, P) { return P.leadHours >= 6 ? '整体升一档(急修)+ 雨前清掏' : '维持养护档,不提前起清掏'; }
+    },
+    'MH-R05': {
+      what: '井盖线在池件的台账点位比对',
+      pick: function (s) { return lineClues(s, '井盖'); },
+      decide: function (c, P) { return (chkOf(c, 'MH1') === 'pass' ? 8 : 40) > P.buffer ? '驳回与转办' : '不触发本规则(台账对得上)'; }
+    },
+    'MH-R06': {
+      what: '雨水口箅面堵塞件',
+      pick: function (s) { return lineClues(s, '井盖').filter(function (c) { return /^GR-/.test(c.facility || ''); }); },
+      decide: function (c, P) { return c.conf >= P.conf ? '常规人工' : '不进处置(置信不足)'; }
+    },
+    'RD-R01': {
+      what: '路面线在池件',
+      pick: function (s) { return lineClues(s, '路面'); },
+      decide: function (c, P) {
+        if (c.conf < P.conf) return '常规人工';
+        return srcCnt(c) >= P.sources ? '加急人工' : '常规人工(来源不足,不加急)';
+      }
+    },
+    'RD-R02': {
+      what: '路面线在池件',
+      pick: function (s) { return lineClues(s, '路面'); },
+      decide: function (c, P) { return c.conf < P.confLo ? '驳回与转办' : (c.conf < P.confHi ? '常规人工' : '加急人工'); }
+    },
+    'RD-R03': {
+      what: '路面线在池件 + 命中树影特征的件',
+      pick: function (s) { return (s.clues || []).filter(function (c) { return c.line === '路面' || /树影/.test(c.source || ''); }); },
+      decide: function (c, P) {
+        var shadow = /树影/.test(c.source || '') ? 0.9 : 0.2;
+        if (shadow >= P.shadowScore) return '驳回与转办';
+        return c.conf < P.confLo ? '驳回与转办' : '进人工车道(不驳回)';
+      }
+    },
+    'RD-R04': {
+      what: '路面线养护级在池件',
+      pick: function (s) { return lineClues(s, '路面').filter(function (c) { return c.level === '养护'; }); },
+      decide: function (c, P) { return (c.conf >= P.conf && passCnt(c) >= P.checks) ? '自动处理(免人工并入养护计划)' : '常规人工'; }
+    },
+    'RD-R05': {
+      what: '路面线观察级在池件',
+      pick: function (s) { return lineClues(s, '路面').filter(function (c) { return c.level === '观察'; }); },
+      decide: function (c) { return passCnt(c) === (c.checks || []).length ? '自动处理(记账)' : '常规人工'; }
+    },
+    'PL-R01': {
+      what: '管网线在办调查案',
+      pick: function (s) { return (s.investigations || []).slice(); },
+      decide: function (k, P) {
+        var dev = 18, hold = 45, times = 3;                    // 演示口径:DMA-07 当夜实测偏差
+        return (dev >= P.dev && hold >= P.hold && times >= P.times) ? '常规人工(开调查案)' : '不立案(未达判据)';
+      }
+    },
+    'PL-R05': {
+      what: '流量已回归的调查案',
+      pick: function (s) { return (s.investigations || []).filter(function (k) { return !!k.flowGreen; }); },
+      decide: function (k, P) { return (3 <= P.back && 2 >= P.keep) ? '建议结案(签字仍在人)' : '继续观察'; }
+    },
+    'DP-R03': {
+      what: '当前五个班组的在办量',
+      pick: function (s) { return (s.crews || []).slice(); },
+      decide: function (cw, P) { return (cw.load > P.maxLoad) ? '超在办提醒上限(仍可派,标黄)' : '正常派单'; }
+    },
+    'DP-R05': {
+      what: '当前在办工单的计时档',
+      pick: function (s) { return (s.tickets || []).filter(function (t) { return !!t.sla; }); },
+      decide: function (t, P) { return '接单 ' + P.accept + ' 分 / 到场 ' + P.arrive + ' 分 / 完工 ' + P.sameDay + ' 分'; }
+    },
+    'CL-R01': {
+      what: '已有两次以上观测的线索',
+      pick: function (s) { return (s.clues || []).filter(function (c) { return (c.obsCount || 1) >= 2; }); },
+      decide: function (c, P) { return obsSpanH(c) <= P.activeWin ? '并入既有线索' : '另开新线索'; }
+    }
+  };
+
+  function shadowReplay(ruleId, key, newVal) {
+    var r = ruleById(ruleId);
+    if (!r) return { ruleId: ruleId, key: key, total: 0, changed: [], note: '规则不存在:' + ruleId };
+    var pm = (r.params || []).filter(function (x) { return x.key === key; })[0];
+    if (!pm) return { ruleId: ruleId, key: key, total: 0, changed: [], note: '本条规则没有参数项「' + key + '」' };
+    var rp = REPLAY[ruleId];
+    var base = {}, nx = {};
+    (r.params || []).forEach(function (x) { base[x.key] = x.val; nx[x.key] = x.val; });
+    nx[key] = num(newVal);
+    var out = {
+      ruleId: ruleId, ruleName: r.name, key: key, label: pm.label, unit: pm.unit || '',
+      from: pm.val, to: nx[key], scope: rp ? rp.what : '', total: 0, changed: [], note: ''
+    };
+    if (!rp) { out.note = '今日无经过本规则的件'; return out; }
+    var items = rp.pick(state) || [];
+    out.total = items.length;
+    items.forEach(function (it) {
+      var a = rp.decide(it, base), b = rp.decide(it, nx);
+      if (a !== b) out.changed.push({ id: it.id, from: a, to: b });
+    });
+    if (!items.length) out.note = '今日无经过本规则的件';
+    /* 有件经过、但一件都不改变去向:说清为什么(哪条判据先卡住),别让调参的人以为试算坏了。
+       rule 自己有 why() 就用它的解释,否则给中性话。 */
+    else if (!out.changed.length) {
+      out.note = (rp.why ? (rp.why(items, base, key, nx) || '') : '') || '当前取值下没有件的去向改变';
+    }
+    return out;
+  }
 
   /* ============ R86 A6 · 多端同步桩(app ↔ 手机浮窗 iframe;同源共享 sessionStorage)============
      发:每次 commit / advance 后向父窗与自己的子 iframe 广播 {t:'origen-sync'}。
@@ -1291,6 +1806,7 @@
       quiet: !!def.quiet
     };
     state.actionLog.push(log);
+    fillSummaries(state);   // R87:任何路径新建的工单都补上事项一句话
     save();
     emit('render', { action: action, log: log });
     syncPeers();
@@ -1333,6 +1849,7 @@
     if (!state.stepLog[step.id] || state.actionLog.length > logFrom) {
       state.stepLog[step.id] = { from: logFrom, to: state.actionLog.length };
     }
+    fillSummaries(state);   // R87:解锁注入的工单也补上事项一句话
     save();
     emit('scenario', { step: step, ran: ran });
     emit('render', { scenario: step.id });
@@ -1469,6 +1986,31 @@
     /* A6 多端同步:reload = 重读 sessionStorage(有变化才换 state 并返回 true);sync = 主动广播 */
     reload: reload,
     sync: syncPeers,
+
+    /* ---- R87 只读导出(只加不改) ---- */
+    /* A3 影子试算回放:这个参数改成 newVal,今天已经过这条规则的件会有什么不同。
+       → { ruleId, ruleName, key, label, unit, from, to, scope, total, changed:[{id,from,to}], note } */
+    shadowReplay: shadowReplay,
+    /* A2 待裁定卡:抢占第三步交到值班长手上的建议方案与后果(默认只给待裁定的) */
+    pendingRulings: function (status) {
+      var list = state.pendingRulings || [];
+      return list.filter(function (x) { return status === '*' ? true : x.status === (status || '待裁定'); });
+    },
+    /* A8 抽审计数:抽审率与已抽数实时算 */
+    auditStats: function () {
+      var q = (state.gov && state.gov.auditQueue) || [];
+      var done = q.filter(function (a) { return a.status === '已抽审'; });
+      return {
+        total: q.length, pending: q.length - done.length, done: done.length,
+        pass: done.filter(function (a) { return a.result === '通过'; }).length,
+        returned: done.filter(function (a) { return a.result === '打回'; }).length,
+        rate: q.length ? Math.round(done.length / q.length * 100) : 0
+      };
+    },
+    /* 工单事项一句话(新建工单已自动带 summary;此处供渲染层临时对象取用) */
+    ticketSummary: function (tk) { return summaryOf(tk, state); },
+    /* 挂起件的恢复条件(渲染层直接读 ticket.resumeCond;此处供预览用) */
+    resumeCond: function (reason) { return resumeCondOf(reason, state.now); },
     /* 对象 → hash 路由(横幅 href / 地图点位跳转共用) */
     route: routeOf
   };

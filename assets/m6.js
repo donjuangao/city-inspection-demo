@@ -54,9 +54,24 @@
   function pageHead(cur) {
     var t = tabDef(cur) || TABS[0];
     return '<div class="card card-tight">' +
-      '<div class="card-hd"><h2>6 · 系统管理</h2><span class="tiny">' + UI.esc(t.sub) + '</span></div>' +
+      '<div class="card-hd"><h2>6 · 系统管理</h2>' +
+      '<span class="row" style="gap:8px;align-items:center"><span class="tiny">' + UI.esc(t.sub) + '</span>' +
+      UI.helpBtn('m6') + '</span></div>' +
       '</div>';
   }
+
+  /* 页职责与口径说明的落点(R87 §11:组件渲染文本里的定义 / 解释句一律挪 HELP) */
+  (w.HELP = w.HELP || {}).m6 = {
+    title: '系统管理 · 本模块职责',
+    body:
+      '<p><b>这一页干什么:</b>把「谁能做什么、按什么判据做、参数是多少、谁在值班」四件事摆成可查的表,并留一份全量动作日志。</p>' +
+      '<p><b>角色与账号:</b>顶栏「角色」切换器换的是身份,不做登录,只改可用动作;权限层级 L 值取自 dict.roleRank,越大调度权越高。服务账号(规则引擎 / AI 服务 / 班组账号)与人角色在同一张动作白名单上受约束,自动动作不豁免审计,每次执行同样落一条日志。</p>' +
+      '<p><b>规则引擎:</b>判据规则版本化管理;参数调整先影子试算、审批后生效,每次变更入动作日志。参数名悬停可看该参数管的是什么。</p>' +
+      '<p><b>影子试算:</b>回答的是「如果这个参数改成 X,今天已经发生的这些件会有什么不同」——对当日经过该规则的件回放一遍,列出去向会变的逐件。提交只写覆盖值与留痕,运行判定仍走基线值,正式生效需审批。</p>' +
+      '<p><b>通道与类目开关:</b>派单是处置调度,不是定性 —— 机器直派件的定性签字仍在人,并行复核窗内可撤回。上级主管部门关闭类目机器直派 = 安全侧动作即时生效,重开需按数据判据批准。</p>' +
+      '<p><b>本体建模:</b>平台的一切行为以「对象 - 链接 - 动作」三类记录结构化存储;注册表与日志实时取自当前世界状态,不是文档抄本。链接当前以外键字段承载,计数实算。</p>' +
+      '<p><b>日志审计视图:</b>按账号 / 动作类型 / 对象类型 / 时间段筛选,支持关键字、分组、列排序与 CSV 导出;点任意一行跳到该行对象。人做的和服务账号做的在同一张表上,同一套留痕。</p>'
+  };
 
   /* ================= 1 · 角色权限(设计档 §0.6;R85④ 原「区巡检管理者」「区管理员」并入「复核主管」) ================= */
   var ROLE_DESC = {
@@ -89,7 +104,6 @@
       '<span class="tiny">人角色四类 + 非人账号三类,同一套动作白名单约束</span></div>' +
       '<div style="overflow-x:auto"><table class="tb"><thead><tr><th>角色 / 账号</th><th>权限层级</th><th>权限范围</th></tr></thead>' +
       '<tbody>' + rows + svcRows + '</tbody></table></div>' +
-      '<div class="tiny" style="margin-top:6px">顶栏「角色」切换器可换身份(不做登录,只改可用动作);权限层级 L 值取自 dict.roleRank,越大调度权越高。</div>' +
       '</div>';
   }
 
@@ -116,7 +130,54 @@
       UI.esc((pm.shadowBy || '') + ' ' + (pm.shadowT || '')) + '</div>';
   }
 
+  /* ---- R87 A3 · 影子试算影响面 ----
+     S.shadowReplay(ruleId,key,newVal) → {total, changed[{id,from,to}], scope, note}:
+     对当日 actionLog 里受该规则影响的历史件回放,给出「改之前先看它会改变今天的哪几件」。 */
+  var ID_ROUTE = [[/^CL-/, 'clue'], [/^WO-/, 'ticket'], [/^AL-/, 'alert'], [/^IV-/, 'case'], [/^RC-/, 'recon']];
+  function idLink(id) {
+    for (var i = 0; i < ID_ROUTE.length; i++) {
+      if (!ID_ROUTE[i][0].test(id)) continue;
+      var h = w.S.route && w.S.route(ID_ROUTE[i][1], id);
+      if (h) return '<a class="mono" href="' + UI.esc(h) + '">' + UI.esc(id) + '</a>';
+    }
+    return '<span class="mono">' + UI.esc(id) + '</span>';
+  }
+  function simBox(rep) {
+    if (!rep) return '';
+    var n = (rep.changed || []).length;
+    var head = '今日 ' + UI.esc(rep.scope || '经过本规则的件') + ' 共 <b>' + rep.total + '</b> 件经过本规则;' +
+      '若生效,<b>' + n + '</b> 件路由将改变';
+    var list = n
+      ? '<table class="tb" style="margin-top:6px"><thead><tr>' +
+        '<th style="width:110px">件号</th><th>当前路由</th><th>试算后路由</th></tr></thead><tbody>' +
+        rep.changed.map(function (c) {
+          return '<tr><td>' + idLink(c.id) + '</td><td class="small">' + UI.esc(c.from) + '</td>' +
+            '<td class="small"><b>' + UI.esc(c.to) + '</b></td></tr>';
+        }).join('') + '</tbody></table>'
+      /* changed 为空时 note 就是影响面分析的产物(哪一项判据先卡住了),按正文显示不按脚注 */
+      : '<div class="small" style="margin-top:5px">' + UI.esc(rep.note || '当前取值下没有件的去向改变。') + '</div>';
+    var chg = '<div class="tiny" style="margin-top:4px">候选值:' + UI.esc(rep.label || '') + ' ' +
+      UI.esc(String(rep.from) + (rep.unit || '')) + ' → <b>' + UI.esc(String(rep.to) + (rep.unit || '')) + '</b></div>';
+    return '<div class="m6-sim">' + '<div class="small">' + head + '</div>' + chg + list +
+      '<div class="tiny m6-sim-ft">正式生效需审批 · 提交后写入影子试算留痕队列,运行判定仍走基线值</div></div>';
+  }
+  function simCss() {
+    if (!w.document || w.document.getElementById('origen-m6-sim-css')) return;
+    var css = '.m6-sim{margin-top:8px;padding:9px 11px;border:1px solid var(--line,#e4e7e2);border-left:3px solid #1a5fb4;' +
+      'border-radius:6px;background:#f7fafd}' +
+      '.m6-sim-ft{margin-top:6px;color:var(--faint,#8e968f)}' +
+      '.m6-pm{border-bottom:1px dashed #b9c0b8;cursor:help}';
+    var s = w.document.createElement('style');
+    s.id = 'origen-m6-sim-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+  simCss();
+
   function paramRows(r, eff) {
+    /* S.ruleParams() 只回传生效值不带 desc,一句话定义仍从原始 RULES 取(R87 A9) */
+    var DESC = {};
+    (r.params || []).forEach(function (p) { if (p.desc) DESC[p.key] = p.desc; });
     return eff.map(function (pm) {
       var uid = r.id + '-' + pm.key;
       var probe = { ruleId: r.id, key: pm.key, val: pm.val, reason: '权限探测' };
@@ -126,8 +187,13 @@
         : '<button type="button" class="btn btn-sm is-off" disabled title="' + UI.esc(chk.reason) + '">调整</button>' +
           '<div class="act-why">未满足:' + UI.esc(chk.reason) + '</div>';
       var initP = { ruleId: r.id, key: pm.key, val: '', reason: '' };
+      /* R87 A9:参数名 hover 显示 desc(一句话定义,数据层 RULES params.desc) */
+      var desc = pm.desc || DESC[pm.key] || '';
+      var nameCell = desc
+        ? '<b class="m6-pm" title="' + UI.esc(desc) + '">' + UI.esc(pm.label) + '</b>'
+        : '<b>' + UI.esc(pm.label) + '</b>';
       var row = '<tr>' +
-        '<td><b>' + UI.esc(pm.label) + '</b><div class="tiny mono">' + UI.esc(pm.key) + '</div></td>' +
+        '<td>' + nameCell + '<div class="tiny mono">' + UI.esc(pm.key) + '</div></td>' +
         '<td>' + paramVal(pm) + '</td>' +
         '<td class="tiny">' + UI.esc(String(pm.base) + (pm.unit || '')) + '</td>' +
         '<td>' + editCell + '</td></tr>';
@@ -148,7 +214,7 @@
         '</div>' +
         '<button type="button" class="btn btn-sm" onclick="M6.edit(\'' + r.id + '\',\'' + pm.key + '\')">取消</button>' +
         '</div>' +
-        '<div class="tiny" style="margin-top:6px">提交 = 影子试算:写一条动作日志 + 试算影响面对比,<b>不改当前运行判定</b>;正式生效需审批。</div>' +
+        '<div id="m6-sr-' + uid + '"></div>' +
         '</td></tr>';
       return row + editor;
     }).join('');
@@ -201,7 +267,6 @@
     var lead = '<div class="card card-tight">' +
       '<div class="card-hd"><h3 style="margin:0;font-size:14px">规则引擎 · 判据规则总表</h3>' +
       '<span class="tiny">共 ' + all.length + ' 条 · ' + order.length + ' 组</span></div>' +
-      '<div class="small">判据规则版本化管理;参数调整先影子试算、审批后生效;每次变更入动作日志。</div>' +
       '</div>';
     var lanesLegend = '<div class="card card-tight"><div class="sec-title">路由去向图例</div>' +
       '<div class="row wrap" style="gap:10px">' + laneDefs().map(function (l) {
@@ -244,6 +309,22 @@
     btn.classList.toggle('is-off', !chk.ok);
     var why = w.document.getElementById('m6-rp-btn-' + uid + '-why');
     if (why) why.textContent = chk.ok ? '' : ('未满足:' + chk.reason);
+    /* R87 A3:每次改值即刻回放当日受本规则影响的件,给出影响面 */
+    var out = w.document.getElementById('m6-sr-' + uid);
+    if (!out) return;
+    if (val === '' || !w.S.shadowReplay) { out.innerHTML = ''; return; }
+    out.innerHTML = simBox(w.S.shadowReplay(ruleId, key, val));
+  };
+  /* 参数 tab 试算台的联动:换规则 → 重填参数列表;换参数 → 候选值回到该参数现行值 */
+  M6.simPick = function (ruleChanged) {
+    var rs = w.document.getElementById('m6SimRule');
+    var ps = w.document.getElementById('m6SimParam');
+    var iv = w.document.getElementById('m6ParamInput');
+    var out = w.document.getElementById('m6ParamPreviewOut');
+    if (!rs || !ps || !iv) return;
+    if (ruleChanged) ps.innerHTML = simParamOpts(rs.value, '');
+    iv.value = simFirstVal(rs.value, ps.value);
+    if (out) out.innerHTML = '';
   };
   w.M6 = M6;
 
@@ -260,7 +341,6 @@
       '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
       '<th style="width:110px">通道</th><th style="width:90px">代码</th><th style="width:110px">判据</th><th>口径</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      '<div class="tiny" style="margin-top:6px">派单是处置调度,不是定性:机器直派件的定性签字仍在人,并行复核窗内可撤回。</div>' +
       '</div>';
   }
 
@@ -308,15 +388,42 @@
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
+  /* 参数 tab 的试算台(R87 A3):选规则 → 选参数 → 填候选值 → 回放当日受本规则影响的件 */
+  function simRuleList() {
+    return w.S.rules().filter(function (r) { return (r.params || []).length; });
+  }
+  function simParamOpts(ruleId, curKey) {
+    var r = w.S.rule(ruleId);
+    return ((r && r.params) || []).map(function (pm) {
+      return '<option value="' + UI.esc(pm.key) + '"' + (pm.key === curKey ? ' selected' : '') + '>' +
+        UI.esc(pm.label) + '(现行 ' + UI.esc(String(pm.val) + (pm.unit || '')) + ')</option>';
+    }).join('');
+  }
+  function simFirstVal(ruleId, key) {
+    var r = w.S.rule(ruleId), out = '';
+    ((r && r.params) || []).forEach(function (pm) { if (!key ? !out : pm.key === key) out = String(pm.val); });
+    return out;
+  }
   function paramPreview() {
+    var list = simRuleList();
+    if (!list.length) return '';
+    var def = w.S.rule('MH-R01') ? 'MH-R01' : list[0].id;
+    var opts = list.map(function (r) {
+      return '<option value="' + UI.esc(r.id) + '"' + (r.id === def ? ' selected' : '') + '>' +
+        UI.esc(r.id + ' · ' + r.name) + '</option>';
+    }).join('');
     return '<div class="sep"></div>' +
-      '<div class="tiny" style="margin-bottom:6px">影子试算(不写入正式参数、不产生动作日志):试算「井盖线加急人工档 SLA」阈值变化对在池待核查件的影响;正式变更需审批,按试点数据标定。</div>' +
-      '<div class="row wrap" style="align-items:flex-end;gap:14px">' +
-      '<div class="tiny">现行值 ' + UI.assume('30 分', '假设值,区可配') + '</div>' +
-      '<div style="width:140px"><label class="fl" for="m6ParamInput">候选新值(分)</label><input type="text" id="m6ParamInput" value="24"></div>' +
-      '<div><button type="button" class="btn" id="m6ParamPreviewBtn">影子试算预估</button></div>' +
+      '<div class="sec-title">影子试算 · 影响面回放</div>' +
+      '<div class="row wrap" style="align-items:flex-end;gap:12px">' +
+      '<div style="min-width:280px;flex:1"><label class="fl" for="m6SimRule">规则</label>' +
+      '<select id="m6SimRule" onchange="M6.simPick(1)" style="width:100%">' + opts + '</select></div>' +
+      '<div style="min-width:230px"><label class="fl" for="m6SimParam">参数</label>' +
+      '<select id="m6SimParam" onchange="M6.simPick(0)" style="width:100%">' + simParamOpts(def, '') + '</select></div>' +
+      '<div style="width:150px"><label class="fl" for="m6ParamInput">候选新值</label>' +
+      '<input type="text" id="m6ParamInput" value="' + UI.esc(simFirstVal(def, '')) + '"></div>' +
+      '<div><button type="button" class="btn" id="m6ParamPreviewBtn">试算影响面</button></div>' +
       '</div>' +
-      '<div class="tiny" id="m6ParamPreviewOut" style="margin-top:8px;color:var(--mute)"></div>';
+      '<div id="m6ParamPreviewOut" style="margin-top:6px"></div>';
   }
 
   /* 规则参数影子试算留痕汇总(跨规则视角;逐条留痕在规则引擎 tab 各规则名下) */
@@ -344,19 +451,21 @@
       paramTable() + paramPreview() + '</div>' + shadowTable();
   }
 
-  /* 影子试算:纯前端估算,不接 S.commit,不改 state —— 仅统计当前在池件数作对照 */
-  function computeShadow(rawVal) {
-    var mins = parseInt(rawVal, 10);
-    if (!mins || mins <= 0) return '请输入正整数分钟数。';
-    var st = w.S.get();
-    var pool = st.clues.filter(function (c) { return c.lane === '加急人工' && c.status === 'open'; });
-    if (!pool.length) return '当前「加急人工」通道内无在池待核查件,暂无可试算样本。';
-    var overNow = pool.filter(function (c) { return c.slaDeadline && w.S.slaLeft(c.slaDeadline) < 0; }).length;
-    var ratio = mins / 30;
-    var overNew = Math.min(pool.length, Math.round(overNow + pool.length * Math.max(0, 1 - ratio) * 0.4));
-    return '影子试算(简化估算,不生效):SLA 30 分 → ' + mins + ' 分候选值下,在池 ' + pool.length +
-      ' 条加急人工件中,预估超时件数由 ' + overNow + ' 条变为约 ' + overNew +
-      ' 条。非真实排队论模型;正式变更需走审批并按试点数据标定。';
+  /* 影子试算:不接 S.commit、不改 state —— 走 S.shadowReplay 回放当日受本规则影响的件 */
+  function computeShadow() {
+    var rid = (w.document.getElementById('m6SimRule') || {}).value;
+    var key = (w.document.getElementById('m6SimParam') || {}).value;
+    var raw = (w.document.getElementById('m6ParamInput') || {}).value;
+    var val = raw === undefined || raw === null ? '' : String(raw).trim();
+    if (!rid || !key) return '<div class="tiny">请先选规则与参数。</div>';
+    if (val === '') return '<div class="tiny">请填候选新值。</div>';
+    var r = w.S.rule(rid), base = null;
+    ((r && r.params) || []).forEach(function (pm) { if (pm.key === key) base = pm.val; });
+    if (typeof base === 'number') {
+      if (isNaN(Number(val))) return '<div class="tiny">本参数为数值型,候选新值需为数字。</div>';
+      val = Number(val);
+    }
+    return simBox(w.S.shadowReplay(rid, key, val));
   }
 
   /* ================= 5 · 值班表 ================= */
@@ -416,7 +525,7 @@
         '<td class="tiny mono">' + UI.esc(l.via) + '</td><td class="mono">' + l.count(st) + '</td></tr>';
     }).join('');
     return '<div class="card"><div class="card-hd"><h3 style="margin:0;font-size:14px">链接类型</h3>' +
-      '<span class="tiny">对象之间的引用关系;当前以外键字段承载,计数实算</span></div>' +
+      '<span class="tiny">承载字段与当前链接数实算自当前世界状态</span></div>' +
       '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
       '<th style="width:220px">链接</th><th style="width:180px">端点类型</th><th style="width:180px">承载字段</th><th style="width:90px">当前链接数</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
@@ -435,35 +544,27 @@
         '<td>' + (d.auto ? UI.badge('自动', 'amber') : UI.badge('人工', 'blue')) + '</td></tr>';
     }
     return '<div class="card"><div class="card-hd"><h3 style="margin:0;font-size:14px">动作类型</h3>' +
-      '<span class="tiny">共 ' + defs.length + ' 类(人工 ' + human.length + ' · 自动 ' + auto.length + ');本表即权限矩阵的本体形态</span></div>' +
+      '<span class="tiny">共 ' + defs.length + ' 类 · 人工 ' + human.length + ' · 自动 ' + auto.length + '</span></div>' +
       '<div style="overflow-x:auto;max-height:340px"><table class="tb"><thead><tr>' +
       '<th style="width:180px">动作</th><th style="width:220px">显示名</th><th>执行角色白名单</th><th style="width:70px">执行方式</th>' +
-      '</tr></thead><tbody>' + human.map(row).join('') + auto.map(row).join('') + '</tbody></table></div>' +
-      '<div class="tiny" style="margin-top:6px">服务账号(规则引擎 / AI 服务 / 班组账号)与人角色在同一张表上受同一套白名单约束;' +
-      '自动动作不豁免审计,每次执行同样落一条日志。</div></div>';
+      '</tr></thead><tbody>' + human.map(row).join('') + auto.map(row).join('') + '</tbody></table></div></div>';
   }
 
-  /* 本体日志(倒序;默认前 50 条,可展开全部)—— 与导览「后端发生了什么」浮层共用 UI.ontologyLog */
-  var logExpanded = false;
+  /* 本体日志审计视图(R87 A6):筛选 / 搜索 / 分组 / 排序 / CSV 导出 / 行点跳对象 —— 组件在 UI.logAudit。
+     导览「后端发生了什么」浮层仍用 UI.ontologyLog 精简渲染,两者共用同一份 actionLog。 */
   function ontologyLogBlock() {
     var all = w.S.get().actionLog;
-    var lim = logExpanded ? 0 : 50;
-    var more = all.length > 50
-      ? '<div style="margin-top:8px"><button type="button" class="btn btn-sm" id="m6LogToggle">' +
-        (logExpanded ? '收起(只看最近 50 条)' : '展开全部 ' + all.length + ' 条') + '</button></div>'
-      : '';
-    return '<div class="card" id="m6-ontology-log"><div class="card-hd"><h3 style="margin:0;font-size:14px">本体日志</h3>' +
-      '<span class="tiny">全量动作记录 ' + all.length + ' 条 · 倒序' + (logExpanded ? '' : ' · 显示最近 ' + Math.min(50, all.length) + ' 条') + '</span></div>' +
-      UI.ontologyLog(all, { desc: true, limit: lim, empty: '当前世界状态下尚无动作记录。' }) + more +
-      '<div class="tiny" style="margin-top:6px">谁、何时、对什么对象、做了什么 —— 同一本日志;每条可整链导出、可按世界状态快照回放。' +
-      '动作日志保存 ' + UI.assume('≥3 年', '留存年限 = 假设值,按客户合规要求配置') + ',防篡改口径 = 可检测。</div></div>';
+    return '<div class="card" id="m6-ontology-log"><div class="card-hd"><h3 style="margin:0;font-size:14px">本体日志 · 审计视图</h3>' +
+      '<span class="tiny">全量动作记录 ' + all.length + ' 条</span></div>' +
+      UI.logAudit() +
+      '<div class="tiny" style="margin-top:6px">动作日志保存 ' +
+      UI.assume('≥3 年', '留存年限 = 假设值,按客户合规要求配置') + ' · 防篡改口径 = 可检测。</div></div>';
   }
 
   function ontologyBlock() {
     return '<div class="card card-tight" id="m6-ontology">' +
       '<div class="card-hd"><h3 style="margin:0;font-size:14px">本体建模</h3>' +
       '<span class="tiny">对象 · 链接 · 动作 三类注册表</span></div>' +
-      '<div class="small">平台的一切行为以 <b>对象-链接-动作</b> 三类记录结构化存储;下列注册表与日志实时取自当前世界状态。</div>' +
       '</div>' +
       objTypeTable() + linkTypeTable() + actionTypeTable() + ontologyLogBlock();
   }
@@ -472,14 +573,8 @@
   w.document.addEventListener('click', function (e) {
     if (!e.target) return;
     if (e.target.id === 'm6ParamPreviewBtn') {
-      var input = w.document.getElementById('m6ParamInput');
       var out = w.document.getElementById('m6ParamPreviewOut');
-      if (out) out.textContent = computeShadow(input ? input.value : '');
-      return;
-    }
-    if (e.target.id === 'm6LogToggle') {
-      logExpanded = !logExpanded;
-      if (w.ROUTE && w.ROUTE.render) w.ROUTE.render();
+      if (out) out.innerHTML = computeShadow();
     }
   });
 
