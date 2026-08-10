@@ -133,7 +133,7 @@
     <h1>一座绿洲城市,和它的<br><span class="hi">城市设施智能巡检平台</span></h1>
     <p class="what">
       Al Ain 的道路、井盖、灌溉管网从此自己会说话:全域传感网持续监测,AI 识别+机械证据校验双闸筛出真问题,
-      人只在拍板点签字;应急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个暴雨前夜,把整个平台走一遍。
+      人只在拍板点签字;紧急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个暴雨前夜,把整个平台走一遍。
     </p>
 
     <div class="roles">
@@ -155,7 +155,7 @@
       <div class="role">
         <div class="r1">上级主管部门</div>
         <div class="r2">桌面 · 治理</div>
-        <div class="r3">看总览、抽审、握紧急直派开关。</div>
+        <div class="r3">看总览、抽审、握机器直派开关。</div>
       </div>
       <div class="role">
         <div class="r1">公众</div>
@@ -171,18 +171,18 @@
       </div>
       <div class="ex">
         <div class="t">看懂 · 双闸</div>
-        <p>AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的应急件才有资格走紧急直派。</p>
+        <p>AI 识别是第一闸,机械证据校验(硬编码判据逐项打钩)是第二闸;两闸都过的紧急件才有资格走机器直派。</p>
       </div>
       <div class="ex">
-        <div class="t">看懂 · 紧急直派「先派后审」</div>
-        <p>人身安全等不起人审——硬证据应急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
+        <div class="t">看懂 · 机器直派「先派后审」</div>
+        <p>人身安全等不起人审——硬证据紧急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
       </div>
     </div>
 
     <div class="tip banner banner-info">
       <span class="banner-ico">i</span>
       <div>
-        下面每一幕内嵌的都是同一套系统的实机镜像——先点框内顶栏「▶ 下一步」,把假时钟从 19:00 走到 19:02,
+        下面每一幕内嵌的都是同一套系统的实机镜像——先点框内底部导览条「▶ 下一镜」,把假时钟从 19:00 走到 19:02,
         看那一次自动派单;工作台 / 班组端 / 公众端共享同一份 sessionStorage 演示状态,这里点开的框与全屏打开的页面状态互通,
         继续点按可以把剧情一路推进到 21:30。
       </div>
@@ -207,7 +207,7 @@
     </div>
     <div class="frame-wrap">
       <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线紧急直派)"></iframe></div>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 复核工作台(井盖线机器直派)"></iframe></div>
     </div>
   </section>
 
@@ -215,22 +215,22 @@
   <section class="act rev" id="act2">
     <div class="frame-wrap">
       <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 紧急直派并行复核卡"></iframe></div>
+      <div class="desk"><iframe data-src="app.html#/m1" title="工作台 · 机器直派并行复核卡"></iframe></div>
     </div>
     <div class="act-body">
       <div class="act-head"><span class="act-no">②</span><span class="act-time">19:03</span></div>
       <h2>十五分钟,人追上机器</h2>
       <p class="quote">「我看下证据——嗯,是真的。确认。」</p>
       <p class="story">
-        复核员屏幕上紧急直派件置顶:证据卡、机械校验四项打钩、
-        <span class="assume" title="假设值:紧急直派并行复核窗 15 分钟,区可配">15 分钟</span>
+        复核员屏幕上机器直派件置顶:证据卡、机械校验四项打钩、
+        <span class="assume" title="假设值:机器直派并行复核窗 15 分钟,区可配">15 分钟</span>
         倒计时、撤回按钮就在手边。确认=告警成立(追认);若是误派,撤回会召回班组,白跑不计班组考核。
         右侧原型可操作:试试确认,或者试试撤回。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">并行复核 15min</span>
         <span class="pt badge badge-blue">撤回可召回</span>
-        <span class="pt badge badge-blue">紧急直派件全量抽审</span>
+        <span class="pt badge badge-blue">机器直派件全量抽审</span>
       </div>
     </div>
   </section>
@@ -271,12 +271,12 @@
       <p class="story">
         完工照进来,提交校验先当场拦不合格照;AI 复验判得出就闭环,判不出=存疑待人裁——永不默认打回。
         同一时刻另外两条线索走向不同结局:0.31 低置信件没有硬证据,老老实实排
-        <span class="assume" title="假设值:应急人审档 SLA 30 分钟,区可配">30 分钟</span>
+        <span class="assume" title="假设值:加急人工档 SLA 30 分钟,区可配">30 分钟</span>
         人审档;树影误报被机械闸置顶后由人驳回,原因码①回流模型,横幅写着「高危驳回已拘主管抽审」。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">永不默认打回</span>
-        <span class="pt badge badge-blue">低置信不走紧急直派</span>
+        <span class="pt badge badge-blue">低置信不走机器直派</span>
         <span class="pt badge badge-blue">驳回拘抽审</span>
       </div>
     </div>
@@ -312,9 +312,9 @@
       <h2>压力测试:调度、公众与治理</h2>
       <p class="quote">「Zakher 又一口井盖——没有空闲班组了。」</p>
       <p class="story">
-        过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,应急完成自动回队)。
+        过载三步:预警广播先喊现场、超额件进批量加急分诊、值班长抢占在途养护班组(原单挂起,紧急件完成自动回队)。
         公众上报的同一口井盖被去重合并进既有线索,上报人拿到回执编号。雨真的要来了:暴雨模式启动、全线升档;
-        上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的紧急直派,该类目立刻回退人审,区可申诉。
+        上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的机器直派,该类目立刻回退人审,区可申诉。
       </p>
       <div class="points">
         <span class="pt badge badge-blue">过载三步</span>
@@ -330,7 +330,7 @@
         </div>
         <div class="frame-wrap">
           <span class="frame-label badge badge-blue">LIVE · 可操作</span>
-          <div class="desk-sm"><iframe data-src="app.html#/m6" title="工作台 · 系统管理(类目紧急直派开关)"></iframe></div>
+          <div class="desk-sm"><iframe data-src="app.html#/m6" title="工作台 · 系统管理(类目机器直派开关)"></iframe></div>
         </div>
       </div>
       <div class="frame-wrap">

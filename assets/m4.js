@@ -5,7 +5,7 @@
    规格来源:
    - 施工图 §7 m4 清单:抽审队列(拘审标来源)/ 公众上报并入清单
    - 设计档 §2.5 机制⑧抽审参数(记账道5%/自动升格道10%/机械驳回5%/批量确认件15%/复验通过件10%,抽审时限48h,全假设值)
-   - 设计档 §2.4 P1:公众上报防滥用三件(同点位去重合并/单设备限频/重复无效上报降权);先入并入队列人工甄别升格,不直接进应急
+   - 设计档 §2.4 P1:公众上报防滥用三件(同点位去重合并/单设备限频/重复无效上报降权);先入并入队列人工甄别升格,不直接进紧急处置
    - 施工图 §6 T10:公众上报同点位 → 去重合并进既有线索,证据叠加,催办计数可见
 
    本模块为只读展示(队列/清单本身不含需要用户当场输入参数的动作),故不建表单桥接;
@@ -20,7 +20,7 @@
     if (src.indexOf('高危') >= 0) return 'red';
     if (src.indexOf('override') >= 0 || src.indexOf('自动拘审') >= 0) return 'red';
     if (src.indexOf('推翻机械判定') >= 0) return 'blue';
-    if (src.indexOf('紧急直派') >= 0 || src.indexOf('批量') >= 0 || src.indexOf('降级') >= 0 || src.indexOf('自动升格') >= 0) return 'amber';
+    if (src.indexOf('机器直派') >= 0 || src.indexOf('批量') >= 0 || src.indexOf('降级') >= 0 || src.indexOf('自动升格') >= 0) return 'amber';
     return 'grey';
   }
   // 抽审关联对象的术语分权:已确认成告警的显示「告警」,尚未确认(或已驳回)的仍显示「线索」——按对象当前真实状态判定,不猜
@@ -36,10 +36,10 @@
   }
   function auditSection(au) {
     var rateNote = '<div class="card card-tight">' +
-      '<div class="sec-title">抽审参数(全假设值,冷启动 × 2)</div>' +
+      UI.secTitle('抽审参数(全假设值,冷启动 × 2)', 'audit') +
       '<div class="small">记账道 ' + UI.assume('5%') + ' · 自动升格道 ' + UI.assume('10%') + ' · 机械驳回 ' + UI.assume('5%') +
       ' · 批量确认件 ' + UI.assume('15%') + ' · 复验通过件 ' + UI.assume('10%') + ' · 抽审时限 ' + UI.assume('48h') + '</div>' +
-      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=上级主管部门类目紧急直派开关)。</div>' +
+      '<div class="tiny" style="margin-top:4px">抽审推翻的自动动作:规则包降版建议;同类错误率超阈值 → 该类目自动车道自动关闭(执行=上级主管部门类目机器直派开关)。</div>' +
       '</div>';
     if (!au.length) {
       return '<h3>抽审队列</h3>' + rateNote + '<div class="tiny" style="margin-top:8px">暂无抽审件。</div>';
@@ -66,14 +66,15 @@
     var ev = (r.evidence || []).map(function (e) {
       return UI.evidenceCard(e, e.from ? '并入自 ' + UI.esc(e.from) : '公众提交示意');
     }).join('');
-    return '<div class="card card-tight">' +
-      '<div class="card-hd"><b>' + UI.esc(r.id) + ' · ' + UI.esc(r.cat) + '</b>' +
+    return '<div' + UI.cardAttrs('report', { cls: 'card card-tight' }) + '>' +
+      '<div class="card-hd"><b class="oc-t1">' + UI.esc(r.id) + ' · ' + UI.esc(r.cat) + '</b>' +
+      '<span class="row" style="gap:6px;align-items:center">' +
       (r.status === '已并入' ? UI.badge('已并入', 'blue') : UI.badge(r.status || '已受理', 'green')) +
-      '</div>' +
+      UI.cardTag('report') + '</span></div>' +
       '<div class="small muted">' + loc + ' · 联系:' + UI.esc(r.contact || '—') + ' · 回执 ' + UI.esc(r.receipt || '—') + '</div>' +
       (r.mergedInto
-        ? '<div class="small" style="margin-top:4px">合并标:<a href="#/m1/clue/' + UI.esc(r.mergedInto) + '">→ 线索 ' + UI.esc(r.mergedInto) + '</a>(去重合并,证据叠加)</div>'
-        : '<div class="tiny" style="margin-top:4px">进人工甄别并入队列,未直接进应急</div>') +
+        ? '<div class="small" style="margin-top:4px">合并标:<a href="#/m1/clue/' + UI.esc(r.mergedInto) + '">→ 线索 ' + UI.esc(r.mergedInto) + '</a>(同点位去重合并,并为该线索的一次观测)</div>'
+        : '<div class="tiny" style="margin-top:4px">进人工甄别并入队列,未直接进紧急处置队列</div>') +
       '<div class="tiny" style="margin-top:2px">催办计数:' + (r.urges || 0) + '</div>' +
       (r.status === '已驳回'
         ? '<div class="tiny" style="margin-top:4px">驳回理由(上报人可见):' + UI.esc(r.rejectReason || '') + '</div>'
@@ -86,12 +87,12 @@
           }).join(' ') +
           '<span class="tiny" style="margin-left:6px">(甄别无效即驳回,理由上报人可见)</span></div>'
         : '') +
-      (ev ? '<div class="sep"></div><div class="ev-grid">' + ev + '</div>' : '') +
+      (ev ? '<div class="sep"></div>' + UI.evInset('<div class="ev-grid">' + ev + '</div>') : '') +
       '</div>';
   }
   function publicSection(pr) {
     var note = '<div class="card card-tight">' +
-      '<div class="small">防滥用三件:同点位去重合并 / 单设备限频 / 重复无效上报降权;上报先入本清单人工甄别升格,不直接进应急。</div>' +
+      '<div class="small">防滥用三件:同点位去重合并 / 单设备限频 / 重复无效上报降权;上报先入人工甄别队列,不直接进紧急处置队列。</div>' +
       '</div>';
     if (!pr.length) {
       return '<h3 style="margin-top:16px">公众上报并入清单</h3>' + note +
@@ -101,10 +102,24 @@
       '<div class="grid2" style="margin-top:8px">' + pr.map(reportCard).join('') + '</div>';
   }
 
+  /* ============ 帮助浮层内容(R86 A4)============ */
+  (window.HELP = window.HELP || {}).m4 = {
+    title: '兜底与质量 · 本模块职责',
+    body:
+      '<p><b>这一页干什么:</b>两件兜底 —— ① 抽审队列:把「自动做掉的」与「人做过的」按比例捞回来复查;② 公众上报:人工甄别后并入线索,或按理由驳回(理由上报人可见)。</p>' +
+      '<p><b>为什么要抽审:</b>机械自动化不豁免审计。免人工车道每条都留一条动作日志,按抽审率捞回复查;推翻结果回流规则包降版建议,同类错误率超阈值即自动关闭该类目的自动车道。</p>' +
+      '<p><b>公众上报防滥用三件:</b>同点位去重合并 / 单设备限频 / 重复无效上报降权。上报先入甄别队列,不直接进紧急处置队列;去重合并后作为既有线索的一次「观测」叠加证据,催办计数可见。</p>' +
+      '<p><b>与客户系统的关系:</b>公众渠道与回执由本平台承载,处置仍走区市政工单系统;抽审结论只影响巡检侧定性与规则版本,不改客户处置记录。</p>' +
+      '<p><b>数字口径:</b>各车道抽审率与抽审时限均为假设值,冷启动期按双倍执行,试点数据到位后标定。</p>'
+  };
+
   /* ---------------- 出口 ---------------- */
   VIEWS.m4 = function () {
     var au = S.get().gov.auditQueue || [];
     var pr = S.get().publicReports || [];
-    return auditSection(au) + publicSection(pr);
+    var head = '<div class="card card-tight"><div class="card-hd"><h3>4 · 兜底与质量</h3>' +
+      '<span class="row" style="gap:8px;align-items:center"><span class="tiny">抽审队列 · 公众上报并入清单</span>' +
+      UI.helpBtn('m4') + '</span></div></div>';
+    return head + auditSection(au) + publicSection(pr);
   };
 })();

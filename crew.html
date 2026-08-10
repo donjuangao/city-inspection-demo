@@ -192,7 +192,7 @@
   function hasPhoto(t, ph) {
     return (t.photos || []).filter(function (p) { return p.phase === ph; }).length > 0;
   }
-  function isHotTicket(t) { return /应急|紧急|急修/.test(t.type || ''); }
+  function isHotTicket(t) { return /紧急|急修/.test(t.type || ''); }
   function on(key) { return !!M.open[key]; }
   function caret(key) { return '<span class="c-caret">' + (on(key) ? '收起 ▲' : '展开 ▼') + '</span>'; }
 
@@ -611,6 +611,9 @@
 (function (w, d) {
   'use strict';
   var CREW_KEY = 'CR-01';
+  /* R86 A6:?crew=CR-0X 或 #crew=CR-0X → 自动选中该班组(导览手机浮窗 iframe 用) */
+  var _q = ((w.location.search || '') + (w.location.hash || '')).match(/crew=(CR-\d+)/i);
+  if (_q && w.S.find.crew(_q[1].toUpperCase())) CREW_KEY = _q[1].toUpperCase();
 
   function tickets(crewId) {
     return w.S.get().tickets.filter(function (t) { return t.crew === crewId; });
@@ -632,6 +635,11 @@
   d.getElementById('crewSel').addEventListener('change', function (e) { CREW_KEY = e.target.value; render(); });
   d.getElementById('btnReset').addEventListener('click', function (e) { e.preventDefault(); w.S.reset(); });
   w.addEventListener('render', render);
+  /* R86 A6:父窗每次 commit/advance 后广播 origen-sync → 重读 sessionStorage 并重渲染(契约不变:仍只读 S) */
+  w.addEventListener('message', function (e) {
+    if (!e || !e.data || e.data.t !== 'origen-sync') return;
+    if (w.S.reload && w.S.reload()) render();
+  });
   UI.bindActions(d);
   render();
 })(window, document);

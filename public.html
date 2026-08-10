@@ -18,7 +18,7 @@
   <main class="mob-body" id="view"></main>
 
   <footer class="mob-foot">
-    上报进兜底并入队列人工甄别升格,不直接进应急 · 联系方式列级脱敏<br>
+    上报进兜底并入队列人工甄别升格,不直接进机器直派 · 联系方式列级脱敏<br>
     <span class="tiny">全站虚构演示数据,零真实照片;证据图为矢量示意</span>
     <span style="float:right"><a href="#" id="btnReset">重置数据</a></span>
   </footer>
@@ -158,7 +158,7 @@ window.VIEW_PUBLIC = (function (w, d) {
       '</ul></div>' +
       '<div class="row wrap" style="margin-top:10px"><button type="button" class="btn" data-nav="back3">← 上一步</button></div>' +
       '<div style="margin-top:8px">' + UI.actionPanel([{ action: 'public_report', label: '提交上报', params: params, cls: 'btn-primary btn-block' }]) + '</div>' +
-      '<div class="tiny" style="margin-top:6px">提交后并入线索池,按复核员同规甄别;不直接进应急。</div>';
+      '<div class="tiny" style="margin-top:6px">提交后并入线索池,按复核员同规甄别;不直接进机器直派。</div>';
   }
 
   function renderReceipt(ctx) {
@@ -260,6 +260,11 @@ window.VIEW_PUBLIC = (function (w, d) {
   }
   d.getElementById('btnReset').addEventListener('click', function (e) { e.preventDefault(); w.S.reset(); });
   w.addEventListener('render', render);
+  /* R86 A6:父窗每次 commit/advance 后广播 origen-sync → 重读 sessionStorage 并重渲染(契约不变:仍只读 S) */
+  w.addEventListener('message', function (e) {
+    if (!e || !e.data || e.data.t !== 'origen-sync') return;
+    if (w.S.reload && w.S.reload()) render();
+  });
   UI.bindActions(d);
   render();
 })(window, document);

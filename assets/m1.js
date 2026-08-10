@@ -11,12 +11,12 @@
 
   /* ============ 常量 ============ */
   var LINES = [
-    { key: 'mh', line: '井盖', title: '井盖 / 排水', sub: '应急流 · 线卡 B' },
+    { key: 'mh', line: '井盖', title: '井盖 / 排水', sub: '紧急流 · 线卡 B' },
     { key: 'rd', line: '路面', title: '路面病害', sub: '养护流 · 线卡 A' },
     { key: 'pl', line: '管网', title: '灌溉管网', sub: '预警调查流 · 线卡 C' }
   ];
-  /* R33 跨线仲裁默认序在线内的落地:应急/紧急最前,紧急直派件再置顶 */
-  var LV_RANK = { '应急': 0, '紧急': 0, '急修': 1, '雨前专项': 2, '调查': 2, '养护': 3, '观察': 4, '设备': 5 };
+  /* R33 跨线仲裁默认序在线内的落地:紧急最前,机器直派件再置顶 */
+  var LV_RANK = { '紧急': 0, '急修': 1, '雨前专项': 2, '调查': 2, '养护': 3, '观察': 4, '设备': 5 };
 
   /* 页面局部 UI 态(不进 store;store 只经 S.commit 变更) */
   var M = { modal: null, form: {}, picks: {}, expanded: false };
@@ -27,6 +27,14 @@
   function card(title, body, extra, cls) {
     return '<div class="card ' + (cls || '') + '">' +
       (title ? '<div class="card-hd"><h3>' + title + '</h3>' + (extra || '') + '</div>' : '') + body + '</div>';
+  }
+  /* R86 A9 · 带类型视觉的对象卡:kind = clue/alert/ticket/case;线索卡左边框取业务线类目色 */
+  function tcard(kind, title, body, extra, opts) {
+    opts = opts || {};
+    return '<div' + UI.cardAttrs(kind, { cls: 'card' + (opts.cls ? ' ' + opts.cls : ''), line: opts.line, color: opts.color }) + '>' +
+      '<div class="card-hd"><h3>' + title + '</h3>' +
+      '<span class="row" style="gap:8px;align-items:center">' + (extra || '') + UI.cardTag(kind, opts.tag) + '</span></div>' +
+      body + '</div>';
   }
   function isOpen(c) { return c.status === 'open'; }
   function isHigh(c) { return S.isHigh(c); }
@@ -87,7 +95,7 @@
       params: function (m, f) { return { clueId: m.id, reason: f.reason }; }
     },
     recall: {
-      title: '紧急直派撤回 · 召回班组',
+      title: '机器直派撤回 · 召回班组',
       action: 'fastlane_recall', submit: '显名撤回并召回',
       cls: 'btn-danger',
       intro: function (m) {
@@ -200,7 +208,7 @@
       '</div></div>';
   }
 
-  /* ============ 页头:术语分权 + R33 仲裁序 + 剧情提示 ============ */
+  /* ============ 页头:术语分权 + R33 仲裁序 + 导览提示 ============ */
   function header(cur) {
     var st = S.get();
     var tabs = LINES.map(function (L) {
@@ -210,22 +218,28 @@
         esc(L.title) + ' <span class="badge badge-' + (L.key === cur ? 'blue' : 'grey') + '">' + (n + extra) + '</span></a>';
     }).join('');
 
-    var hint = '';
-
     return '<div class="card card-tight">' +
-      '<div class="card-hd"><h2>1 · 复核工作台 —— 确认 / 驳回 / 升格,处置认定留痕的地方</h2>' +
-      '<span class="tiny">复核员 90% 的时间在这一页</span></div>' +
-      '<div class="grid3">' +
-      '<div class="small"><b>线索 vs 告警</b><div class="tiny">AI 与规则只产「线索」;人确认签字后才叫「告警」—— 定性权永远在人。</div></div>' +
-      '<div class="small"><b>双闸</b><div class="tiny">第一闸 = AI 识别;第二闸 = 机械证据校验(硬编码判据逐项打钩)。两闸都过的应急件才有资格走紧急直派。</div></div>' +
-      '<div class="small"><b>紧急直派 = 先派后审</b><div class="tiny">派单是处置调度,不是定性;人 ' + UI.assume('15 分钟', '紧急直派并行复核窗 15 分钟=假设值,区可配') + ' 内并行复核,撤回可召回。</div></div>' +
+      '<div class="card-hd"><h2>1 · 复核工作台</h2>' +
+      '<span class="row" style="gap:8px;align-items:center">' +
+      '<span class="tiny">当前身份 ' + esc(st.role) + '</span>' + UI.helpBtn('m1') + '</span></div>' +
+      '<div class="oc-t3">跨线仲裁默认序:<b>井盖紧急 &gt; 管网紧急 &gt; 路面急修</b>;本线内机器直派件再置顶。区值班主管可临时置顶改序,动作留痕。' +
+      'SLA / 阈值数字均为' + UI.assume('假设值', '全部 SLA 与阈值为假设值,试点首周与客户核实后按区可配参数调整') + '。</div>' +
       '</div>' +
-      '<div class="sep"></div>' +
-      '<div class="tiny">跨线仲裁默认序:<b>井盖应急 &gt; 管网紧急 &gt; 路面急修</b>;本线内紧急直派件再置顶。区值班主管可临时置顶改序,动作留痕。本页 SLA / 阈值数字均为' + UI.assume('假设值', '全部 SLA 与阈值为假设值,试点首周与客户核实后按区可配参数调整') + '。</div>' +
-      '</div>' +
-      hint +
       '<div class="tabs">' + tabs + '</div>';
   }
+
+  /* ============ 帮助浮层内容(R86 A4:组件内只留生产文案,解说迁到这里)============ */
+  (w.HELP = w.HELP || {}).m1 = {
+    title: '复核工作台 · 本模块职责',
+    body:
+      '<p><b>这一页干什么:</b>对 AI 与规则产出的线索做定性 —— 确认 / 驳回 / 转办 / 升格,每一次定性都留痕。复核员约九成工作时间在这一页。</p>' +
+      '<p><b>线索 vs 告警:</b>AI 与规则只产「线索」;人确认签字后才叫「告警」—— 定性权永远在人。</p>' +
+      '<p><b>双闸:</b>第一闸 = AI 识别;第二闸 = 机械证据校验(硬编码判据逐项打钩)。两闸都过的紧急件才有资格走机器直派。</p>' +
+      '<p><b>三档通道判据:</b>机器直派 = 先派后审(机器先把单派出去,人 15 分钟并行复核可撤回);加急人工 / 常规人工 = 先审后派(分钟级单条确认 / 批量例行确认);另有自动处理(不派人)与驳回与转办(不进处置)。</p>' +
+      '<p><b>线索的原子性:</b>同一设施(或 50m 路段栅格)× 同一异常类目 = 同一条线索;活跃期内每次新发现并入为一次「观测」,不新开线索。线索关闭后再发现才开新线索。</p>' +
+      '<p><b>与客户系统的关系:</b>本平台负责巡检定性与证据链;派工与处置的记录系统是区市政工单系统,本模块产生的工单为镜像 + 写回,处置状态以客户系统为准。</p>' +
+      '<p><b>数字口径:</b>模块内 SLA、阈值、抽审率均为假设值(带虚线下划线标注),试点首周与客户核实后按区可配参数标定。</p>'
+  };
 
   /* ============ 队列表(列:线索号/设施+地址/级别/置信/车道/SLA/状态)============ */
   function queueTable(list, note) {
@@ -233,7 +247,8 @@
     var rows = list.map(function (c) {
       var urgent = isHigh(c) && isOpen(c);
       return '<tr class="' + (urgent ? 'is-urgent' : '') + '" data-goto="#/m1/clue/' + esc(c.id) + '" style="cursor:pointer" title="点击进线索详情">' +
-        '<td><b>' + esc(c.id) + '</b>' + (c.fastlane ? ' ' + UI.badge('紧急直派', 'amber') : '') + '</td>' +
+        '<td><b>' + esc(c.id) + '</b>' + (c.fastlane ? ' ' + UI.badge('机器直派', 'amber') : '') +
+        '<div class="tiny">观测 ' + (c.obsCount || UI.obsList(c).length) + ' 次 · 最近 ' + esc(c.lastSeen || c.t) + '</div></td>' +
         '<td>' + UI.addr(c.facility) + '<div class="tiny">' + esc(c.kindText || '') + '</div></td>' +
         '<td>' + UI.levelBadge(c.level) + '</td>' +
         '<td>' + confText(c) + '</td>' +
@@ -248,7 +263,7 @@
       (note ? '<div class="tiny" style="margin-top:6px">' + note + '</div>' : '');
   }
 
-  /* ============ 紧急直派并行复核卡(T1/T2 后出现)============ */
+  /* ============ 机器直派并行复核卡(T1/T2 后出现)============ */
   function fastlaneCard(c, compact) {
     var tk = c.ticketId ? S.find.ticket(c.ticketId) : null;
     var cw = tk && tk.crew ? S.find.crew(tk.crew) : null;
@@ -256,16 +271,17 @@
       UI.banner('info', '<b>机器派单,人复核中</b> —— ' + esc(c.id) + ' 双闸硬证据齐,系统已自动派 ' +
         esc(cw ? cw.name : '班组') + (tk ? '(紧急工单 ' + esc(tk.id) + ' · 镜像 ' + esc(tk.mirror) + ')' : '') +
         '。派单是<b>处置调度</b>,不是定性;告警要等人确认追认。') +
+      UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:220px">' +
       UI.kv([
         ['并行复核窗', '截止 ' + esc(c.reviewEnd || '—') + ' · ' + UI.sla(c.reviewEnd || c.slaDeadline) + ' ' + UI.assume('(窗长 15 分钟)', '15 分钟并行复核窗 = 假设值;超时走三级升级'), true],
-        ['准入硬条件', '应急级 + [传感器硬证据(已认证设备签名报文)或 高置信 + 机械四项全过] + 该类目紧急直派开关开启'],
+        ['准入硬条件', '紧急级 + [传感器硬证据(已认证设备签名报文)或 高置信 + 机械四项全过] + 该类目机器直派开关开启'],
         ['当前工单', tk ? (esc(tk.id) + ' · ' + esc(tk.state) + ' · ' + esc(cw ? cw.name : '—')) : '—'],
         ['撤回后果', esc(recallBranch(tk))]
       ]) +
       '</div>' +
-      (compact ? '' : '<div style="width:230px;flex:none">' + UI.evidenceGrid(c.evidence.slice(0, 1)) + '</div>') +
+      (compact ? '' : '<div style="width:230px;flex:none">' + UI.evInset(UI.evidenceGrid(c.evidence.slice(0, 1))) + '</div>') +
       '</div>' +
       '<div class="sep"></div>' +
       '<div class="row wrap">' +
@@ -273,29 +289,30 @@
         { action: 'view_evidence', params: { clueId: c.id }, label: c.evidenceViewed ? '✓ 证据卡已查看(高危前置已满足)' : '查看证据卡(高危确认前置)' },
         { action: 'confirm', params: { clueId: c.id }, label: '确认 = 告警追认', cls: 'btn-ok' }
       ])) + '</div>' +
-      '<div class="grow">' + pw(modalBtn('紧急直派撤回(理由码 · 召回班组)', 'recall', c.id, 'btn-danger')) + '</div>' +
+      '<div class="grow">' + pw(modalBtn('机器直派撤回(理由码 · 召回班组)', 'recall', c.id, 'btn-danger')) + '</div>' +
       '</div>' +
-      '<div class="tiny" style="margin-top:8px">紧急直派件<b>全量抽审</b>(误派率月报口径);撤回件白跑不计班组考核,班组可申诉。' +
+      '<div class="tiny" style="margin-top:8px">机器直派件<b>全量抽审</b>(误派率月报口径);撤回件白跑不计班组考核,班组可申诉。' +
       ' <a href="#/m4">抽审队列 →</a></div>';
-    return card('紧急直派并行复核 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('先派后审', 'amber'),
-      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>');
+    return tcard('clue', '机器直派并行复核 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('先派后审', 'amber'),
+      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
-  /* ============ 应急人审档卡(T5 · 0.31 件,与紧急直派成对照)============ */
+  /* ============ 加急人工卡(T5 · 0.31 件,与机器直派成对照)============ */
   function urgentReviewCard(c) {
     var body =
       '<div class="banner banner-warn"><span class="banner-ico">!</span><span>' +
-      '<b>为什么它不走紧急直派:</b>置信 ' + esc(conf2(c.conf)) + ' 纯视觉、<b>无传感器硬证据</b>,机械四项未全过 —— 双闸硬条件不满足。' +
-      '低置信不等于放过:应急级<b>不看置信度</b>,强制人核(线卡 B / 非理想态①)。</span></div>' +
+      '<b>为什么它不走机器直派:</b>置信 ' + esc(conf2(c.conf)) + ' 纯视觉、<b>无传感器硬证据</b>,机械四项未全过 —— 双闸硬条件不满足。' +
+      '低置信不等于放过:紧急级<b>不看置信度</b>,强制人核(线卡 B / 非理想态①)。</span></div>' +
+      UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:230px">' +
       UI.kv([
-        ['车道', UI.laneBadge('应急人审档') + ' <span class="tiny">加急队列人工单条确认</span>', true],
-        ['SLA 倒计时', UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline || '—') + ' ' + UI.assume('(档长 30 分钟)', '应急人审档 SLA 30 分钟 = 假设值,区可配'), true],
+        ['车道', UI.laneBadge('加急人工') + ' <span class="tiny">先审后派 · 加急队列人工单条确认</span>', true],
+        ['SLA 倒计时', UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline || '—') + ' ' + UI.assume('(档长 30 分钟)', '加急人工 SLA 30 分钟 = 假设值,区可配'), true],
         ['超时', '三级升级:复核员 → 复核主管 → 区值班长;并发只读预警(不定性、不派工)'],
         ['兜底', '本档确认与驳回<b>都</b>拘进主管抽审', true]
       ]) + '</div>' +
-      '<div style="width:220px;flex:none">' + UI.evidenceGrid(c.evidence.slice(0, 1)) + '</div>' +
+      '<div style="width:232px;flex:none">' + UI.evInset(UI.obsStrip(c)) + '</div>' +
       '</div>' +
       '<div class="sep"></div>' +
       '<div class="row wrap"><div class="grow">' + pw(UI.actionPanel([
@@ -304,8 +321,8 @@
       ])) + '</div><div class="grow">' +
       pw(modalBtn('驳回(六码)', 'reject', c.id) + modalBtn('转办产权单位', 'transfer', c.id)) +
       '</div></div>';
-    return card('应急人审档 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('置信 ' + conf2(c.conf), 'grey'),
-      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>');
+    return tcard('clue', '加急人工 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('置信 ' + conf2(c.conf), 'grey'),
+      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
   /* ============ 机械驳回置顶证据卡(T6 树影件:高危零自动归档)============ */
@@ -319,8 +336,9 @@
       '。证据卡<b>置顶</b>,转加急人工驳回确认(高危零自动归档验收线)。</span></div>' +
       (done ? UI.banner('warn', '<b>高危驳回已拘主管抽审</b> —— ' + esc(c.id) + ' 原因码 ' + esc(c.rejectCode || '') +
         ';复核员把真异常驳回成树影时,由抽审发现。') : '') +
+      UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
-      '<div style="width:240px;flex:none">' + UI.evidenceGrid(c.evidence.slice(0, 1)) + '</div>' +
+      '<div style="width:246px;flex:none">' + UI.evInset(UI.obsStrip(c)) + '</div>' +
       '<div class="grow" style="min-width:240px">' + UI.checksCard(c) +
       '<div class="tiny" style="margin-top:6px">诚实边界:树影这类<b>物理上持续存在的假目标</b>,多帧复现与几何域判据跟第一闸高度相关,机械闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。</div>' +
       '</div></div>' +
@@ -332,8 +350,8 @@
       pw(modalBtn('推翻机械判定(理由码必填)', 'overrule', c.id, 'btn-danger')) +
       '<div class="tiny">推翻 = 线索复活进人审 + 自动触发抽审;误杀样本回流规则组。</div>' +
       '</div></div>';
-    return card('机械驳回置顶 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.badge('机械驳回', 'blue'),
-      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>');
+    return tcard('clue', '机械驳回置顶 · ' + esc(c.id) + ' ' + UI.levelBadge(c.level) + ' ' + UI.laneBadge('机械驳回'),
+      body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
   /* ============ 自动升格演示(T7:免人工件 + 抽审兜底)============ */
@@ -417,15 +435,15 @@
         ['核查工单', tk ? (esc(tk.id) + ' · ' + esc(tk.state) + ' · ' + esc(UI.crewName(tk.crew))) : '—']
       ]) +
       '</div>' +
-      '<div style="width:250px;flex:none">' + UI.evidenceGrid(k.evidence || [{ kind: 'flow-curve' }]) + '</div>' +
+      '<div style="width:250px;flex:none">' + UI.evInset(UI.evidenceGrid(k.evidence || [{ kind: 'flow-curve' }])) + '</div>' +
       '</div>' +
       '<div class="sep"></div>' +
       pw(UI.actionPanel([
         { action: 'open_case', params: { caseId: k.id }, label: '立案 → 开核查任务', cls: 'btn-primary' },
         { action: 'close_case', params: { caseId: k.id }, label: '结案(人签字)', cls: 'btn-ok' }
       ])) +
-      '<div class="tiny" style="margin-top:8px">本线形态与前两线根本不同:<b>不是「线索池等人审」,是「预警 → 调查案」</b>;规则腿(硬编码水力学脚本)先行,AI 时序判型只提建议,<b>人只在立案与结案两点拍板</b>。系统出「建议结案」,签字仍在人。</div>';
-    return card('调查案 ' + esc(k.id) + ' ' + UI.badge(k.status, k.status === '已结案' ? 'green' : 'blue'), body);
+      '<div class="tiny" style="margin-top:8px">规则腿(硬编码水力学脚本)先行,AI 时序判型只提建议,<b>人只在立案与结案两点拍板</b>;系统出「建议结案」,签字仍在人。</div>';
+    return tcard('case', '调查案 ' + esc(k.id) + ' ' + UI.badge(k.status, k.status === '已结案' ? 'green' : 'blue'), body, '', { color: '#6b3fa0' });
   }
 
   /* ============ 数据源健康(隐性失效两态 / 设备工单)============ */
@@ -470,11 +488,12 @@
 
     if (L.key === 'mh') {
       all.filter(function (c) { return c.fastlane && isOpen(c); }).forEach(function (c) { html += fastlaneCard(c); });
-      all.filter(function (c) { return c.lane === '应急人审档' && isOpen(c); }).forEach(function (c) { html += urgentReviewCard(c); });
+      all.filter(function (c) { return c.lane === '加急人工' && isOpen(c); }).forEach(function (c) { html += urgentReviewCard(c); });
       all.filter(function (c) { return c.mechFail || (c.lane === '机械驳回' && isHigh(c)); }).forEach(function (c) { html += mechRejectCard(c); });
       html += stormCard();
-      html += card('井盖 / 排水线队列 · ' + all.length + ' 条(仲裁序:紧急直派件最顶,应急件置顶)',
-        queueTable(all, '暴雨预警期:雨水口养护件整体升一档(线卡 B「养护→雨前急修」);井筒淤积对视觉与液位<b>皆盲</b>,由雨前清掏核查任务型兜底。'));
+      html += tcard('clue', '井盖 / 排水线队列 · ' + all.length + ' 条(仲裁序:机器直派件最顶,紧急件置顶)',
+        queueTable(all, '暴雨预警期:雨水口养护件整体升一档(线卡 B「养护→雨前急修」);井筒淤积对视觉与液位<b>皆盲</b>,由雨前清掏核查任务型兜底。'),
+        '', { line: L.line, tag: '队列' });
       html += healthCard(L);
 
     } else if (L.key === 'rd') {
@@ -506,7 +525,7 @@
         '本线的「置信」不是图像置信度,而是<b>规则持续时长 × 多源一致度</b> —— 三线置信语义都不同,这正是三线不能混为一谈的实证(线卡 C)。'));
       html += card('管网线车道表(线卡 C)',
         '<table class="tb"><thead><tr><th style="width:110px">车道</th><th style="width:230px">进入条件</th><th>处置</th><th style="width:200px">兜底</th></tr></thead><tbody>' +
-        '<tr><td>紧急直派</td><td>爆管规则命中 × 阀事件对齐过(计划外)</td><td>自动紧急工单(关阀优先)+ 值班即刻预警;人并行确认</td><td>三级升级;紧急直派件全量抽审</td></tr>' +
+        '<tr><td>机器直派</td><td>爆管规则命中 × 阀事件对齐过(计划外)</td><td>自动紧急工单(关阀优先)+ 值班即刻预警;人并行确认</td><td>三级升级;机器直派件全量抽审</td></tr>' +
         '<tr><td>调查案</td><td>渗漏 / 压力嫌疑</td><td>自动开调查案(观察窗 + 视觉旁证 + 可派现场核查);人在立案→结案两点拍板</td><td>调查案超期升级主管</td></tr>' +
         '<tr><td>设备维护</td><td>传感器自检失败</td><td><b>免人工定性</b>,自动开设备维护工单</td><td>月度设备健康报表</td></tr>' +
         '</tbody></table>');
@@ -532,17 +551,19 @@
     var meta = S.get().meta;
 
     /* --- 左列 --- */
-    var left = UI.objectCard(c, { kind: '线索' });
+    var left = UI.objectCard(c, { kind: '线索' }) + UI.obsLine(c);
 
     if (c.fastlane && isOpen(c)) left += fastlaneCard(c, true);
-    if (c.lane === '应急人审档' && isOpen(c)) left += urgentReviewCard(c);
+    if (c.lane === '加急人工' && isOpen(c)) left += urgentReviewCard(c);
     if (c.mechFail) left += mechRejectCard(c);
 
-    left += card('证据卡 · 全部为矢量示意(零真实照片)',
-      UI.evidenceGrid(c.evidence) +
-      '<div class="tiny" style="margin-top:6px">来源:' + esc(c.source || '—') + '。证据图统一标注「AI 生成示意」;原始视频不出专网。' +
-      (c.publicRefs && c.publicRefs.length ? ' 已叠加公众上报证据:' + c.publicRefs.map(esc).join(' / ') + '(多源同点去重合并)。' : '') + '</div>',
-      c.evidenceViewed ? UI.badge('已查看(高危确认前置已满足)', 'green') : UI.badge('高危件确认前须查看', 'grey'));
+    left += tcard('clue', '证据卡 · 观测逐条(全部为矢量示意,零真实照片)',
+      UI.evInset(UI.obsStrip(c),
+        '同一设施 × 同一异常类目在活跃期内的每次新发现 = 一次<b>观测</b>,并入本条线索;每张图对应一次观测,左上角标为来源。' +
+        '来源:' + esc(c.source || '—') + ';证据图统一标注「AI 生成示意」,原始视频不出专网。' +
+        (c.publicRefs && c.publicRefs.length ? ' 已叠加公众上报证据:' + c.publicRefs.map(esc).join(' / ') + '(多源同点去重合并)。' : '')),
+      c.evidenceViewed ? UI.badge('已查看(高危确认前置已满足)', 'green') : UI.badge('高危件确认前须查看', 'grey'),
+      { line: c.line, tag: '证据' });
 
     left += card('机械校验闸(第二闸)', UI.checksCard(c) +
       '<div class="tiny" style="margin-top:6px">校验项<b>变长按线</b>:路面 5 项 / 井盖 4 项 / 管网 3 项;每项留痕规则包版本。' +
@@ -575,9 +596,9 @@
       modalBtn('转办产权单位(转办码 ≠ 驳回码)', 'transfer', c.id) +
       UI.actionPanel([{ action: 'archive_doubt', params: { clueId: c.id }, label: '存疑归档(仅批量半审车道)' }]);
 
-    acts += '<div class="sep"></div><div class="sec-title">机械闸 / 紧急直派</div>' +
+    acts += '<div class="sep"></div>' + UI.secTitle('机械闸 / 机器直派', 'clue') +
       modalBtn('推翻机械判定', 'overrule', c.id) +
-      modalBtn('紧急直派撤回 · 召回班组', 'recall', c.id, 'btn-danger');
+      modalBtn('机器直派撤回 · 召回班组', 'recall', c.id, 'btn-danger');
 
     if (tk) {
       acts += '<div class="sep"></div><div class="sec-title">复验人裁(永不默认打回)</div>' +
@@ -616,8 +637,7 @@
       relate += '<div class="small">工单镜像:<b>' + esc(tk.id) + '</b> · ' + esc(tk.type) + ' · 状态 ' + UI.badge(tk.state, 'blue') +
         ' · 承接 ' + esc(UI.crewName(tk.crew)) + ' · 客户系统 ' + esc(tk.mirror) + ' · 来源 ' + esc(tk.source) +
         (tk.suspended ? ' · ' + UI.badge('已挂起 · SLA 停表', 'amber') : '') +
-        ' <a href="#/m2">告警与工单 →</a></div>' +
-        '<div class="tiny">处置动作全部写回区市政工单系统(它才是处置真源);证据同时双写进我方证据链。</div>';
+        ' <a href="#/m2">告警与工单 →</a></div>';
     }
     if (al) {
       relate += '<div class="small" style="margin-top:6px">告警:<b>' + esc(al.id) + '</b> · ' + UI.badge(al.status, al.status === '成立' ? 'green' : 'grey') +
@@ -632,8 +652,9 @@
 
     return '<div class="card card-tight"><div class="act-row">' +
       '<a class="btn btn-sm" href="' + back + '">← 返回 ' + esc(c.line) + '线队列</a>' +
-      '<span class="tiny" style="align-self:center">路由 #/m1/clue/' + esc(c.id) + '</span></div></div>' +
-      card('下游对象 · 处置真源在客户系统', relate) +
+      '<span class="tiny" style="align-self:center">路由 #/m1/clue/' + esc(c.id) + '</span>' +
+      '<span class="top-spacer"></span>' + UI.helpBtn('m1') + '</div></div>' +
+      tcard('ticket', '下游对象', relate, '', { tag: '关联' }) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:320px">' + left + '</div>' +
       '<div style="width:352px;flex:none;min-width:300px">' + right + '</div>' +

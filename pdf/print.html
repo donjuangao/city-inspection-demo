@@ -82,7 +82,7 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <div class="lead"><b>一句话定位:</b>全域传感网让每个设施持续报出自己的状态;AI 识别与规则校验两道关口筛出真问题;人只在拍板点签字。人身安全类紧急事件由系统直接派人处置、复核员 15 分钟内(假设值)并行核实、可撤回——<b>定性权永远在人。</b>平台的强拓展性来自<b>本体化数据底座</b>:对象、链接、动作把系统行为结构化,新场景只需注册新对象类型。</div>
   </div>
 
-  <p class="tt">全文只需要记一对词:<b>AI 或规则报出来、还没经人确认的事项叫「线索」;经人确认后才叫「告警」</b>。除此之外不再定义新词,一律白话直述。</p>
+  <p class="tt">全文只需要记一对词:<b>AI 或规则报出来、还没经人确认的事项叫「线索」;经人确认后才叫「告警」</b>。除此之外不再定义新词,一律白话直述。<b>一条线索管一处:</b>同一设施 × 同一类目在活跃期内的反复发现<b>并入同一条线索</b>(逐次记为一次「观测」,证据多图并排);线索关闭后再发现则新开一条,旧线索作历史关联。</p>
 
   <h2>三根柱子(全案的承重结构)</h2>
   <div class="cols2">
@@ -482,15 +482,15 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
   <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>4 / 9</span></div>
 </section>
 
-<!-- ═══════════════ 页 5 · ②-2:紧急直派时序 + 五类通道分类学 + 线 A ═══════════════ -->
+<!-- ═══════════════ 页 5 · ②-2:机器直派时序 + 通道分类学(三档 + 两类出口) + 线 A ═══════════════ -->
 <section class="page">
   <div class="hd">
     <p class="kicker">交付② mini-PRD · 页 2 / 6</p>
-    <h1>三(续)· 紧急直派时间线 · 五类处理通道 · 线 A 流水线</h1>
+    <h1>三(续)· 机器直派时间线 · 处置通道分类学 · 线 A 流水线</h1>
   </div>
 
-  <h2>紧急直派(先派人、后补认定)的时间线</h2>
-  <svg viewBox="0 0 560 70" role="img" aria-label="紧急直派时序示意">
+  <h2>机器直派(先派后审)的时间线</h2>
+  <svg viewBox="0 0 560 70" role="img" aria-label="机器直派时序示意">
     <rect x="0" y="0" width="560" height="70" fill="#ffffff"/>
     <line x1="10" y1="30" x2="550" y2="30" stroke="#d8dee6" stroke-width="2"/>
     <circle cx="46" cy="30" r="5" fill="#c0392b"/><circle cx="186" cy="30" r="5" fill="#c0392b"/><circle cx="352" cy="30" r="5" fill="#1a5fb4"/><circle cx="500" cy="30" r="5" fill="#2e7d32"/>
@@ -509,20 +509,21 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
   </svg>
   <p class="tt"><b>为什么敢先派后审:</b>延误成本(人身安全)远大于误派成本(班组白跑一趟);误派由四条硬门槛 + 全量抽查 + 月报控住,撤回件不计班组考核。四条硬门槛:① 只认已认证设备的签名报文 ② 补传与回放的旧数据不触发 ③ 同设备短时间重复信号自动合并 ④ 每片区单位时间派单有上限,超限熔断转人工并通知区值班长。<b>定性权没有下放——直派派的是处置调度,不是定性。</b></p>
 
-  <h2>五类处理通道(全线统一的分类学)</h2>
+  <h2>处置通道:三档处置 + 两类出口(全线统一的分类学)</h2>
+  <p class="tt"><b>本质二分:先派后审仅机器直派一档;先审后派两档 —— 加急人工(分钟级)、常规人工(批量);另两行是出口。</b></p>
   <table>
-    <tr><th style="width:14%">通道</th><th style="width:40%">什么件进这条通道</th><th style="width:46%">怎么处理 · 兜底</th></tr>
-    <tr class="lane-red"><td class="k">紧急直派</td><td>硬证据 × 紧急级(人身安全类)</td><td>系统秒级派人处置,人并行复核可撤回;<b>全量抽查</b>、误派率月报、撤回件不计班组考核</td></tr>
-    <tr class="lane-orange"><td class="k">加急人工</td><td>紧急 / 急修级 × 无硬证据或校验存疑</td><td>分钟级单条人工确认(时限按线设,均为假设值);确认与驳回都自动进主管抽查</td></tr>
-    <tr class="lane-blue"><td class="k">常规人工</td><td>养护级批量或单条确认;管网立案与结案拍板</td><td>当日 4 小时内(假设值)确认,一批一单;可存疑归档,抽查兜底</td></tr>
-    <tr class="lane-green"><td class="k">自动处理</td><td>数据门槛达标类目免人工</td><td>记台账 / 并入养护计划 / 持续观察;事后抽查,同类错误率超阈值该类目自动退回人工</td></tr>
-    <tr class="lane-grey"><td class="k">驳回与转办</td><td>规则校验驳回 · 非市政资产 · 设备自身故障</td><td><b>高危零自动归档</b>(证据置顶转人工);转办产权方或开设备维修单,不进业务队列</td></tr>
+    <tr><th style="width:14%">处置通道</th><th style="width:40%">先派后审 / 先审后派 · 什么件进这条通道</th><th style="width:46%">怎么处理 · 兜底</th></tr>
+    <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 硬证据 × 紧急级(人身安全类)</td><td>系统秒级派人处置,人并行复核可撤回;<b>全量抽查</b>、误派率月报、撤回件不计班组考核</td></tr>
+    <tr class="lane-orange"><td class="k">加急人工</td><td><b>先审后派(分钟级)</b> —— 紧急 / 急修级 × 无硬证据或校验存疑</td><td>分钟级单条人工确认(时限按线设,均为假设值);确认与驳回都自动进主管抽查</td></tr>
+    <tr class="lane-blue"><td class="k">常规人工</td><td><b>先审后派(批量 / 例行)</b> —— 养护级批量或单条确认;管网立案与结案拍板</td><td>当日 4 小时内(假设值)确认,一批一单;可存疑归档,抽查兜底</td></tr>
+    <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 数据门槛达标类目免人工</td><td>记台账 / 并入养护计划 / 持续观察;事后抽查,同类错误率超阈值该类目自动退回人工</td></tr>
+    <tr class="lane-grey"><td class="k">驳回与转办</td><td><b>出口 · 不进处置</b> —— 规则校验驳回 · 非市政资产 · 设备自身故障</td><td><b>高危零自动归档</b>(证据置顶转人工);转办产权方或开设备维修单,不进业务队列</td></tr>
   </table>
 
-  <p class="tt">三条线各自的<b>逐档参数明细</b>(进入条件 / 时限 / 兜底,三线全表,参数均为假设值)不占本文篇幅,见演示站「产品协议」页:https://donjuangao.github.io/city-inspection-demo/spec.html</p>
+  <p class="tt">三条线各自的<b>逐档参数明细</b>与<b>全量业务规则总表</b>(进入条件 / 时限 / 兜底 / 判据规则,参数均为假设值)不占本文篇幅;<b>判据规则带版本号、变更走审批留痕</b>,在系统管理「规则引擎」页可视、可配,全表见演示站「产品协议」页:https://donjuangao.github.io/city-inspection-demo/spec.html</p>
 
   <h2>三条业务线:同一套骨架,不同的腿与参数</h2>
-  <p class="tt">路面是<b>渐进劣化</b>(量最大、单条风险最低),井盖排水是<b>突发事件</b>(分钟级人身威胁),灌溉管网是<b>埋地系统</b>(看不见,证据是水流数据不是照片)。三条线走的是<b>同一套五段骨架</b>(发现 → 规则校验 → 分级路由 → 处置 → 复验闭环)与<b>上面同一套五类通道</b>,差异只在「发现」段用哪两条腿、以及路由的参数取值。</p>
+  <p class="tt">路面是<b>渐进劣化</b>(量最大、单条风险最低),井盖排水是<b>突发事件</b>(分钟级人身威胁),灌溉管网是<b>埋地系统</b>(看不见,证据是水流数据不是照片)。三条线走的是<b>同一套五段骨架</b>(发现 → 规则校验 → 分级路由 → 处置 → 复验闭环)与<b>上面同一套三档通道 + 两类出口</b>,差异只在「发现」段用哪两条腿、以及路由的参数取值。</p>
 
   <h3>线 A · 路面病害</h3>
   <svg viewBox="0 0 560 282" role="img" aria-label="线 A 路面:同骨架五段流水线">
@@ -553,9 +554,9 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="358" y="63" font-size="10" fill="#243342">多帧复现吗 · 重复吗 · 深度可判吗</text>
     <text x="358" y="75" font-size="10" fill="#5b6b7c">逐项留痕,带规则版本号</text>
     <text x="358" y="87" font-size="10" fill="#5b6b7c">硬性不过 → 驳回与转办(灰)</text>
-    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的五类分类学)</text>
+    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的三档 + 两类出口分类学)</text>
     <rect x="0" y="112" width="556" height="15" rx="2" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
-    <text x="8" y="123" font-size="10" fill="#c0392b">紧急直派 · 主干道 / 学校医院段 × 多源确证 → 复核员一键升级(人发起;路面件系统不自动直派)</text>
+    <text x="8" y="123" font-size="10" fill="#c0392b">机器直派 · 主干道 / 学校医院段 × 多源确证 → 复核员一键升级(人发起;路面件系统不自动直派)</text>
     <rect x="0" y="129" width="556" height="15" rx="2" fill="#fdf6e3" stroke="#9a6b00" stroke-width="1"/>
     <text x="8" y="140" font-size="10" fill="#9a6b00">加急人工 · 急修级(陷坑 / 沉陷等行车安全)→ 30 分钟内(假设值)人工确认 → 派单班组</text>
     <rect x="0" y="146" width="556" height="15" rx="2" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
@@ -585,7 +586,7 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
   <div class="hd">
     <p class="kicker">交付② mini-PRD · 页 3 / 6</p>
     <h1>三(续)· 线 B 井盖排水 · 线 C 灌溉管网</h1>
-    <p class="sub">与线 A 完全相同的五段骨架与五类通道;差异只在「发现」段的两条腿、判型职权划分与路由参数(全为假设值)。</p>
+    <p class="sub">与线 A 完全相同的五段骨架与三档通道两类出口;差异只在「发现」段的两条腿、判型职权划分与路由参数(全为假设值)。</p>
   </div>
 
   <h3>线 B · 排水与井盖</h3>
@@ -617,9 +618,9 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="358" y="63" font-size="10" fill="#243342">多帧复现吗 · 短时重复合并了吗</text>
     <text x="358" y="75" font-size="10" fill="#5b6b7c">逐项留痕,带规则版本号</text>
     <text x="358" y="87" font-size="10" fill="#5b6b7c">硬性不过 → 高危零自动归档</text>
-    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的五类分类学)</text>
+    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的三档 + 两类出口分类学)</text>
     <rect x="0" y="112" width="556" height="15" rx="2" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
-    <text x="8" y="123" font-size="10" fill="#c0392b">紧急直派 · 已签名传感报文硬证据 × 紧急级 → 秒级派单 + 预警通报;复核员 15 分钟(假设值)并行核实可撤回</text>
+    <text x="8" y="123" font-size="10" fill="#c0392b">机器直派 · 已签名传感报文硬证据 × 紧急级 → 秒级派单 + 预警通报;复核员 15 分钟(假设值)并行核实可撤回</text>
     <rect x="0" y="129" width="556" height="15" rx="2" fill="#fdf6e3" stroke="#9a6b00" stroke-width="1"/>
     <text x="8" y="140" font-size="10" fill="#9a6b00">加急人工 · 紧急级无硬证据或校验存疑 → 30 分钟(假设值)单条确认;急修级 → 2 小时(假设值)确认</text>
     <rect x="0" y="146" width="556" height="15" rx="2" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
@@ -670,9 +671,9 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <text x="358" y="63" font-size="10" fill="#243342">阀门事件对齐吗 · 重复吗</text>
     <text x="358" y="75" font-size="10" fill="#5b6b7c">逐项留痕,带规则版本号</text>
     <text x="358" y="87" font-size="10" fill="#5b6b7c">判不出型 → 「不明异常」升调查案</text>
-    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的五类分类学)</text>
+    <text x="0" y="106" font-size="10" fill="#5b6b7c">③ 分级路由 —— 本线用到的通道(色 = 全线统一的三档 + 两类出口分类学)</text>
     <rect x="0" y="112" width="556" height="15" rx="2" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
-    <text x="8" y="123" font-size="10" fill="#c0392b">紧急直派 · 爆管特征规则命中 × 阀门事件对齐 → 秒级派单 + 预警通报 + 关阀影响面提示</text>
+    <text x="8" y="123" font-size="10" fill="#c0392b">机器直派 · 爆管特征规则命中 × 阀门事件对齐 → 秒级派单 + 预警通报 + 关阀影响面提示</text>
     <rect x="0" y="129" width="556" height="15" rx="2" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
     <text x="8" y="140" font-size="10" fill="#1a5fb4">常规人工 · 渗漏嫌疑达门槛 → 自动开调查案;人在立案 / 结案两点拍板,结案须流量回归正常</text>
     <rect x="0" y="146" width="556" height="15" rx="2" fill="#eaf4ea" stroke="#2e7d32" stroke-width="1"/>
@@ -788,7 +789,7 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <rect x="394" y="80" width="80" height="18" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
     <text x="434" y="92" font-size="10" fill="#12233a" text-anchor="middle">水力学规则</text>
     <rect x="478" y="80" width="78" height="18" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
-    <text x="517" y="92" font-size="10" fill="#12233a" text-anchor="middle">紧急直派</text>
+    <text x="517" y="92" font-size="10" fill="#12233a" text-anchor="middle">机器直派</text>
     <rect x="82" y="102" width="92" height="18" rx="3" fill="#eef3fa" stroke="#1a5fb4" stroke-width="1"/>
     <text x="128" y="114" font-size="10" fill="#12233a" text-anchor="middle">AI 完工复验</text>
     <rect x="178" y="102" width="104" height="18" rx="3" fill="#eaf4ea" stroke="#2e7d32" stroke-width="1"/>
@@ -847,19 +848,19 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
     <tr><td class="k">③ 排序建议</td><td>按置信度与风险给队列排序,让人先看最要紧的</td><td>排错序延误处理 → 高危档不看置信度必到人,<b>硬①</b></td></tr>
     <tr><td class="k">④ 完工复验</td><td>比对处置前后照片,判断修没修好</td><td>错判冤枉班组 → 判不出存疑人裁、永不默认打回,派生条款「复验人裁」</td></tr>
     <tr><td class="k">⑤ 上报甄别辅助</td><td>对公众上报做图片质量与类目预判,辅助人工甄别</td><td>误杀真实上报 → 甄别驳回必人工、留痕可申诉,<b>硬①</b></td></tr>
-    <tr><td class="k">AI 不干的</td><td colspan="2"><b>不定性(不产告警)、不关闭线索、不直接指挥班组。</b>唯一的自动派单是紧急直派——那由机械规则硬证据触发,且人 15 分钟内(假设值)并行复核可撤回。</td></tr>
+    <tr><td class="k">AI 不干的</td><td colspan="2"><b>不定性(不产告警)、不关闭线索、不直接指挥班组。</b>唯一的自动派单是机器直派——那由机械规则硬证据触发,且人 15 分钟内(假设值)并行复核可撤回。</td></tr>
   </table>
 
   <h2>两条硬机制(其余全是它们的派生)</h2>
   <table>
     <tr><th style="width:22%">硬机制</th><th style="width:40%">怎么运作</th><th style="width:38%">兜底在哪</th></tr>
-    <tr><td class="k">硬① 两道关口<br>与分线路由</td><td>AI 识别与机械规则<b>互为校验</b>;规则校验硬编码、逐项留痕、带版本号;置信度只定排序不定生死,<b>高危必到人</b>;全线统一的五类通道分类学(见页 2),三条线只是它的三次实例化。</td><td><b>两道关口互相矛盾 = 不放行</b>,转人审并标矛盾件;校验驳回 ≠ 静默丢弃(逐项留痕 + 留样抽查);漏报有机械保底腿与周期定检排程接住,「模型漏了」与「根本没拍到」由观测记录分开。</td></tr>
+    <tr><td class="k">硬① 两道关口<br>与分线路由</td><td>AI 识别与机械规则<b>互为校验</b>;规则校验硬编码、逐项留痕、带版本号;置信度只定排序不定生死,<b>高危必到人</b>;全线统一的三档通道 + 两类出口分类学(见页 2),三条线只是它的三次实例化。</td><td><b>两道关口互相矛盾 = 不放行</b>,转人审并标矛盾件;校验驳回 ≠ 静默丢弃(逐项留痕 + 留样抽查);漏报有机械保底腿与周期定检排程接住,「模型漏了」与「根本没拍到」由观测记录分开。</td></tr>
     <tr><td class="k">硬② 本体化<br>日志底座</td><td>对象-链接-动作把一切行为结构化——<b>谁、何时、对什么对象、做了什么动作、产生什么链接</b>;自动动作同样入账;每条动作记录带当时的规则 / 模型 / 参数版本字段。</td><td>证据链<b>天然结构化、可回放、可整链导出</b>,不需要另发明一种记录格式;责任定位到人 / 服务账号 / 规则版本;<b>AI 每一格权限的开放门槛,就长在这本日志的实测准确率上</b>。</td></tr>
   </table>
 
   <p class="tt">其余条款全是这两条的<b>派生细则</b>(七条,每条注明派生自哪条硬机制,数值均为假设值):抽查参数 / 复验人裁 / 误报原因回流 / 断流降级明示 / 责任情形表(双方签署)/ 紧急越权 / 三方交替检验——逐条内容见演示站「产品协议」页:https://donjuangao.github.io/city-inspection-demo/spec.html</p>
 
-  <div class="warn"><b>诚实句(替换掉「界面上不存在 AI 直接产告警的路径」这种绝对话):</b>紧急直派会<b>先派人、后补认定</b>——它派出的是处置调度,不产出告警;这条路径全量抽查、可撤回、误派不计班组考核。定性权仍然在人,但代价是我们承认存在一条「人还没确认、班组已经在路上」的通道。</div>
+  <div class="warn"><b>诚实句(替换掉「界面上不存在 AI 直接产告警的路径」这种绝对话):</b>机器直派会<b>先派人、后补认定</b>——它派出的是处置调度,不产出告警;这条路径全量抽查、可撤回、误派不计班组考核。定性权仍然在人,但代价是我们承认存在一条「人还没确认、班组已经在路上」的通道。</div>
 
   <div class="foot"><span>城市设施智能巡检平台 · 方案与 PRD · 2026-08 · 全文所涉客户业务与数字均为假定/假设值</span><span>8 / 9</span></div>
 </section>
@@ -914,7 +915,7 @@ svg{ display:block; width:100%; height:auto; margin:0 0 1mm; }
       <li>⑥ 给定点位与时间窗 → 可导出被哪些数据源扫过</li>
     </ul></td></tr>
     <tr><td class="k">专项验收</td><td><ul>
-      <li><b>紧急直派</b>:注入硬证据紧急件 → X 秒内(假设值)自动派单、预警通报、复核任务同时生成;撤回后班组端收到召回</li>
+      <li><b>机器直派</b>:注入硬证据紧急件 → X 秒内(假设值)自动派单、预警通报、复核任务同时生成;撤回后班组端收到召回</li>
       <li><b>覆盖率</b>:试点期末观测记录与热区图可导出、传感器在线率 ≥ 阈值</li>
       <li><b>压力</b>:注入 3 倍高危线索,行为符合过载三步</li>
       <li><b>责任</b>:责任情形表双方签署</li>

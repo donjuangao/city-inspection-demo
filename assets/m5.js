@@ -6,7 +6,7 @@
    - 施工图 §7 m5:健康总览卡(数字=前面动作的下游,联动 store)+ 覆盖热区示意 SVG
    - 设计档 §2.4:「设施状态总览 v1(M8 提级:管理者三问=哪片最差/趋势如何/覆盖哪里有洞;含覆盖热区图 HW-17)」
    - 设计档 §0.7:5 统计总览 —— 健康总览 v1=M4-6 · 覆盖率=M10-12
-   铁律:本页零独立数据源,全部数字现算自 S.get()/S.dict(),不新增 mock 字段。 */
+   铁律:本模块零独立数据源,全部数字现算自 S.get()/S.dict(),不新增 mock 字段。 */
 (function (w) {
   'use strict';
 
@@ -52,8 +52,8 @@
           '<div style="height:100%;width:' + pct + '%;background:var(--red)"></div></div></div>';
       }).join('')
       : '<div class="tiny">当前无在办线索/工单,暂无片区排名。</div>';
-    return '<div class="card"><div class="sec-title">管理者三问 · ① 哪片最差</div>' + body +
-      '<div class="tiny" style="margin-top:6px">按街区聚合「待核查线索 + 未验收工单」计数(实算,非独立编造)。</div></div>';
+    return '<div class="card">' + UI.secTitle('管理者三问 · ① 哪片最差', 'clue') + body +
+      '<div class="tiny" style="margin-top:6px">口径:按街区聚合「待核查线索 + 未验收工单」计数。</div></div>';
   }
 
   function q2Trend() {
@@ -67,8 +67,8 @@
       ['人工驳回', nReject + ' 次'],
       ['规则引擎自动步', nAuto + ' 次']
     ]);
-    return '<div class="card"><div class="sec-title">管理者三问 · ② 趋势如何</div>' + rows +
-      '<div class="tiny" style="margin-top:6px">趋势口径 = 动作日志累计(时间线唯一数据源),随处置动作持续增长。</div></div>';
+    return '<div class="card">' + UI.secTitle('管理者三问 · ② 趋势如何', 'ticket') + rows +
+      '<div class="tiny" style="margin-top:6px">口径:动作日志累计。</div></div>';
   }
 
   function q3Gaps() {
@@ -79,15 +79,26 @@
         return '<a class="badge badge-amber" href="#/m3/facility/' + f.id + '">' + UI.esc(f.id) + ' · ' + UI.esc(f.block) + '</a>';
       }).join('') + '</div>'
       : '<div class="tiny">当前数据下全部设施均有观测覆盖。</div>';
-    return '<div class="card"><div class="sec-title">管理者三问 · ③ 覆盖哪里有洞</div>' + body +
-      '<div class="tiny" style="margin-top:6px">点开徽标 → 台账(模块 3)详情核实观测覆盖窗。</div></div>';
+    return '<div class="card">' + UI.secTitle('管理者三问 · ③ 覆盖哪里有洞', 'audit') + body +
+      '<div class="tiny" style="margin-top:6px">点开徽标 → 设施台账详情核实观测覆盖窗。</div></div>';
   }
 
   function heatMap() {
-    return '<div class="card"><div class="sec-title">覆盖热区示意</div>' +
-      '<div style="max-width:360px">' + UI.evidenceSvg('heat') + '</div>' +
-      '<div class="tiny" style="margin-top:4px">示意用色深浅代表观测覆盖密度;非真实地理热力图,正式版由传感器在线率 + 移动网轨迹密度生成。</div></div>';
+    return '<div class="card">' + UI.secTitle('覆盖热区示意', 'facility') +
+      '<div style="max-width:360px">' + UI.evInset(UI.evidenceSvg('heat'),
+        '色深 = 观测覆盖密度;' + UI.assume('示意图', '演示为示意热区,非真实地理热力图;正式版由传感器在线率 + 移动网轨迹密度生成') +
+        '。空间分布看 <a href="#/m3" style="color:#9ec8e6">设施地图看板</a>。') + '</div></div>';
   }
+
+  /* ============ 帮助浮层内容(R86 A4)============ */
+  (w.HELP = w.HELP || {}).m5 = {
+    title: '统计总览 · 本模块职责',
+    body:
+      '<p><b>这一页干什么:</b>回答管理者三问 —— 哪片最差 / 趋势如何 / 覆盖哪里有洞,并给出告警、工单、闭环、机器直派件的健康总览。</p>' +
+      '<p><b>数字从哪来:</b>本模块零独立数据源,全部数字实时算自当前状态与动作日志 —— 都是前面处置动作的下游,不单独编造统计口径。</p>' +
+      '<p><b>覆盖率为什么单列:</b>「没报出来」有两种:模型漏报,和压根没观测。只有把覆盖缺口显式列出,漏报回查才分得清这两件事。</p>' +
+      '<p><b>与客户系统的关系:</b>本模块统计只覆盖巡检侧对象;工单量以客户系统对账后的口径为准,不一致进对账异常队列。</p>'
+  };
 
   VIEWS.m5 = function (ctx) {
     var st = w.S.get(), TS = w.S.dict().ticketSources;
@@ -97,12 +108,13 @@
     var fastlane = count(st.tickets, function (t) { return t.source === TS.auto; });
 
     var head = '<div class="card">' +
-      '<div class="card-hd"><h3>5 · 统计总览</h3><span class="tiny">健康总览卡:数字实算自 S.get()——都是前面动作的下游</span></div>' +
+      '<div class="card-hd"><h3>5 · 统计总览</h3>' +
+      '<span class="row" style="gap:8px;align-items:center"><span class="tiny">健康总览</span>' + UI.helpBtn('m5') + '</span></div>' +
       '<div class="grid4">' +
-      statTile(alertsOn + ' / ' + st.alerts.length, '告警数(成立 / 总数)', '来自「确认」动作产出') +
-      statTile(String(ticketsOpen), '在办工单数', '来自派单三来源(①②③)') +
-      statTile(String(closed), '闭环数(已验收)', '来自「复验人裁·合格」动作') +
-      statTile(String(fastlane), '紧急直派件数', '来自「自动派单」动作(来源①)') +
+      statTile(alertsOn + ' / ' + st.alerts.length, '告警数(成立 / 总数)', '人确认后成立') +
+      statTile(String(ticketsOpen), '在办工单数', '派单三来源合计') +
+      statTile(String(closed), '闭环数(已验收)', '复验合格闭环') +
+      statTile(String(fastlane), '机器直派件数', '来源① 自动派单') +
       '</div></div>';
 
     return head + '<div class="grid3">' + q1Worst() + q2Trend() + q3Gaps() + '</div>' + heatMap();

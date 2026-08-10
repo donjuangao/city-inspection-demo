@@ -18,7 +18,7 @@
 
   U.badge = function (text, tone) { return '<span class="badge badge-' + (tone || 'grey') + '">' + esc(text) + '</span>'; };
 
-  var LEVEL_TONE = { '应急': 'red', '紧急': 'red', '急修': 'red', '养护': 'blue', '观察': 'grey', '调查': 'blue', '设备': 'grey', '雨前专项': 'amber' };
+  var LEVEL_TONE = { '紧急': 'red', '急修': 'red', '养护': 'blue', '观察': 'grey', '调查': 'blue', '设备': 'grey', '雨前专项': 'amber' };
   U.levelBadge = function (lv) { return lv ? U.badge(lv, LEVEL_TONE[lv] || 'grey') : ''; };
 
   var STATUS_TEXT = {
@@ -44,38 +44,65 @@
     return '<span class="assume" title="' + esc(note || '假设值:试点首周与客户核实后按区可配参数调整') + '">' + esc(text) + '</span>';
   };
 
-  /* ---------------- 五类通道分类学徽章(R85⑤;与 PDF 五类通道分类学同名同色 —— 页级注入,不动 tokens.css) ---------------- */
+  /* ---------------- 通道徽章(R86 A1 三档收敛;取名取色唯一处 = data.js window.LANES —— 页级注入,不动 tokens.css) ----------------
+     window.LANES = [{key,name,short,color,kind,note}];五档:机器直派 / 加急人工 / 常规人工 / 自动处理 / 驳回与转办。
+     LANE_CLASS = 数据层车道原名(队列细分名)→ 五档之一 + 细分名副注。 */
+  var LANE_DEFS = w.LANES || [];
+  function laneDef(key) { for (var i = 0; i < LANE_DEFS.length; i++) if (LANE_DEFS[i].key === key) return LANE_DEFS[i]; return null; }
+  function laneName(key) { var d = laneDef(key); return d ? d.name : key; }
+
   var LANE_CLASS = {
-    '紧急直派':   { name: '紧急直派', tone: 'lane-e' },
-    '应急人审档': { name: '加急人工', tone: 'lane-u', sub: '应急人审档' },
-    '当日队列':   { name: '加急人工 · 当日档', tone: 'lane-u', sub: '当日队列(参数)' },
-    '批量':       { name: '常规人工', tone: 'lane-n', sub: '批量' },
-    '批量加急分诊(显名降级)': { name: '常规人工', tone: 'lane-n', sub: '批量加急分诊 · 显名降级' },
-    '批量半审':   { name: '常规人工', tone: 'lane-n', sub: '批量半审' },
-    '单条必审':   { name: '常规人工', tone: 'lane-n', sub: '单条必审' },
-    '记账':       { name: '自动处理', tone: 'lane-a', sub: '记账' },
-    '自动升格':   { name: '自动处理', tone: 'lane-a', sub: '自动升格' },
-    '机械驳回':   { name: '驳回与转办', tone: 'lane-r', sub: '机械驳回' },
-    '设备维护':   { name: '驳回与转办', tone: 'lane-r', sub: '设备维护' }
+    '机器直派':   { key: 'machine' },
+    '加急人工':   { key: 'urgent' },
+    '当日队列':   { key: 'urgent', sub: '当日队列(参数)' },
+    '批量':       { key: 'normal', sub: '批量' },
+    '批量加急分诊(显名降级)': { key: 'normal', sub: '批量加急分诊 · 显名降级' },
+    '批量半审':   { key: 'normal', sub: '批量半审' },
+    '单条必审':   { key: 'normal', sub: '单条必审' },
+    '常规人工':   { key: 'normal' },
+    '调查案':     { key: 'normal', sub: '调查案 · 立案/结案两点拍板' },
+    '记账':       { key: 'auto', sub: '记账' },
+    '自动升格':   { key: 'auto', sub: '自动升格' },
+    '自动处理':   { key: 'auto' },
+    '机械驳回':   { key: 'reject', sub: '机械驳回' },
+    '设备维护':   { key: 'reject', sub: '设备维护' },
+    '驳回与转办': { key: 'reject' }
   };
+  Object.keys(LANE_CLASS).forEach(function (k) {
+    var d = LANE_CLASS[k];
+    d.name = laneName(d.key);
+    d.tone = 'lane-' + d.key;
+  });
   U.laneClass = function (laneRaw) { return LANE_CLASS[laneRaw] || null; };
-  /* 主名徽章(五色)+ 原细分名降为副注小字;未在字典内的车道名(如管网调查案)原样徽章不着五色 */
+  U.laneColor = function (laneRaw) {
+    var c = LANE_CLASS[laneRaw]; var d = c ? laneDef(c.key) : null;
+    return d ? d.color : '#5b6b7c';
+  };
+  /* 主名徽章(五色)+ 原细分名降为副注小字;未在字典内的车道名原样徽章不着五色 */
   U.laneBadge = function (laneRaw) {
     if (!laneRaw) return '';
     var def = LANE_CLASS[laneRaw];
     if (!def) return U.badge(laneRaw, 'blue');
     var sub = def.sub ? ' <span class="lane-sub">(' + esc(def.sub) + ')</span>' : '';
-    return '<span class="badge lane-badge ' + def.tone + '">' + esc(def.name) + '</span>' + sub;
+    return '<span class="badge lane-badge ' + def.tone + '" title="' + esc((laneDef(def.key) || {}).kind || '') + '">' + esc(def.name) + '</span>' + sub;
   };
+  /* 通道判据句(先派后审 / 先审后派 / 不派人 / 不进处置) */
+  U.laneKind = function (laneRaw) {
+    var c = LANE_CLASS[laneRaw]; var d = c ? laneDef(c.key) : null;
+    return d ? d.kind : '';
+  };
+  function hexSoft(hex, amt) {
+    var n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    function mix(x) { return Math.round(x + (255 - x) * amt); }
+    return 'rgb(' + mix(r) + ',' + mix(g) + ',' + mix(b) + ')';
+  }
   (function injectLaneCss() {
     if (!w.document || w.document.getElementById('origen-lane-css')) return;
-    var css = '.lane-badge{font-weight:600;border:1px solid transparent;border-radius:20px;padding:1px 8px;font-size:11.5px;display:inline-block}' +
-      '.lane-e{background:#fbe9e7;color:#c0392b;border-color:#eec2ba}' +   /* 紧急直派 · 红 #c0392b */
-      '.lane-u{background:#faf2df;color:#9a6b00;border-color:#e8d7a6}' +  /* 加急人工 · 橙 #9a6b00 */
-      '.lane-n{background:#e6edfa;color:#1a5fb4;border-color:#bcd1ef}' +  /* 常规人工 · 蓝 #1a5fb4 */
-      '.lane-a{background:#e6f2e7;color:#2e7d32;border-color:#bcdcbf}' +  /* 自动处理 · 绿 #2e7d32 */
-      '.lane-r{background:#eceff1;color:#5b6b7c;border-color:#cfd6dc}' +  /* 驳回与转办 · 灰 #5b6b7c */
-      '.lane-sub{font-size:11px;color:var(--faint,#8e968f);margin-left:2px}';
+    var css = '.lane-badge{font-weight:600;border:1px solid transparent;border-radius:20px;padding:1px 8px;font-size:11.5px;display:inline-block}';
+    LANE_DEFS.forEach(function (d) {
+      css += '.lane-' + d.key + '{background:' + hexSoft(d.color, 0.9) + ';color:' + d.color + ';border-color:' + hexSoft(d.color, 0.7) + '}';
+    });
+    css += '.lane-sub{font-size:11px;color:var(--faint,#8e968f);margin-left:2px}';
     var s = w.document.createElement('style');
     s.id = 'origen-lane-css';
     s.textContent = css;
@@ -214,6 +241,177 @@
     return '<div class="ev-grid">' + list.map(function (e) { return U.evidenceCard(e, caption); }).join('') + '</div>';
   };
 
+  /* ---------------- R86 A3 · 观测(一次检测事件 = 一条观测)---------------- */
+  /* 兼容口径:没有 observations 的线索按「一次观测」渲染(既有渲染路径不变) */
+  function obsList(c) {
+    if (c && c.observations && c.observations.length) return c.observations;
+    if (!c) return [];
+    return [{ t: c.t, source: c.source, conf: (c.conf === undefined ? null : c.conf), evidence: (c.evidence || []).slice(), note: c.note || '', kind: (w.CLUE_OBS ? w.CLUE_OBS.kind(c.source) : '其他') }];
+  }
+  U.obsList = obsList;
+  function mixText(c, os) {
+    var mix = c && c.sourceMix;
+    if (!mix) { mix = {}; os.forEach(function (o) { var k = o.kind || '其他'; mix[k] = (mix[k] || 0) + 1; }); }
+    return Object.keys(mix).map(function (k) { return k + '×' + mix[k]; }).join(' / ');
+  }
+  /* 线索卡/详情头部观测行:观测 N 次 · 首见 xx:xx · 最近 xx:xx · 来源:传感器×2/公众×1 */
+  U.obsLine = function (c) {
+    if (!c) return '';
+    var os = obsList(c);
+    var first = c.firstSeen || (os[0] && os[0].t) || c.t;
+    var last = c.lastSeen || (os[os.length - 1] && os[os.length - 1].t) || c.t;
+    var maxConf = (c.maxConf === undefined || c.maxConf === null)
+      ? (typeof c.conf === 'number' ? c.conf : null) : c.maxConf;
+    return '<div class="obs-line">' +
+      '<span class="obs-n">观测 ' + os.length + ' 次</span>' +
+      '<span class="obs-sep">·</span><span>首见 ' + esc(first || '—') + '</span>' +
+      '<span class="obs-sep">·</span><span>最近 ' + esc(last || '—') + '</span>' +
+      '<span class="obs-sep">·</span><span>来源:' + esc(mixText(c, os)) + '</span>' +
+      (maxConf === null ? '' : '<span class="obs-sep">·</span><span>最高置信 <b class="mono">' + esc(String(Math.round(maxConf * 100) / 100)) + '</b></span>') +
+      '</div>';
+  };
+  /* 证据卡多图横排:observations 逐条一张(证据示意 + 来源角标 + 时刻);零真实照片纪律不变 */
+  U.obsStrip = function (c) {
+    var os = obsList(c);
+    if (!os.length) return '<div class="tiny">暂无证据件</div>';
+    var cells = os.map(function (o, i) {
+      var evs = (o.evidence && o.evidence.length) ? o.evidence : [{ kind: 'field' }];
+      return evs.map(function (e) {
+        var kind = typeof e === 'string' ? e : (e && e.kind) || 'field';
+        return '<div class="obs-item">' +
+          '<div class="ev">' + U.evidenceSvg(kind) +
+          '<span class="obs-src">' + esc(o.kind || '其他') + '</span>' +
+          '<div class="ev-cap">观测 ' + (i + 1) + ' · ' + esc(o.t || '—') +
+          (typeof o.conf === 'number' ? ' · 置信 <span class="mono">' + esc(String(Math.round(o.conf * 100) / 100)) + '</span>' : '') +
+          '</div></div>' +
+          (o.note ? '<div class="tiny obs-note">' + esc(o.note) + '</div>' : '') +
+          '</div>';
+      }).join('');
+    }).join('');
+    return '<div class="obs-strip">' + cells + '</div>';
+  };
+
+  /* ---------------- R86 A9 · 卡片视觉体系(页级注入,不动 tokens.css)----------------
+     线索卡=左边框类目色 + 右上类型角标;告警卡=红系头部条;工单卡=蓝系;调查案=紫系;
+     证据区=深底内嵌;队列区块标题=色条;标题/正文/元信息三级字号字重;kv 行降灰。 */
+  var CARD_TONE = {
+    clue: { color: '#1a5fb4', label: '线索' },
+    alert: { color: '#c0392b', label: '告警' },
+    ticket: { color: '#1a5fb4', label: '工单' },
+    case: { color: '#6b3fa0', label: '调查案' },
+    audit: { color: '#9a6b00', label: '抽审' },
+    report: { color: '#2e7d32', label: '公众上报' },
+    facility: { color: '#5b6b7c', label: '设施' }
+  };
+  var LINE_COLOR = { '井盖': '#c2410c', '路面': '#1a5fb4', '管网': '#0e7490' };
+  U.lineColor = function (line) { return LINE_COLOR[line] || '#5b6b7c'; };
+  /* 卡片外壳 class + 内联类目色变量:U.cardShell('clue', {line:'井盖'}) → ' oc oc-clue" style="--cat:#c2410c ' 的安全拼装见下 */
+  U.cardAttrs = function (kind, opts) {
+    opts = opts || {};
+    var t = CARD_TONE[kind] || CARD_TONE.clue;
+    var color = opts.color || (opts.line ? U.lineColor(opts.line) : t.color);
+    return ' class="' + (opts.cls ? esc(opts.cls) + ' ' : '') + 'oc oc-' + kind + '"' +
+      ' style="--cat:' + color + (opts.style ? ';' + opts.style : '') + '"';
+  };
+  U.cardTag = function (kind, text) {
+    var t = CARD_TONE[kind] || CARD_TONE.clue;
+    return '<span class="oc-tag" style="--cat:' + t.color + '">' + esc(text || t.label) + '</span>';
+  };
+  /* 队列区块标题(带色条) */
+  U.secTitle = function (text, kind) {
+    var t = CARD_TONE[kind] || CARD_TONE.clue;
+    return '<div class="sec-title sec-bar" style="--cat:' + t.color + '">' + esc(text) + '</div>';
+  };
+  /* 证据区深底内嵌 */
+  U.evInset = function (inner, note) {
+    return '<div class="ev-inset">' + inner + (note ? '<div class="ev-inset-note">' + note + '</div>' : '') + '</div>';
+  };
+  (function injectCardCss() {
+    if (!w.document || w.document.getElementById('origen-card-css')) return;
+    var css = [
+      /* 卡片类型区分 */
+      '.oc{position:relative}',
+      '.oc-clue{border-left:4px solid var(--cat,#1a5fb4)}',
+      '.oc-alert,.oc-ticket,.oc-case,.oc-audit,.oc-report{border-top:3px solid var(--cat)}',
+      '.oc-alert{background:linear-gradient(#fdf6f4,#fff 46px)}',
+      '.oc-ticket{background:linear-gradient(#f2f6fd,#fff 46px)}',
+      '.oc-case{background:linear-gradient(#f7f3fc,#fff 46px)}',
+      '.oc-tag{display:inline-block;flex:none;font-size:10.5px;font-weight:700;letter-spacing:.08em;' +
+        'padding:1px 8px;border-radius:20px;color:var(--cat);border:1px solid var(--cat);background:#fff;opacity:.92}',
+      /* 队列区块标题色条 */
+      '.sec-bar{border-left:3px solid var(--cat,#1a5fb4);padding-left:8px;color:var(--cat,#5c6660);opacity:.95}',
+      /* 信息层级三级 */
+      '.oc-t1{font-size:15px;font-weight:700;color:var(--ink-hi,#0b1a12);letter-spacing:-.01em}',
+      '.oc-t2{font-size:13px;font-weight:400;color:var(--ink,#1b231f);line-height:1.68}',
+      '.oc-t3{font-size:11.5px;font-weight:400;color:var(--faint,#8e968f);line-height:1.55}',
+      '.card .kv dt{color:#9aa39c;font-weight:400}',
+      '.card .kv dd{color:#3c453f}',
+      /* 证据区深底内嵌 */
+      '.ev-inset{background:#20303c;border-radius:8px;padding:10px}',
+      '.ev-inset .ev{border-color:#33454f;background:#16232c}',
+      '.ev-inset .ev-cap{background:#f7f9fb;border-top-color:#dfe4ea}',
+      '.ev-inset-note{color:#b9c6d1;font-size:11.5px;margin-top:8px;line-height:1.6}',
+      '.ev-inset-note b{color:#e7eef3}',
+      /* 观测行 / 观测证据横排 */
+      '.obs-line{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px;color:#5c6660;' +
+        'background:#f5f7f4;border:1px solid #e4e7e2;border-radius:6px;padding:6px 10px;margin:8px 0}',
+      '.obs-line .obs-n{font-weight:700;color:#0b1a12}',
+      '.obs-line .obs-sep{color:#c3cabf}',
+      '.ev-inset .obs-line{background:#1a2831;border-color:#33454f;color:#b9c6d1}',
+      '.ev-inset .obs-line .obs-n{color:#fff}',
+      '.obs-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}',
+      '.obs-item{flex:none;width:172px}',
+      '.obs-item .ev{position:relative}',
+      '.obs-src{position:absolute;left:6px;top:6px;background:rgba(11,26,18,.78);color:#fff;font-size:10px;' +
+        'padding:1px 7px;border-radius:20px;letter-spacing:.02em}',
+      '.obs-note{margin-top:4px;line-height:1.5}',
+      '.ev-inset .obs-note{color:#93a3b0}',
+      /* 横幅:关闭键 / 可点主体 / 同类堆叠折叠 */
+      '.banner{position:relative}',
+      '.banner-body{flex:1 1 auto}',
+      'a.banner-body{color:inherit;text-decoration:none;cursor:pointer}',
+      'a.banner-body:hover{text-decoration:underline;color:inherit}',
+      '.banner-x{flex:none;border:0;background:transparent;color:inherit;opacity:.5;cursor:pointer;' +
+        'font-size:15px;line-height:1;padding:0 2px;font-family:inherit}',
+      '.banner-x:hover{opacity:1}',
+      '.banner-fold{margin-bottom:var(--gap,10px)}',
+      '.banner-fold>summary{cursor:pointer;list-style:none;font-size:12.5px;padding:6px 12px;border-radius:6px;' +
+        'border:1px dashed var(--line,#e4e7e2);background:#fbfcfa;color:var(--mute,#5c6660)}',
+      '.banner-fold>summary::-webkit-details-marker{display:none}',
+      '.banner-fold[open]>summary{margin-bottom:6px}',
+      '.banner-fold .banner{margin-bottom:6px}',
+      /* 帮助浮层 */
+      '.help-btn{border:1px solid var(--line,#e4e7e2);background:#fff;color:var(--mute,#5c6660);border-radius:50%;' +
+        'width:22px;height:22px;line-height:1;cursor:pointer;font-size:12.5px;font-weight:700;padding:0;font-family:inherit}',
+      '.help-btn:hover{border-color:#1a5fb4;color:#1a5fb4}',
+      '.help-mask{position:fixed;inset:0;background:rgba(11,26,18,.34);display:flex;align-items:center;' +
+        'justify-content:center;z-index:80;padding:20px}',
+      '.help-fly{background:#fff;border-radius:10px;max-width:560px;width:100%;max-height:80vh;overflow:auto;' +
+        'padding:18px 20px;box-shadow:0 18px 46px rgba(11,26,18,.28)}',
+      '.help-fly h3{margin:0 0 8px}',
+      '.help-fly .help-body{font-size:13px;line-height:1.75;color:#3c453f}',
+      '.help-fly .help-body p{margin:0 0 8px}',
+      /* 地图看板(m3) */
+      '.map-wrap{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}',
+      '.map-svg{flex:1 1 460px;min-width:320px;max-width:660px}',
+      '.map-svg svg{display:block;width:100%;height:auto;border:1px solid var(--line,#e4e7e2);border-radius:8px;background:#fbfcf8}',
+      '.map-side{flex:0 1 230px;min-width:190px}',
+      '.map-layers{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}',
+      '.map-layer{border:1px solid var(--line,#e4e7e2);background:#fff;color:var(--mute,#5c6660);border-radius:20px;' +
+        'padding:3px 11px;font-size:12px;cursor:pointer;font-family:inherit}',
+      '.map-layer.is-on{border-color:var(--cat,#1a5fb4);color:var(--cat,#1a5fb4);background:#fff;font-weight:600}',
+      '.map-layer.is-on::before{content:"✓ "}',
+      '.map-lg{display:flex;align-items:center;gap:7px;font-size:12px;color:#5c6660;padding:2px 0}',
+      '.map-lg i{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}',
+      '.map-node{cursor:pointer}',
+      '.map-node:hover{opacity:.72}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-card-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  })();
+
   /* 通用折线(劣化曲线 / 流量曲线;points = [{x,y}] 或 [num]) */
   U.lineChart = function (points, opts) {
     opts = opts || {};
@@ -247,7 +445,7 @@
     if (obj.level) badges.push(U.levelBadge(obj.level));
     if (obj.lane) badges.push(U.laneBadge(obj.lane));
     if (obj.status) badges.push(U.statusBadge(obj.status));
-    if (obj.fastlane) badges.push(U.badge('紧急直派自动派', 'amber'));
+    if (obj.fastlane) badges.push(U.badge('机器直派自动派', 'amber'));
     if (obj.conf !== undefined && obj.conf !== null) badges.push(U.badge('置信 ' + obj.conf, 'grey'));
 
     var l2 = f ? ('关于:' + esc(f.kind) + ' ' + U.addr(f.id) + (f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : ''))
@@ -402,15 +600,45 @@
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   };
 
-  /* ---------------- 横幅 ---------------- */
+  /* ---------------- 横幅(R86 A9:右侧 × 关闭 + 主体可点跳对象 + 同类堆叠折叠)---------------- */
   var ICO = { info: 'i', warn: '!', danger: '!', ok: '✓', amber: '!' };
-  U.banner = function (tone, text) {
+  /* U.banner(tone, htmlText, opts?) —— opts:{id 可关闭, href 可点跳转} */
+  U.banner = function (tone, text, opts) {
+    opts = opts || {};
     var t = tone === 'amber' ? 'warn' : tone;
-    return '<div class="banner banner-' + esc(t) + '"><span class="banner-ico">' + (ICO[tone] || 'i') + '</span><span>' + text + '</span></div>';
+    var body = opts.href
+      ? '<a class="banner-body" href="' + esc(opts.href) + '" title="跳转到该提示对应的对象">' + text + '</a>'
+      : '<span class="banner-body">' + text + '</span>';
+    var x = opts.id
+      ? '<button type="button" class="banner-x" title="关闭该条提示(重置数据后回来)" ' +
+        'data-act="banner_dismiss" data-p="' + U.attr({ bannerId: opts.id }) + '">×</button>'
+      : '';
+    return '<div class="banner banner-' + esc(t) + '">' +
+      '<span class="banner-ico">' + (ICO[tone] || 'i') + '</span>' + body + x + '</div>';
   };
+  var TONE_LABEL = { info: '通知', warn: '提醒', danger: '预警', ok: '完成', amber: '提醒' };
   U.banners = function (scope) {
-    var bs = w.S.get().banners.filter(function (b) { return !scope || b.scope === 'global' || b.scope === scope; });
-    return bs.slice(-6).map(function (b) { return U.banner(b.tone, esc(b.text)); }).join('');
+    var bs = (w.S.banners ? w.S.banners(scope)
+      : w.S.get().banners.filter(function (b) { return !scope || b.scope === 'global' || b.scope === scope; }));
+    bs = bs.slice(-8);
+    /* 同类(同 tone)>2 条 → 折叠成「N 条提示 ▾」;组序按该组最新一条的先后 */
+    var order = [], groups = {};
+    bs.forEach(function (b) {
+      var k = b.tone === 'amber' ? 'warn' : b.tone;
+      if (!groups[k]) { groups[k] = []; }
+      groups[k].push(b);
+      var at = order.indexOf(k); if (at >= 0) order.splice(at, 1);
+      order.push(k);
+    });
+    return order.map(function (k) {
+      var list = groups[k];
+      var html = list.map(function (b) {
+        return U.banner(b.tone, esc(b.text), { id: b.dismissible === false ? null : b.id, href: b.href });
+      }).join('');
+      if (list.length <= 2) return html;
+      return '<details class="banner-fold"><summary>' + list.length + ' 条' +
+        esc(TONE_LABEL[k] || '提示') + ' ▾(点开展开全部)</summary>' + html + '</details>';
+    }).join('');
   };
 
   /* ---------------- toast(动作反馈 / 系统提示)---------------- */
@@ -431,6 +659,188 @@
       (lines && lines.length ? '<div class="tiny" style="margin-top:8px">' + lines.map(esc).join(' · ') + '</div>' : '') +
       '</div>';
   };
+
+  /* ---------------- 帮助浮层(R86 A4:页职责说明 / 与客户系统关系,从组件文案迁出的落点)----------------
+     注册表 = window.HELP = { m1:{title, body(html)}, … },各模块自己注册。
+     机制:页头「?」按钮 → UI.helpFly(key);W1 若提供更完备的浮层实现,其定义覆盖本降级实现(后到者优先)。 */
+  w.HELP = w.HELP || {};
+  U.helpBtn = function (key, label) {
+    return '<button type="button" class="help-btn" data-help="' + esc(key) + '" ' +
+      'title="' + esc(label || '本模块职责说明 / 与客户系统的关系') + '" aria-label="帮助">?</button>';
+  };
+  function helpFallback(key) {
+    var def = (w.HELP || {})[key];
+    if (!def) return;
+    var old = w.document.querySelector('.help-mask');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var mask = w.document.createElement('div');
+    mask.className = 'help-mask';
+    mask.innerHTML = '<div class="help-fly">' +
+      '<div class="card-hd"><h3>' + esc(def.title || '说明') + '</h3>' +
+      '<button type="button" class="btn btn-sm" data-help-close="1">关闭</button></div>' +
+      '<div class="help-body">' + (def.body || '') + '</div></div>';
+    mask.addEventListener('click', function (e) {
+      if (e.target === mask || (e.target.getAttribute && e.target.getAttribute('data-help-close'))) {
+        if (mask.parentNode) mask.parentNode.removeChild(mask);
+      }
+    });
+    w.document.body.appendChild(mask);
+  }
+  U.helpFly = U.helpFly || helpFallback;
+  if (w.document) {
+    w.document.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el.getAttribute && !el.getAttribute('data-help')) el = el.parentNode;
+      if (!el || !el.getAttribute) return;
+      var k = el.getAttribute('data-help');
+      if (!k) return;
+      e.preventDefault();
+      (U.helpFly || helpFallback)(k);
+    });
+  }
+
+  /* ================================================================
+     R86 A4 · 帮助浮层完整实现(W1 新增;覆盖上面的降级实现,契约同款:w.HELP 注册表 + data-help 委托)
+     def = {title, sub?, body(html 字符串 或 段落数组), rows?:[[k,v]], foot?}
+     ================================================================ */
+  U.registerHelp = function (key, def) { w.HELP[key] = def; return U; };
+  U.helpDef = function (key) { return (w.HELP || {})[key] || null; };
+
+  function helpBody(def) {
+    var out = '';
+    if (def.sub) out += '<p class="tiny" style="color:var(--faint,#8e968f)">' + esc(def.sub) + '</p>';
+    var b = def.body;
+    if (b && b.join) out += b.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+    else if (b) out += b;
+    if (def.rows && def.rows.length) {
+      out += '<table class="tb" style="margin-top:8px"><tbody>' + def.rows.map(function (r) {
+        return '<tr><td style="width:34%"><b>' + esc(r[0]) + '</b></td><td>' + (r[2] ? r[1] : esc(r[1])) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    }
+    if (def.foot) out += '<p class="tiny" style="margin-top:10px;color:var(--faint,#8e968f)">' + esc(def.foot) + '</p>';
+    return out;
+  }
+
+  U.helpClose = function () {
+    var old = w.document && w.document.querySelector('.help-mask');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+  };
+
+  U.helpFly = function (key) {
+    var def = U.helpDef(key);
+    if (!def || !w.document) return null;
+    U.helpClose();
+    var mask = w.document.createElement('div');
+    mask.className = 'help-mask';
+    mask.innerHTML = '<div class="help-fly" role="dialog" aria-label="' + esc(def.title || '说明') + '">' +
+      '<div class="card-hd"><h3>' + esc(def.title || '说明') + '</h3>' +
+      '<button type="button" class="btn btn-sm" data-help-close="1">关闭(Esc)</button></div>' +
+      '<div class="help-body">' + helpBody(def) + '</div></div>';
+    mask.addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== mask && !(t.getAttribute && t.getAttribute('data-help-close'))) t = t.parentNode;
+      if (e.target === mask || (t && t !== mask)) U.helpClose();
+    });
+    w.document.body.appendChild(mask);
+    return mask;
+  };
+
+  if (w.document) {
+    w.document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) U.helpClose();
+    });
+  }
+
+  /* ================================================================
+     R86 A6 · 手机模拟浮窗(UI.phoneSim)
+     UI.phoneSim(src, {title, crew}) 打开/切换;UI.phoneSim.close() 关闭;UI.phoneSim.isOpen() 查询。
+     同源 iframe:store.js 每次 commit/advance 后 postMessage('origen-sync') + storage 事件兜底 →
+     浮窗内页面自行重读 sessionStorage 重渲染,本组件只负责「壳」与「在场」,不代管同步。
+     ================================================================ */
+  var PH_W = 390, PH_H = 740, PH_S = 0.72;
+  var _phone = null;
+
+  function phoneCss() {
+    if (w.document.getElementById('origen-phone-css')) return;
+    var css = [
+      /* z-index 45:压在导览条(40)之上、浮层遮罩(50)之下 —— 开浮层时手机窗自然退到遮罩后面 */
+      '.phonesim{position:fixed;right:20px;bottom:118px;z-index:45;width:' + Math.round(PH_W * PH_S) + 'px;',
+      'background:#11161a;border-radius:26px;padding:8px;box-shadow:0 14px 40px rgba(11,26,18,.34);border:1px solid #2a3238}',
+      '.phonesim-hd{display:flex;align-items:center;gap:6px;color:#e9eeea;font-size:11.5px;padding:2px 4px 7px;cursor:move;user-select:none}',
+      '.phonesim-hd b{font-weight:600}',
+      '.phonesim-dot{width:7px;height:7px;border-radius:50%;background:#17a05e;flex:none}',
+      '.phonesim-sp{flex:1}',
+      '.phonesim-x{background:transparent;border:1px solid #39424a;color:#c9d2cb;border-radius:5px;font-family:inherit;',
+      'font-size:11.5px;line-height:1;padding:3px 7px;cursor:pointer}',
+      '.phonesim-x:hover{background:#222a30;color:#fff}',
+      '.phonesim-body{width:' + Math.round(PH_W * PH_S) + 'px;height:' + Math.round(PH_H * PH_S) + 'px;overflow:hidden;',
+      'border-radius:18px;background:#fff;position:relative}',
+      '.phonesim-body iframe{width:' + PH_W + 'px;height:' + PH_H + 'px;border:0;transform:scale(' + PH_S + ');transform-origin:0 0;display:block}',
+      '.phonesim-ft{color:#8b958d;font-size:10.5px;padding:6px 4px 0;text-align:center}',
+      '@media (max-height:760px){.phonesim{bottom:96px}.phonesim-body{height:' + Math.round(PH_H * PH_S * 0.82) + 'px}}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-phone-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+
+  function phoneBuild() {
+    phoneCss();
+    var wrap = w.document.createElement('div');
+    wrap.className = 'phonesim';
+    wrap.innerHTML =
+      '<div class="phonesim-hd"><span class="phonesim-dot"></span><b class="phonesim-t">班组处置端</b>' +
+      '<span class="phonesim-sp"></span>' +
+      '<button type="button" class="phonesim-x" data-phone="new">新窗打开</button>' +
+      '<button type="button" class="phonesim-x" data-phone="close">×</button></div>' +
+      '<div class="phonesim-body"><iframe title="现场端" src="about:blank"></iframe></div>' +
+      '<div class="phonesim-ft">与工作台同一份状态 · 推进即同步</div>';
+    w.document.body.appendChild(wrap);
+    var api = {
+      wrap: wrap, frame: wrap.querySelector('iframe'),
+      titleEl: wrap.querySelector('.phonesim-t'), src: ''
+    };
+    wrap.addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== wrap && !(t.getAttribute && t.getAttribute('data-phone'))) t = t.parentNode;
+      if (!t || t === wrap) return;
+      var a = t.getAttribute('data-phone');
+      if (a === 'close') U.phoneSim.close();
+      else if (a === 'new' && api.src) w.open(api.src, '_blank');
+    });
+    /* 拖动:表头按下 → 改用 left/top 定位 */
+    var hd = wrap.querySelector('.phonesim-hd'), drag = null;
+    hd.addEventListener('mousedown', function (e) {
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-phone')) return;
+      var r = wrap.getBoundingClientRect();
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+      wrap.style.right = 'auto'; wrap.style.bottom = 'auto';
+      wrap.style.left = r.left + 'px'; wrap.style.top = r.top + 'px';
+      e.preventDefault();
+    });
+    w.document.addEventListener('mousemove', function (e) {
+      if (!drag) return;
+      var x = Math.max(4, Math.min(e.clientX - drag.dx, w.innerWidth - 60));
+      var y = Math.max(4, Math.min(e.clientY - drag.dy, w.innerHeight - 40));
+      wrap.style.left = x + 'px'; wrap.style.top = y + 'px';
+    });
+    w.document.addEventListener('mouseup', function () { drag = null; });
+    return api;
+  }
+
+  U.phoneSim = function (src, opts) {
+    if (!w.document || !src) return null;
+    opts = opts || {};
+    if (!_phone) _phone = phoneBuild();
+    if (_phone.src !== src) { _phone.frame.src = src; _phone.src = src; }
+    _phone.titleEl.textContent = opts.title || '现场端 · 实时';
+    _phone.wrap.style.display = '';
+    return _phone;
+  };
+  U.phoneSim.close = function () { if (_phone) _phone.wrap.style.display = 'none'; };
+  U.phoneSim.isOpen = function () { return !!(_phone && _phone.wrap.style.display !== 'none'); };
+  U.phoneSim.src = function () { return _phone ? _phone.src : ''; };
 
   /* ---------------- 小工具 ---------------- */
   U.kv = function (pairs) {

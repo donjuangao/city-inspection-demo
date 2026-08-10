@@ -87,13 +87,20 @@ lack = [i + 1 for i, p in enumerate(per_page) if "假设" not in p]
 check("⑩ 每页 ≥1 处「假设」标注", not lack, "缺失页 %r" % (lack,))
 
 # 11 术语纪律(2026-08-10 走查 R83-1/-3:砍术语对照表,全文说人话)
-#    正向:首页有「线索/告警」这对唯一保留术语的定义句;反向:黑话族零残留
+#    正向:首页有「线索/告警」这对唯一保留术语的定义句 + 线索原子性(并入同一条线索)定义句;
+#    反向:黑话族零残留
 # 2026-08-10 R85⑤:demo 界面通道名已统一为五类分类学(「快车道」→「紧急直派」),
 #   桥接句失效已从术语定义行删除,原「桥接豁免剔除该行」的 re.sub 随之删除——全文零豁免扫描
-jargon = re.findall(r'快车道|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html)
+# 2026-08-10 R86①(A1 三档收敛):通道分类学收敛为「三档处置 + 两类出口」,正词 = 机器直派 /
+#   加急人工 / 常规人工 / 自动处理 / 驳回与转办。旧通道词「紧急直派」随之作废,与「应急」
+#   (与「加急」混淆,R86 A1 废弃)一并入黑话族;「快车道」保持在册(R85 之前的更旧一代词)。
+# 2026-08-10 R86③(A3 线索原子性):线索聚合口径进术语区,加正向判据「并入同一条线索」。
+jargon = re.findall(r'快车道|紧急直派|应急|影子池|覆盖窗|双闸|机械校验|机械闸|DMT|本体扩展包|租户化', html)
 has_pair = ("线索" in per_page[0]) and ("告警" in per_page[0]) and ("不再定义新词" in per_page[0])
-check("⑪ 术语纪律:线索/告警定义句在 + 黑话族零残留", has_pair and not jargon,
-      "定义句 %s;黑话命中 %r" % ("在" if has_pair else "缺", jargon[:8]))
+has_atom = "并入同一条线索" in per_page[0]
+check("⑪ 术语纪律:线索/告警 + 线索原子性定义句在 + 黑话族零残留", has_pair and has_atom and not jargon,
+      "词对定义句 %s;原子性定义句 %s;黑话命中 %r"
+      % ("在" if has_pair else "缺", "在" if has_atom else "缺", jargon[:8]))
 
 # 12 厂商专名红线
 vendor = re.findall(r'Origen|NABD|SpatialWare|Palantir', html, re.I)
