@@ -47,7 +47,7 @@
      R88 A6⑲ 角色口径:镜里要看的那个动作由谁做,role 就写谁 —— 主管落锤(驳回/裁定/抽审/提级/参数变更)
      的镜写「复核主管」,其余写「区复核员」;班组镜的现场视角由右侧手机浮窗自己承载,工作台身份不跟着变。 */
   var STORY = [
-    /* ============ 主线 18 镜 ============ */
+    /* ============ 主线 20 镜(+ 支线 19 镜 = 分镜树 39 镜)============ */
     {
       sid: 'S0', ref: null, axis: '序幕', stage: '', route: '#/m1', focus: '.tabs',
       lane: null, laneNote: '尚未进入任何通道', graph: 'mh', node: null,
@@ -61,19 +61,19 @@
       say: '19:02,Al Jimi 街区 MH-0417 的位移传感器报警,报文带已认证设备签名,属于硬证据。注意抬头的措辞:它现在只是「线索」——AI 与规则只产线索,定性权在人。'
     },
     {
-      /* focus 用备选数组:m1 详情把机械校验四项降成折叠区后 .checks 这个类名可能不在了,
-         退到文本命中「机械校验」所在的卡 —— 焦点不跟着别人的 DOM 变动一起烂掉。 */
+      /* focus 用备选数组:m1 详情把规则校验四项降成折叠区后 .checks 这个类名可能不在了,
+         退到文本命中「规则校验」所在的卡 —— 焦点不跟着别人的 DOM 变动一起烂掉。 */
       sid: 'S2', ref: 'T1', axis: '井盖线', stage: '规则校验', route: '#/m1/clue/CL-0417',
-      focus: ['.checks', 'text:机械校验', 'text:规则包版本'],
+      focus: ['.checks', 'text:规则校验', 'text:规则包版本'],
       lane: '机器直派', graph: 'mh', node: 'mh_gate',
-      title: '第二闸 · 机械校验四项逐项打钩',
-      say: '第一闸是 AI 识别,第二闸是机械证据校验:硬编码判据逐项打钩,每项留规则包版本号。井盖线四项全过——两闸都过的高危件,才有资格先派后审。'
+      title: '第二道关口 · 规则校验四项逐项打钩',
+      say: '第一道关口是 AI 识别,第二道是规则校验:硬编码判据逐项打钩,每项留规则包版本号。井盖线四项全过——两道都过的高危件,才有资格先派后审。'
     },
     {
       sid: 'S3', ref: 'T1', axis: '井盖线', stage: '分级路由', route: '#/m2/tickets', focus: '#tk-WO-9001',
       lane: '机器直派', graph: 'mh', node: 'mh_machine',
       title: '机器直派 · 机器先把单派出去',
-      say: '双闸齐全,系统当场把工单派给排水一班,同时镜像写进区市政工单系统。这条通道叫机器直派,判据句是「先派后审」:派单是处置调度,不是定性——人还没签字,告警就还不成立。'
+      say: '两道关口齐全,系统当场把工单派给排水一班,同时镜像写进区市政工单系统。这条通道叫机器直派,判据句是「先派后审」:派单是处置调度,不是定性——人还没签字,告警就还不成立。'
     },
     {
       sid: 'S4', ref: 'T2', axis: '井盖线', stage: '处置', route: '#/m1',
@@ -132,32 +132,32 @@
       focus: ['text:为什么它不走', 'text:无传感器硬证据'],
       lane: '加急人工', graph: 'mh', node: 'mh_urgent',
       title: '对照件 · 纯视觉 0.31、无硬证据',
-      say: '19:30,Hili 街区一件井盖异常,置信 0.31,纯视觉,没有传感器硬证据,机械四项没全过——不满足先派后审的硬条件,进加急人工 30 分钟档。低置信不等于放过:高危级本身不看置信度,该人核照样人核。'
+      say: '19:30,Hili 街区一件井盖异常,置信 0.31,纯视觉,没有传感器硬证据,规则校验四项没全过——不满足先派后审的硬条件,进加急人工 30 分钟档。低置信不等于放过:高危级本身不看置信度,该人核照样人核。'
     },
     {
       sid: 'S8', ref: 'T6', axis: '支线·异常', stage: '规则校验', route: '#/m1/clue/CL-0588',
-      focus: ['text:机械校验硬失败', 'text:零自动归档'],
+      focus: ['text:规则校验硬失败', 'text:零自动归档'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
       branches: [{ label: '↳ 深入:驳回落锤与误报回流', sid: 'F0' }],
-      title: '树影误报 · 机械驳回也不自动归档',
-      say: '19:40,一件树影造成的持续假目标,机械校验硬失败。系统没有直接归档——高危件零自动归档是硬线,证据卡置顶转人工驳回确认。人也可以反过来推翻机械判定,理由码必填,误杀样本回流规则组。'
+      title: '盖体反光误判 · 机械驳回也不自动归档',
+      say: '19:40,一件强日照下盖体反光造成的持续假目标,规则校验硬失败。系统没有直接归档——高危件零自动归档是硬线,证据卡置顶转人工驳回确认。人也可以反过来推翻规则判定,理由码必填,误杀样本回流规则组。'
     },
     {
-      sid: 'S9', ref: 'T7', axis: '路面线', stage: '发现+规则校验', route: '#/m1/line/rd',
+      sid: 'S9', ref: 'T7', axis: '路面线', stage: '分级路由', route: '#/m1/line/rd',
       focus: ['text:自动升格', 'text:免人工'],
       lane: '自动处理', graph: 'rd', node: 'rd_auto',
       title: '路面车载批量 · 五项校验全过',
-      say: '20:00,路面车载采集的一批进池。路面线的机械校验是五项,逐项打钩。养护级、高置信、机械全过——三条同时成立才自动升格,免人工。横幅上写着抽审兜底:免人工不等于免审计,每条照样一条日志。'
+      say: '20:00,路面车载采集的一批进池。路面线的规则校验是五项,逐项打钩。养护级、高置信、规则校验全过——三条同时成立才自动升格,免人工。横幅上写着抽审兜底:免人工不等于免审计,每条照样一条日志。'
     },
     {
-      sid: 'S10', ref: 'T7', axis: '路面线', stage: '分级路由+处置', route: '#/m2/tickets', focus: '#tk-WO-9007',
+      sid: 'S10', ref: 'T7', axis: '路面线', stage: '处置', route: '#/m2/tickets', focus: '#tk-WO-9007',
       lane: '自动处理', graph: 'rd', node: 'rd_plan',
       branches: [{ label: '↳ 深入:主管提级与完工抽查', sid: 'R1' }],
       title: '并入周期养护的批量工单',
       say: '升格后的件不单独开单,并入周批养护工单——这是自动处理通道,绿色,判据句是「不派人定性」。同一条流水线,井盖线那件走的是红色的机器直派,路面线这件走到这里是绿色:分档不同的是级别与证据,不是系统。'
     },
     {
-      sid: 'S11', ref: 'T8', axis: '管网线', stage: '发现', route: '#/m1/line/pl',
+      sid: 'S11', ref: 'T8', axis: '管网线', stage: '分级路由', route: '#/m1/line/pl',
       focus: ['text:IV-0071', 'text:调查案'],
       lane: null, laneNote: '调查案(观察窗 + 现场核查)', graph: 'pl', node: 'pl_case',
       branches: [{ label: '↳ 深入:立案之后', sid: 'P1' }],
@@ -168,7 +168,7 @@
       sid: 'S12', ref: 'T8', axis: '管网线', stage: '分级路由', route: '#/m2/tickets', focus: '#tk-WO-9008',
       lane: '自动处理', graph: 'pl', node: 'pl_dev',
       title: 'SN-FM03 自检失败 · 设备维修单',
-      say: '同一时刻还有一件:流量计 SN-FM03 自检失败,系统直接开设备维修单,承接方是传感网运维方,不惊动三线班组。判型职权在这里划死——爆管与设备故障走规则与设备通道,不经 AI 定性。先排设备故障,再报业务异常。'
+      say: '同一时刻还有一件:流量计 SN-FM03 自检失败,系统直接开设备维修单,承接方是传感网运维方,不惊动三线班组。判型职权在这里划死——爆管与设备故障走规则与设备通道,不经 AI 定性。先排设备故障,再报业务异常。爆管那一档今晚没真发生,但它在图上:点底部「流程位置」看管网线,PL-R02 那一支就是压降速率越限直判、机器直派带关阀预案——同样不经 AI,只是今晚没被触发。'
     },
     {
       sid: 'S13', ref: 'T9', axis: '支线·越级与压力', stage: '分级路由', route: '#/m2/dispatch',
@@ -195,7 +195,7 @@
       say: '21:20,与客户工单系统的日对账出现 1 条不一致。裁决规则写在页首:处置状态以客户系统为准,巡检定性以我方为准。这个界面不是第二真源,它是镜像;对不上就人工裁定,裁定本身也是一条动作。同一时刻 DMA-07 流量回归基线,管网那条线也走到了建议结案。'
     },
     {
-      sid: 'S16', ref: 'T12', axis: '支线·越级与压力', stage: '处置', route: '#/m2/tickets',
+      sid: 'S16', ref: 'T12', axis: '支线·越级与压力', stage: '分级路由', route: '#/m2/tickets',
       focus: ['text:气象预警接入', 'text:雨前清掏', '#tk-WO-9012'],
       lane: null, laneNote: '气象预警 · 雨前清掏专项任务包', graph: 'mh', node: 'mh_route',
       title: '气象预警接入 · 雨前清掏专项任务包下发',
@@ -244,7 +244,7 @@
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } }
       ],
       title: '人工驳回确认 · 原因码必填',
-      say: '树影这一件由人来落锤:驳回,原因码①拍摄干扰。机械闸拦不住的东西,系统不敢替人归档;但人一旦驳回,这条记录带着原因码进日志——驳回不是终点,是回流的起点。'
+      say: '盖体反光这一件由人来落锤:驳回,原因码①拍摄干扰。规则校验闸拦不住的东西,系统不敢替人归档;但人一旦驳回,这条记录带着原因码进日志——驳回不是终点,是回流的起点。'
     },
     {
       sid: 'F2', br: 'F', back: 'S9', ref: 'T6', axis: '支线·异常', stage: '分级路由',
@@ -266,7 +266,7 @@
         { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } },
         { action: 'fp_feedback', params: { clueId: 'CL-0588', code: '①', ruleId: 'MH-R03', actor: '区复核员' } },
-        { action: 'rule_param_change', params: { ruleId: 'MH-R03', key: 'agree', val: 0.88, reason: '树影误杀样本回流(原因码①)', actor: '复核主管' } }
+        { action: 'rule_param_change', params: { ruleId: 'MH-R03', key: 'agree', val: 0.88, reason: '盖体反光误判误杀样本回流(原因码①)', actor: '复核主管' } }
       ],
       title: '规则参数调优 · 走影子试算',
       say: '回流到判据这一层就成了具体动作:把 MH-R03 的帧间一致率从 0.8 提到 0.88。要点是改之前先看它会改变今天的哪几件——试算把今天经过这条规则的件逐件回放,路由会变的当场列出来。这一条的答案是零件改变,原因也直接写出来了:今天这 7 件画面识别件全卡在置信线上,最高一件 0.83 还没到 0.85,一致率根本轮不到起作用。调参的人在生效前就知道自己拧错了旋钮——这比事后看误派率省一整个试点周。提交也只是留痕,当前运行判定一行不动,正式生效仍要走审批。'
@@ -952,13 +952,15 @@
       name: '井盖线', line: '井盖', vb: [1040, 376], start: 'mh_find',
       nodes: [
         nd('mh_find', '发现', '传感器报警 / 视觉过检', 16, 20, 190, null, 'S1'),
-        nd('mh_gate', '规则校验', '机械四项 · 双闸硬条件', 16, 110, 190, null, 'S2'),
+        nd('mh_gate', '规则校验', '四项逐项打钩 · 两道关口硬条件', 16, 110, 190, null, 'S2'),
         nd('mh_route', '分级路由', '按证据与级别分档', 16, 200, 190, null, 'S16'),
         nd('mh_machine', '机器直派', '先派后审 · 并行复核 15 分', 286, 12, 270, '机器直派', 'S3'),
         nd('mh_urgent', '加急人工', '先审后派 · 分钟级确认', 286, 78, 270, '加急人工', 'S7'),
         nd('mh_normal', '常规人工', '批量例行确认后并入计划', 286, 144, 270, '常规人工', null),
         nd('mh_auto', '自动处理', '设备维修单 · 不派三线班组', 286, 210, 270, '自动处理', null),
         nd('mh_reject', '驳回与转办', '人工驳回确认 · 零自动归档', 286, 276, 270, '驳回与转办', 'F1'),
+        /* Z4 口径 13:超时兜底派单是一个真节点,不是注脚 —— 加急人工件三级升级走完仍无人给结论,系统自己把单发出去(来源④) */
+        nd('mh_overdue', '超时兜底派单', '三级升级走完仍无人 · 来源④', 616, 12, 190, '机器直派', null),
         nd('mh_do', '处置', '班组五格状态机', 616, 78, 190, null, 'S5'),
         nd('mh_dev', '设备侧闭环', '传感网运维方承接', 616, 210, 190, null, null),
         nd('mh_arch', '归档 · 原因回流', '按原因码找消费者', 616, 276, 190, null, 'F2'),
@@ -969,10 +971,15 @@
         { from: 'mh_find', to: 'mh_gate', type: 'v' },
         { from: 'mh_gate', to: 'mh_route', type: 'v' },
         { from: 'mh_route', to: 'mh_machine', label: 'MH-R01' },
+        /* Z4 口径 13:补 MH-R03(AI 多帧一致视觉当硬证据用 → 也升机器直派)与 MH-R07(气象预警 → 雨前清掏专项任务包,计划性) */
+        { from: 'mh_route', to: 'mh_machine', label: 'MH-R03', viaX: 232, labelDy: -40 },
         { from: 'mh_route', to: 'mh_urgent', label: 'MH-R02' },
         { from: 'mh_route', to: 'mh_normal', label: 'MH-R06' },
+        { from: 'mh_route', to: 'mh_normal', label: 'MH-R07', viaX: 232, labelDy: 16 },
         { from: 'mh_route', to: 'mh_auto', label: 'MH-R04' },
         { from: 'mh_route', to: 'mh_reject', label: 'MH-R05' },
+        { from: 'mh_urgent', to: 'mh_overdue', dash: true, label: 'MH-R08' },
+        { from: 'mh_overdue', to: 'mh_do', type: 'v' },
         { from: 'mh_machine', to: 'mh_do' },
         { from: 'mh_urgent', to: 'mh_do' },
         { from: 'mh_normal', to: 'mh_do' },
@@ -986,27 +993,32 @@
       pre: {
         mh_gate: 'mh_find', mh_route: 'mh_gate',
         mh_machine: 'mh_route', mh_urgent: 'mh_route', mh_normal: 'mh_route', mh_auto: 'mh_route', mh_reject: 'mh_route',
+        mh_overdue: 'mh_urgent',
         mh_do: 'mh_machine', mh_dev: 'mh_auto', mh_arch: 'mh_reject',
         mh_verify: 'mh_do', mh_close: 'mh_verify'
       },
-      note: '判据句:双传感器互证(MH-R01)才走先派后审;单一传感器越限只能先审后派。'
+      note: '判据句:双传感器互证(MH-R01)或 AI 多帧一致(MH-R03)才走先派后审;单一传感器越限只能先审后派。人一直不来也不空转 —— MH-R08 超时兜底把单先发出去,定性仍悬、件全量拘抽审。'
     },
     rd: {
-      name: '路面线', line: '路面', vb: [1040, 356], start: 'rd_find',
+      name: '路面线', line: '路面', vb: [1040, 422], start: 'rd_find',
       nodes: [
         nd('rd_find', '发现', '车载过检 / 固定相机', 16, 20, 190, null, 'S9'),
-        nd('rd_gate', '规则校验', '机械五项逐项打钩', 16, 110, 190, null, 'S9'),
+        nd('rd_gate', '规则校验', '五项逐项打钩', 16, 110, 190, null, 'S9'),
         nd('rd_route', '分级路由', '置信 × 来源 × 道路等级', 16, 200, 190, null, null),
-        nd('rd_urgent', '加急人工', '高置信 + 多源确证 + 主干道', 286, 12, 270, '加急人工', 'R1'),
-        nd('rd_normal', '常规人工', '单源中置信 → 批量半审', 286, 78, 270, '常规人工', null),
-        nd('rd_auto', '自动处理 · 自动升格', '养护级 × 高置信 × 机械全过', 286, 144, 270, '自动处理', 'S9'),
-        nd('rd_note', '自动处理 · 记账', '观察级 → 入劣化曲线', 286, 210, 270, '自动处理', null),
-        nd('rd_reject', '驳回与转办', '低置信 / 树影类误报特征', 286, 276, 270, '驳回与转办', null),
-        nd('rd_plan', '开单 / 并入周批', '按级别单开或并批', 616, 78, 190, null, 'S10'),
-        nd('rd_curve', '劣化曲线', '不开单 · 只记台账', 616, 210, 190, null, null),
-        nd('rd_arch', '归档 · 样本回流', '原因码① 回流模型', 616, 276, 190, null, null),
-        nd('rd_do', '处置', '班组五格状态机', 846, 78, 178, null, 'R2'),
-        nd('rd_spot', '完工抽查', '按比例现场抽查', 846, 180, 178, null, 'R3')
+        /* Z4 口径 6:路面线没有「规则直接进机器直派」这条入口 —— 唯一进法是人显名提级两级
+           (养护/观察 → 急修;急修 × 多源确证 ≥2 → 机器直派)。节点在这里,入边只有提级那一条。 */
+        nd('rd_machine', '机器直派', '仅由人提级② 进 · 先派后审', 286, 12, 270, '机器直派', null),
+        nd('rd_urgent', '加急人工', '高置信 + 多源确证 + 主干道', 286, 78, 270, '加急人工', 'R1'),
+        nd('rd_normal', '常规人工', '单源中置信 → 批量半审', 286, 144, 270, '常规人工', null),
+        nd('rd_auto', '自动处理 · 自动升格', '养护级 × 高置信 × 规则校验全过', 286, 210, 270, '自动处理', 'S9'),
+        nd('rd_note', '自动处理 · 记账', '观察级 → 入劣化曲线', 286, 276, 270, '自动处理', null),
+        nd('rd_reject', '驳回与转办', '低置信 / 树影类误报特征', 286, 342, 270, '驳回与转办', null),
+        nd('rd_overdue', '超时兜底派单', '档到期无人审 · 来源④', 846, 12, 178, '机器直派', null),
+        nd('rd_plan', '开单 / 并入周批', '按级别单开或并批', 616, 144, 190, null, 'S10'),
+        nd('rd_curve', '劣化曲线', '不开单 · 只记台账', 616, 276, 190, null, null),
+        nd('rd_arch', '归档 · 样本回流', '原因码① 回流模型', 616, 342, 190, null, null),
+        nd('rd_do', '处置', '班组五格状态机', 846, 144, 178, null, 'R2'),
+        nd('rd_spot', '完工抽查', '按比例现场抽查', 846, 246, 178, null, 'R3')
       ],
       edges: [
         { from: 'rd_find', to: 'rd_gate', type: 'v' },
@@ -1016,6 +1028,7 @@
         { from: 'rd_route', to: 'rd_auto', label: 'RD-R04' },
         { from: 'rd_route', to: 'rd_note', label: 'RD-R05' },
         { from: 'rd_route', to: 'rd_reject', label: 'RD-R03' },
+        { from: 'rd_machine', to: 'rd_plan' },
         { from: 'rd_urgent', to: 'rd_plan' },
         { from: 'rd_normal', to: 'rd_plan' },
         { from: 'rd_auto', to: 'rd_plan' },
@@ -1023,15 +1036,19 @@
         { from: 'rd_reject', to: 'rd_arch' },
         { from: 'rd_plan', to: 'rd_do' },
         { from: 'rd_do', to: 'rd_spot', type: 'v', label: '完工后' },
-        { from: 'rd_normal', to: 'rd_urgent', type: 'vu', dash: true, label: '主管提级' }
+        { from: 'rd_normal', to: 'rd_urgent', type: 'vu', dash: true, label: '提级①' },
+        { from: 'rd_urgent', to: 'rd_machine', type: 'vu', dash: true, label: '提级②' },
+        { from: 'rd_urgent', to: 'rd_overdue', dash: true, label: 'RD-R07' },
+        { from: 'rd_overdue', to: 'rd_do', type: 'v' }
       ],
       pre: {
         rd_gate: 'rd_find', rd_route: 'rd_gate',
         rd_urgent: 'rd_route', rd_normal: 'rd_route', rd_auto: 'rd_route', rd_note: 'rd_route', rd_reject: 'rd_route',
+        rd_machine: 'rd_urgent', rd_overdue: 'rd_urgent',
         rd_plan: 'rd_auto', rd_curve: 'rd_note', rd_arch: 'rd_reject',
         rd_do: 'rd_plan', rd_spot: 'rd_do'
       },
-      note: '判据句:置信只决定进哪一档,不决定要不要人看;低置信高危仍强制人核。'
+      note: '判据句:置信只决定进哪一档,不决定要不要人看;低置信高危仍强制人核。提级两级都是人做的显名动作 —— 提级①(养护 / 观察 → 急修,复核主管)只换档,提级②(急修 × 多源确证 ≥2 次观测 → 机器直派,复核员即可发起)才换通道,当场开单先派后审、窗内可撤回、件全量拘抽审。'
     },
     pl: {
       name: '管网线', line: '管网', vb: [1040, 340], start: 'pl_alarm',
@@ -1141,7 +1158,8 @@
       var via = e.via || (Math.max(f.y + f.h, t.y + t.h) + 30);
       return [[fcx, f.y + f.h], [fcx, via], [tcx, via], [tcx, t.y + t.h]];
     }
-    mid = (f.x + f.w + t.x) / 2;
+    /* viaX:同一对节点之间要画第二条边(MH-R01 / MH-R03 这类多判据同去向)时,让它走另一条竖干,不叠在一起 */
+    mid = (e.viaX != null) ? e.viaX : (f.x + f.w + t.x) / 2;
     return [[f.x + f.w, fcy], [mid, fcy], [mid, tcy], [t.x, tcy]];
   }
   function arrow(p1, p2, color) {
@@ -1183,7 +1201,8 @@
         (e.dash ? ' stroke-dasharray="6 4"' : '') + '></path>');
       out.push(arrow(pts[pts.length - 2], pts[pts.length - 1], color));
       if (e.label) {
-        var lx = (pts[1][0] + pts[2][0]) / 2, ly = (pts[1][1] + pts[2][1]) / 2;
+        /* labelDy:并行边的标签沿竖干错开,免得两个判据号压在同一点上 */
+        var lx = (pts[1][0] + pts[2][0]) / 2, ly = (pts[1][1] + pts[2][1]) / 2 + (e.labelDy || 0);
         var wdt = textW(e.label) + 8;
         /* R88 A6⑩:边上的判据编号(MH-R01 等)是规则表里的真规则 —— hover 出判据原文,点开出规则卡 */
         var rl = ruleOf(e.label);

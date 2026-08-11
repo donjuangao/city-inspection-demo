@@ -54,6 +54,17 @@
   th.p1{border-bottom:3px solid #2e7d32 !important}
   th.p2{border-bottom:3px solid #5b6b7c !important}
 
+  /* ---------- ⑥ 规则总表:参数块 / 规则号 / 抢占三步 ---------- */
+  .pm{margin:0 0 7px}
+  .pm:last-child{margin-bottom:0}
+  .pm b{color:var(--ink-hi);font-weight:700}
+  .pm .pv{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--blue);font-weight:700;white-space:nowrap}
+  .pm .pd,td .pd{color:var(--mute);font-size:11.5px;line-height:1.65}
+  .rid{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:700;
+    color:var(--mute);background:#eef0ec;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-right:5px}
+  ol.steps{margin:7px 0 0;padding-left:18px}
+  ol.steps li{margin:0 0 4px;line-height:1.65}
+
   .assume{border-bottom:1px dotted var(--faint);cursor:help;color:inherit}
   .src-note{font-size:11px;color:var(--faint);margin:6px 0 14px}
   .scope-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -72,7 +83,7 @@
   <div class="hero-inner">
     <div class="kicker">产品协议 · 界面与参数对照</div>
     <h1>城市设施智能巡检平台 · 产品协议</h1>
-    <p class="lead">这份协议把<b>方案与 PRD 因篇幅收进总纲的逐档细节</b>——三线各通道的进入条件与时限、功能清单的优先级颗粒度、两条硬机制的七条派生细则——按界面实际能看到的位置摊开,供实施与验收时逐条核对。</p>
+    <p class="lead">这份协议把<b>方案与 PRD 因篇幅收进总纲的逐档细节</b>——三线各通道的进入条件与时限、功能清单的优先级与子功能颗粒度、两条硬机制的七条派生细则、规则引擎 36 条判据的全部可配参数、三个主对象的字段表——按界面实际能看到的位置摊开,供实施与验收时逐条核对。</p>
     <p class="lead"><b>本页与《方案与 PRD》PDF 互为详略:PDF 载总纲,本页载逐档参数明细。</b></p>
     <a class="back" href="index.html">← 返回原型导览</a>
   </div>
@@ -87,6 +98,7 @@
     <a class="qn" href="#derived">④ 派生细则</a>
     <a class="qn" href="#scope">⑤ 演示范围声明</a>
     <a class="qn" href="#rules">⑥ 业务规则总表</a>
+    <a class="qn" href="#objects">⑦ 对象字段表</a>
   </nav>
 
   <!-- ============ ① 页面地图(新写,demo 实况,PDF 无对应原文) ============ -->
@@ -98,11 +110,11 @@
       <thead><tr><th style="width:15%">模块</th><th style="width:26%">主要路由</th><th style="width:34%">职责一句话</th><th style="width:25%">对应 PDF 章节</th></tr></thead>
       <tbody>
         <tr><td class="k">m1 复核工作台</td><td class="mono">#/m1(默认井盖 tab)<br>#/m1/line/mh|rd|pl<br>#/m1/clue/&lt;线索号&gt;</td><td>三线队列分区(仲裁序置顶紧急件)、线索详情与动作面板、机器直派并行复核卡、调查案立案/结案</td><td>交付② 页 1/6「三·用户流程」+ 页 2-3/6「机器直派时间线/三条业务线」</td></tr>
-        <tr><td class="k">m2 告警与工单</td><td class="mono">#/m2/alerts(默认)<br>#/m2/tickets<br>#/m2/recon<br>#/m2/dispatch</td><td>告警列表、工单镜像(客户系统五状态映射)、对账异常队列、调度改派/合并/拆单</td><td>交付② 页 4/6「三之附·工单系统对接」+「异常流程全展开」</td></tr>
+        <tr><td class="k">m2 告警与工单</td><td class="mono">#/m2/alerts(默认)<br>#/m2/tickets<br>#/m2/tickets/&lt;工单号&gt;<br>#/m2/recon<br>#/m2/dispatch<br>#/m2/crew/&lt;班组号 CR-xx&gt;</td><td>告警列表(成立 / 申诉复核中 / 误报撤销 / 已撤销)、工单镜像(客户系统五状态映射)、对账异常队列、调度改派 / 合并 / 拆单与班组地图、班组详情页(在手工单 · 资质装备 · 班次)</td><td>交付② 页 4/6「三之附·工单系统对接」+「异常流程全展开」</td></tr>
         <tr><td class="k">m3 设施台账</td><td class="mono">#/m3(默认列表)<br>#/m3/line/&lt;线路&gt;<br>#/m3/facility/&lt;设施号&gt;</td><td>设施列表与详情、点位历史与证据链回查、路面线劣化曲线</td><td>交付② 页 5/6「功能清单·底座与治理」P1 行</td></tr>
-        <tr><td class="k">m4 兜底与质量</td><td class="mono">#/m4</td><td>抽审队列(拘审标来源)与抽审动作(通过 / 打回)、免人工件的完工抽查</td><td>交付② 页 5/6「五·AI 边界与兜底」+ 派生细则「抽查参数」</td></tr>
+        <tr><td class="k">m4 兜底与质量</td><td class="mono">#/m4</td><td>抽审队列(拘审标来源)与抽审动作(通过 / 打回)、免人工件的完工抽审</td><td>交付② 页 5/6「五·AI 边界与兜底」+ 派生细则「抽审参数」</td></tr>
         <tr><td class="k">m5 统计总览</td><td class="mono">#/m5</td><td>健康总览卡(数字实时联动 store)、覆盖热区示意</td><td>交付② 页 5/6「功能清单·底座与治理」P1「设施状态总览首版」</td></tr>
-        <tr><td class="k">m6 系统管理</td><td class="mono">#/m6</td><td>角色表、参数变更(影子试算)、类目机器直派开关(上级主管部门)、值班表、本体建模(对象/链接/动作三表 + 本体日志)</td><td>交付① 页 3/3「平台本体(对象·链接·动作)」+ 交付② 页 5/6「硬② 本体化日志底座」及其派生细则</td></tr>
+        <tr><td class="k">m6 系统管理</td><td class="mono">#/m6(默认角色权限 tab)<br>#/m6/roles<br>#/m6/rules<br>#/m6/lanes<br>#/m6/params<br>#/m6/duty<br>#/m6/ontology</td><td>六 tab 各管一段:<b>角色权限</b>(三类人角色 + 三个非人服务账号的权限范围)、<b>规则引擎</b>(⑥ 业务规则总表 36 条的白盒页 —— 按线分组折叠、判据句与参数逐条可见、参数可调走影子试算与审批留痕、AI 复验提示词模板可查可编)、<b>通道与类目开关</b>(五类通道口径 + 类目机器直派开关,上级主管部门管)、<b>参数变更</b>(变更单台账 · 影子试算 · 审批后生效)、<b>值班</b>(值班表 = 升级链兜底依据)、<b>本体建模</b>(对象 / 链接 / 动作三张注册表 + 全量动作日志)</td><td>交付① 页 3/3「平台本体(对象·链接·动作)」+ 交付② 页 5/6「硬② 本体化日志底座」及其派生细则</td></tr>
       </tbody>
     </table>
   </div>
@@ -127,12 +139,12 @@
   <div class="card">
     <table class="tb">
       <tr><th style="width:15%">处置通道</th><th style="width:27%">先派后审 / 先审后派 · 进入条件</th><th style="width:31%">怎么处理(参数均为假设值)</th><th style="width:27%">兜底</th></tr>
-      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 紧急级 × 两道关口过(已签名传感器硬证据,或 AI 高置信 + 规则校验全过)</td><td><b>系统自动派单</b> + 预警通报;复核员 <span class="assume" title="假设值:机器直派并行复核窗时长,区可配">15 分钟</span>并行核实:确认 = 追认,撤回 = 显名召回</td><td>误派率月报 + 直派件<b>全量抽查</b>;开关按类目由上级主管部门管;复核超时逐级上报</td></tr>
-      <tr class="lane-orange"><td class="k">加急人工</td><td><b>先审后派 · 分钟级</b> —— 紧急级 × 低置信且无硬证据</td><td>加急队列单条人工确认,时限 <span class="assume" title="假设值">30 分钟</span></td><td>确认与驳回都自动进主管抽查</td></tr>
-      <tr class="lane-orange"><td class="k">加急人工<br>(急修档)</td><td><b>先审后派 · 分钟级</b> —— 急修级</td><td>同通道、参数不同:单条人工确认,时限 <span class="assume" title="假设值">2 小时</span></td><td>抽查;<b>超时兜底派单</b>——确认档到期 + 兜底等待期仍无人给结论则自动派班组,告警不成立、定性仍悬、件全量拘抽审</td></tr>
-      <tr class="lane-blue"><td class="k">常规人工</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级(平时档堵塞)</td><td>批量确认 / 并入养护计划,<span class="assume" title="假设值">当日 4 小时内</span>确认</td><td>抽查;可存疑归档;提级为急修是复核主管的显名动作(原因必填),不按观测次数自动提级</td></tr>
-      <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 养护类目 × 规则校验全过 × 数据门槛达标</td><td><b>免人工</b>并入养护计划;高危类目冷启动全关</td><td>事后抽查;错误率超阈值该类目自动退回人工</td></tr>
-      <tr class="lane-grey"><td class="k">驳回与转办</td><td><b>出口 · 不进处置</b> —— 台账无此井盖 / 多帧不复现 / 重复;产权非市政</td><td><b>紧急与急修级不自动归档</b>:证据置顶,转加急人工确认;产权件转办</td><td>驳回件留样抽查;守住「高危零自动归档」验收线</td></tr>
+      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 紧急级 × 两道关口过(已签名传感器硬证据,或 AI 高置信 + 规则校验全过)</td><td><b>系统自动派单</b> + 预警通报;复核员 <span class="assume" title="假设值:机器直派并行复核窗时长,区可配">15 分钟</span>并行核实:确认 = 追认,撤回 = 显名召回</td><td>误派率月报 + 直派件<b>全量抽审</b>;开关按类目由上级主管部门管;复核超时逐级上报</td></tr>
+      <tr class="lane-orange"><td class="k">加急人工</td><td><b>先审后派 · 分钟级</b> —— 紧急级 × 低置信且无硬证据</td><td>加急队列单条人工确认,时限 <span class="assume" title="假设值">30 分钟</span></td><td>确认与驳回都自动进主管抽审</td></tr>
+      <tr class="lane-orange"><td class="k">加急人工<br>(急修档)</td><td><b>先审后派 · 分钟级</b> —— 急修级</td><td>同通道、参数不同:单条人工确认,时限 <span class="assume" title="假设值">2 小时</span></td><td>抽审;<b>超时兜底派单</b>——确认档到期 + 兜底等待期仍无人给结论则自动派班组,告警不成立、定性仍悬、件全量拘抽审</td></tr>
+      <tr class="lane-blue"><td class="k">常规人工</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级(平时档堵塞)</td><td>批量确认 / 并入养护计划,<span class="assume" title="假设值">当日 4 小时内</span>确认</td><td>抽审;可存疑归档;提级为急修是复核主管的显名动作(原因必填),不按观测次数自动提级</td></tr>
+      <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 养护类目 × 规则校验全过 × 数据门槛达标</td><td><b>免人工</b>并入养护计划;高危类目冷启动全关</td><td>事后抽审;错误率超阈值该类目自动退回人工</td></tr>
+      <tr class="lane-grey"><td class="k">驳回与转办</td><td><b>出口 · 不进处置</b> —— 台账无此井盖 / 多帧不复现 / 重复;产权非市政</td><td><b>紧急与急修级不自动归档</b>:证据置顶,转加急人工确认;产权件转办</td><td>驳回件留样抽审;守住「高危零自动归档」验收线</td></tr>
     </table>
   </div>
 
@@ -140,11 +152,11 @@
   <div class="card">
     <table class="tb">
       <tr><th style="width:15%">处置通道</th><th style="width:27%">先派后审 / 先审后派 · 进入条件</th><th style="width:31%">怎么处理(参数均为假设值)</th><th style="width:27%">兜底</th></tr>
-      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 主干道 / 学校医院段 × 多源确证的行车安全件</td><td><b>由复核员一键升级发起</b>(人发起,系统不自动直派路面件)</td><td>升级件留痕、进抽查;升级率进月报</td></tr>
-      <tr class="lane-orange"><td class="k">加急人工</td><td><b>先审后派 · 分钟级</b> —— 急修级(深坑 / 沉陷等行车安全类)</td><td>单条人工确认,时限 <span class="assume" title="假设值">30 分钟</span>,确认即派单班组;深度存疑先现场核查回填定级</td><td>抽查;同点位多源重复观测自动并入既有线索计数(只作排序输入,不自动提级)</td></tr>
-      <tr class="lane-blue"><td class="k">常规人工<br>(单条必审)</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级 × 边界情形(靠近学校医院 / 主干道)</td><td>单条人工确认,<span class="assume" title="假设值">当日 4 小时内</span></td><td>抽查</td></tr>
-      <tr class="lane-blue"><td class="k">常规人工<br>(批量)</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级 × 中低置信</td><td>批量确认视图(规则校验结果做辅助列),一批一单,<span class="assume" title="假设值">当日 4 小时内</span></td><td>抽查;可存疑归档</td></tr>
-      <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 养护级 × 高置信 × 规则校验全过 × 该类目数据门槛达标;观察级 × 校验过</td><td><b>免人工</b>:并入周期养护计划(周批工单),或记台账入劣化曲线不派单;页面明示「本条未经人工,抽查兜底」</td><td>事后抽查;冷启动关闭;错误率超阈值自动退回人工;恶化到阈值自动复报</td></tr>
+      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 主干道 / 学校医院段 × 多源确证的行车安全件</td><td><b>由复核员一键升级发起</b>(人发起,系统不自动直派路面件)</td><td>升级件留痕、进抽审;升级率进月报</td></tr>
+      <tr class="lane-orange"><td class="k">加急人工</td><td><b>先审后派 · 分钟级</b> —— 急修级(深坑 / 沉陷等行车安全类)</td><td>单条人工确认,时限 <span class="assume" title="假设值">30 分钟</span>,确认即派单班组;深度存疑先现场核查回填定级</td><td>抽审;同点位多源重复观测自动并入既有线索计数(只作排序输入,不自动提级)</td></tr>
+      <tr class="lane-blue"><td class="k">常规人工<br>(单条必审)</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级 × 边界情形(靠近学校医院 / 主干道)</td><td>单条人工确认,<span class="assume" title="假设值">当日 4 小时内</span></td><td>抽审</td></tr>
+      <tr class="lane-blue"><td class="k">常规人工<br>(批量)</td><td><b>先审后派 · 批量 / 例行</b> —— 养护级 × 中低置信</td><td>批量确认视图(规则校验结果做辅助列),一批一单,<span class="assume" title="假设值">当日 4 小时内</span></td><td>抽审;可存疑归档</td></tr>
+      <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 养护级 × 高置信 × 规则校验全过 × 该类目数据门槛达标;观察级 × 校验过</td><td><b>免人工</b>:并入周期养护计划(周批工单),或记台账入劣化曲线不派单;页面明示「本条未经人工,抽审兜底」</td><td>事后抽审;冷启动关闭;错误率超阈值自动退回人工;恶化到阈值自动复报</td></tr>
       <tr class="lane-grey"><td class="k">驳回与转办</td><td><b>出口 · 不进处置</b> —— 不在路网 / 多帧不复现 / 重复;非市政资产(如国道)</td><td>自动归档,原因自动记录;产权件转办产权方</td><td>驳回件留样,定期抽样标注估「误杀率」</td></tr>
     </table>
   </div>
@@ -153,24 +165,66 @@
   <div class="card">
     <table class="tb">
       <tr><th style="width:15%">处置通道</th><th style="width:27%">先派后审 / 先审后派 · 进入条件</th><th style="width:31%">怎么处理(参数均为假设值)</th><th style="width:27%">兜底</th></tr>
-      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 爆管特征规则命中 × 阀门事件对齐(机械直判,不经 AI)</td><td>秒级派单 + 预警通报 + 关阀影响面提示(影响哪些片区灌溉)</td><td>直派件全量抽查;误派率月报</td></tr>
+      <tr class="lane-red"><td class="k">机器直派</td><td><b>先派后审</b> —— 爆管特征规则命中 × 阀门事件对齐(机械直判,不经 AI)</td><td>秒级派单 + 预警通报 + 关阀影响面提示(影响哪些片区灌溉)</td><td>直派件全量抽审;误派率月报</td></tr>
       <tr class="lane-blue"><td class="k">常规人工<br>(调查案)</td><td><b>先审后派 · 批量 / 例行</b> —— 渗漏或压力异常嫌疑(持续时长 × 多源一致度达标);AI 判不出型的「不明异常」同样进此通道</td><td><b>自动开调查案</b>:观察窗累积证据 + 调度视觉旁证 + 可派现场核查;人在立案 / 结案两点拍板</td><td>调查超期上报主管;结案必须流量回归正常,否则自动重开</td></tr>
       <tr class="lane-green"><td class="k">自动处理</td><td><b>出口 · 不派人</b> —— 嫌疑未达立案门槛</td><td>系统累积持续观察,不打扰人;达门槛自动升调查案</td><td>观察队列可查,不静默丢弃</td></tr>
-      <tr class="lane-grey"><td class="k">驳回与转办</td><td><b>出口 · 不进处置</b> —— 传感器自检失败 / 数据断流</td><td>免人工定性,自动开设备维修单,<b>不进业务队列</b></td><td>故障期该片区标「观测降级」横幅,总览可见</td></tr>
+      <tr class="lane-green"><td class="k">自动处理<br>(设备故障)</td><td><b>出口 · 不派人</b> —— 传感器自检失败 / 数据断流</td><td>免人工定性,自动开设备维修单交传感网运维方,<b>不进业务队列</b>(设备故障走的是自动处理出口,不是驳回:它有承接方、有工单,只是不占复核人力)</td><td>故障期该片区标「观测降级」横幅,总览可见;设备工单同样入动作日志</td></tr>
     </table>
   </div>
 
   <!-- ============ ③ 功能清单明细(素材块2) ============ -->
   <h2 class="sec" id="features"><span class="no">③</span>功能清单明细(P0 / P1 / P2)</h2>
-  <p class="sec-lead">图表一一对应:功能结构图五条泳道 = 下表五行模块;块底色 = 优先级(蓝 = P0 最小可用版本必须有,绿 = P1 试点期内跟上,灰 = P2 后段)。</p>
-  <p class="src-note">来源:块2(《方案与 PRD》改前页 9 原文迁移,彩色功能结构图留在 PDF,本表原文完整抄录)。</p>
+  <p class="sec-lead">图表一一对应:功能结构图<b>四条泳道 = 下表四行模块</b>;块底色 = 优先级(蓝 = P0 最小可用版本必须有,绿 = P1 试点期内跟上,灰 = P2 后段)。PDF 的功能结构图是<b>模块 → 功能</b>两层、第三层只列了每模块最吃劲的几项;<b>第三层「子功能」全表在本节第二张表</b>(PDF 页 5/6 指路即指这里)。</p>
+  <p class="src-note">来源:块2(《方案与 PRD》改前页 9 原文迁移,彩色功能结构图留在 PDF,本表原文完整抄录);「子功能」全表为演示站新增,与 PDF 页 5/6 三级表同口径、更全。</p>
   <div class="card">
     <table class="tb">
       <tr><th class="p0" style="width:12%">模块</th><th class="p0" style="width:40%">P0 · 最小可用版本必须有</th><th class="p1" style="width:34%">P1 · 试点期内跟上</th><th class="p2" style="width:14%">P2 · 后段</th></tr>
-      <tr><td class="k">复核工作台</td><td>三线队列分区视图(按业务线路由 + 紧急件置顶)、线索详情与动作面板(按钮即动作;条件不满足的按钮灰态并写明原因)、批量确认视图、调查案视图(管网线立案 / 结案两点拍板)、确认 → 开工单副作用与镜像回传、动作日志时间线(对象-链接-动作全量记录)、兜底面板(抽检任务池 + 免人工件完工抽查)</td><td>主管抽查队列、撤销动作(显名 + 主管确认)、调度视图(班组负载 + 改派 / 合并 / 拆单)</td><td>—</td></tr>
+      <tr><td class="k">复核工作台</td><td>三线队列分区视图(按业务线路由 + 紧急件置顶)、线索详情与动作面板(按钮即动作;条件不满足的按钮灰态并写明原因)、<b>认领任务池</b>(件默认在公共池,谁处置谁先认领;他人已认领件灰化,接手须填原因并留痕)、批量确认视图、调查案视图(管网线立案 / 结案两点拍板)、确认 → 开工单副作用与镜像回传、动作日志时间线(对象-链接-动作全量记录)、兜底面板(抽审队列 + 免人工件完工抽审)</td><td>主管抽审队列、撤销动作(显名 + 主管确认)与误报申诉(复核窗后的第三条纠错道:申诉 → 主管裁定 → 误报撤销留痕 + 复检工单)</td><td>—</td></tr>
       <tr><td class="k">识别与规则</td><td>三类目识别模型接入(置信度 + 证据包)、全域传感网接入(智能井盖 / 液位计 / 分区流量计,一期标配)、规则校验关口(按线 5 / 4 / 3 项,逐项留痕带版本号)、管网水力学规则(代码首日可用,首次可信报警需基线期 X 天,假设值)、机器直派(四条硬门槛 + 并行复核 + 撤回召回)、AI 完工复验(引导拍摄 + 前后对比 + 存疑人裁)</td><td>驳回原因回流路由与月度模型评估、误报样本留存与抽样标注台(估「误杀率」用)、跨时次异源复现核验</td><td>—</td></tr>
-      <tr><td class="k">班组移动端</td><td>接单列表 · 工单详情与导航 · 现场拍照回传 · 完工提交(全部写回客户工单系统);现场动作族:拒单(选原因)/ 受阻上报 / 安全上报 / 现场新增上报 / 部分完工 / 班次交接;管网核查工单另有分段关阀试验读数回传(写回核查任务包对应段)</td><td>—</td><td>—</td></tr>
-      <tr><td class="k">底座与治理</td><td>数据源健康监测(连续 N 时窗无有效帧或质量塌方 → 自动开设备维修单 + 总览横幅「本片区观测降级」)、推理产出率探针(有帧无线索 = AI 服务失明,与无帧分开报)、人工日对账清单</td><td>参数变更控制台(走审批)、类目自动处理开关、值班排班与上报链配置、传感网运维(在线率 / 盘点对账 / 设备绑定校验 / 电池与固件)、劣化曲线台账、设施状态总览首版(含覆盖热区图)</td><td>报表与健康总览完整版、无人机与卫星腿</td></tr>
+      <tr><td class="k">调度与班组</td><td><b>调度视图</b>(班组负载与地图 + 改派 / 合并 / 拆单)、<b>先派尽派</b>与零可用班组时的<b>抢占三步待裁定卡</b>(在办件让位 / 跨班组借调 / 复核主管(值班)裁定;系统先算好方案,人只按确认或改)、<b>超时兜底派单</b>(确认档到期 + 兜底等待期无人给结论 → 自动派,件全量拘抽审);<b>班组现场端</b>:接单列表 · 工单详情与导航 · 现场拍照回传 · 完工提交(全部写回客户工单系统);现场动作族:拒单(选原因)/ 受阻上报 / 安全上报 / 现场新增上报 / 部分完工 / 班次交接</td><td>管网核查工单的分段关阀试验读数回传(写回核查任务包对应段,读数差进数据卡)</td><td>—</td></tr>
+      <tr><td class="k">底座与治理</td><td>本体日志与链接层(对象-链接-动作全量记录、审计视图可筛可导)、规则引擎与影子试算(36 条白盒可视可配)、数据源健康监测(连续 N 时窗无有效帧或质量塌方 → 自动开设备维修单 + 总览横幅「本片区观测降级」)、推理产出率探针(有帧无线索 = AI 服务失明,与无帧分开报)、人工日对账清单</td><td>参数变更控制台(走审批)、类目机器直派开关、值班排班与上报链配置、传感网运维(在线率 / 盘点对账 / 设备绑定校验 / 电池与固件)、劣化曲线台账、设施状态总览首版(含覆盖热区图)</td><td>报表与健康总览完整版、无人机与卫星腿</td></tr>
+    </table>
+  </div>
+
+  <h3 class="sub">第三层:模块 → 功能 → 子功能(全表)</h3>
+  <p class="src-note">PDF 页 5/6 三级表只列「每个模块最吃劲的几项」并指路「全表见演示站『产品协议』页」——本表即那张全表,按演示站实际可点到的粒度逐条展开;括号内数字均为假设值。</p>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:13%">模块</th><th style="width:20%">功能</th><th style="width:9%">优先级</th><th>子功能</th></tr></thead>
+      <tbody>
+        <tr><td class="k" rowspan="10">复核工作台</td><td>三线队列视图</td><td>P0</td><td>线内 tab 切换(井盖 / 路面 / 管网)· 待处置置顶区(按剩余时限升序,内容随角色变)· 认领过滤(我的 / 公共池 / 全部)· 队列两层化(队列行 + 行内展开)· 本线概览条(数据源健康 / 任务包 / 当班统计)· 侧栏红点角标 = 当前身份在该模块的待办数</td></tr>
+        <tr><td>线索详情与动作面板</td><td>P0</td><td>对象卡(设施 / 街区 / 分级 / 置信)· 观测与证据卡(多图翻页、逐次观测各带时刻来源)· 规则校验卡(路面 5 / 井盖 4 / 管网 3 逐项打钩带版本号)· 动作面板(按语义分色;条件不满足的按钮灰态并写明原因)· 动作日志时间线 · 关联对象(工单 / 告警 / 设施 / 班组 / 抽审)全链跳转</td></tr>
+        <tr><td>认领任务池</td><td>P0</td><td>公共池认领 · 他人已认领件整卡灰化标「已由 XX 认领」· 接手须填原因并留痕(不做静默夺件,原认领人可回查)· 隐式认领(直接点处置即认领,记认领 + 处置两条日志)</td></tr>
+        <tr><td>批量确认视图</td><td>P0</td><td>按批次取件 · 规则校验结果做辅助列 · 一批一单 · 单批上限(20 条)· 低置信件可存疑归档</td></tr>
+        <tr><td>机器直派并行复核卡</td><td>P0</td><td>15 分钟倒计时 · 确认 = 告警追认 · 撤回 = 显名召回(理由码必填)· 复核超时逐级上报 · 直派件全量拘抽审</td></tr>
+        <tr><td>调查案视图(管网线)</td><td>P0</td><td>立案 / 结案两点拍板 · 观察窗证据累积 · 核查任务包(夜间听漏 + 分段关阀试验,按段收敛嫌疑区间)· 结案须流量回归基线,否则自动重开</td></tr>
+        <tr><td>确认开单与镜像回传</td><td>P0</td><td>确认 → 告警成立 → 副作用开工单 → 写回客户工单系统镜像号;机器直派件的确认只作追认,不重复派工</td></tr>
+        <tr><td>动作日志时间线</td><td>P0</td><td>对象-链接-动作全量记录 · 非人动作(规则引擎 / AI 服务 / 班组账号)同样入账 · 每条带当时的规则 / 模型 / 参数版本与世界状态快照</td></tr>
+        <tr><td>主管抽审队列</td><td>P1</td><td>抽审来源标(高危确认拘审 / 比例抽样 / 机器直派全量 / 超时兜底全量)· 通过 / 打回(打回原因码五选一)· 被抽对象与触发动作可点跳 · 抽审覆盖率可导出</td></tr>
+        <tr><td>撤销、推翻与误报申诉</td><td>P1</td><td>显名撤销(理由码 + 主管确认)· 显名推翻(写理由 + 记日志 + 触发抽审)· 复核窗过后的误报申诉:复核员发起 → 主管裁定 → 误报撤销留痕 + 复检工单(与主动撤销分开计,月报口径不混)</td></tr>
+
+        <tr><td class="k" rowspan="8">识别与规则</td><td>三类目识别模型接入</td><td>P0</td><td>置信度 + 证据包随线索落库 · 置信只定排序不定生死 · 高危必到人</td></tr>
+        <tr><td>全域传感网接入</td><td>P0</td><td>智能井盖位移 / 井内液位计 / DMA 流量计 / 压力计 / 固定相机,一期标配;秒级直连规则腿不进视觉模型(OB-R03)</td></tr>
+        <tr><td>规则校验关口</td><td>P0</td><td>路面 5 项 / 井盖 4 项 / 管网 3 项,逐项留痕带版本号;硬性项不过 → 驳回留样,高危件零自动归档</td></tr>
+        <tr><td>管网水力学规则</td><td>P0</td><td>压降速率 + 阀事件对齐(机器直判,不经 AI)· 按灌溉事件算水量平衡 · 代码首日可用,首次可信报警需基线期(X 天,假设值)</td></tr>
+        <tr><td>机器直派</td><td>P0</td><td>四条硬门槛 + 并行复核窗 + 撤回召回 + 按类目开关(上级主管部门管,区可申诉)· 误派率进月报</td></tr>
+        <tr><td>AI 完工复验</td><td>P0</td><td>引导拍摄 → 前后照配准(AV-R01)→ 多帧比对判定(AV-R02)→ 判不出转存疑待人裁(AV-R03)→ 打回须附对比证据(AV-R04);提示词模板可查可编,改模板与改参数同一条审批语义</td></tr>
+        <tr><td>线索归并与观测</td><td>P0</td><td>同设施 × 同类目活跃期内并入同一条线索记一次观测 · 路面无锚点按路段栅格(50 米)并 · 跨类目不并 · 线索关闭后再发现另开一条并挂「历史关联」</td></tr>
+        <tr><td>误报回流与留样标注</td><td>P1</td><td>驳回必选原因码(六码各自对应不同回流消费者)· 误报样本留存与抽样标注台(估「误杀率」)· 月度模型评估 · 跨时次异源复现核验</td></tr>
+
+        <tr><td class="k" rowspan="5">调度与班组</td><td>班组负载与调度地图</td><td>P0</td><td>班组位置与在途目标 · 在手工单数与状态 · 资质装备与班次 · 班组详情页(<span class="mono">#/m2/crew/CR-xx</span>)· 地图落点可点跳</td></tr>
+        <tr><td>改派 / 合并 / 拆单</td><td>P0</td><td>改派选原因码(资质不符 / 负载均衡 / 就近改派 / 承包商合同切换)· 同点位合单 · 大件拆单;每步留痕</td></tr>
+        <tr><td>先派尽派与抢占三步</td><td>P0</td><td>候选排序(就近,超半径不剔除只后排)→ 硬过滤(持证 / 装备)→ 先派尽派(在办不构成压单理由)→ 辖区零可用班组才进抢占三步:在办件让位 / 跨班组借调 / 复核主管(值班)裁定;<b>每步系统先算好具体方案,人只按确认或改</b>,原单挂起停表并事后回补</td></tr>
+        <tr><td>超时兜底派单</td><td>P0</td><td>人工确认档到期 + 三级升级走完 + 兜底等待期(180 分钟)仍无人给结论 → 自动派可用班组(来源④);告警不成立、定性仍悬,件全量拘抽审,复核员事后补审</td></tr>
+        <tr><td>班组现场端(crew.html)</td><td>P0</td><td>接单列表 · 工单详情与导航 · 修复前后双照回传 · 完工提交(全部写回客户工单系统)· 现场动作族:拒单(选原因)/ 受阻上报 / 安全上报 / 现场新增上报 / 部分完工 / 班次交接 · 管网核查工单的分段关阀试验读数回传(P1)</td></tr>
+
+        <tr><td class="k" rowspan="6">底座与治理</td><td>数据源健康监测</td><td>P0</td><td>连续 N 时窗无有效帧或质量塌方 → 自动开设备维修单 + 总览横幅「本片区观测降级」· 推理产出率探针(有帧无线索 = AI 服务失明,与无帧分开报)· 降级态可复现,本身是一条验收项</td></tr>
+        <tr><td>人工日对账</td><td>P0</td><td>我方处置态 vs 客户系统状态逐单比对 · 不一致进对账异常队列 · 24 小时内主管人工裁定</td></tr>
+        <tr><td>规则引擎(白盒)</td><td>P0</td><td>七组共 36 条规则按线分组折叠 · 每条带判据句 + 全参数(值 + 单位 + 一句话定义)+ 版本号 + 可改角色 · 参数调整走影子试算(当日件回放影响面)+ 审批留痕 · 权限不足者拦截</td></tr>
+        <tr><td>本体日志与链接层</td><td>P0</td><td>对象表 / 链接表 / 动作表 / 日志表四张注册表 · 日志的链接列可筛可搜可排可导出 CSV · 未归类动作自检</td></tr>
+        <tr><td>参数与治理控制台</td><td>P1</td><td>参数变更控制台(走审批)· 类目机器直派开关 · 值班排班与上报链配置 · 传感网运维(在线率 / 盘点对账 / 设备绑定校验 / 电池与固件)· 劣化曲线台账 · 设施状态总览首版(含覆盖热区图)</td></tr>
+        <tr><td>报表与新数据腿</td><td>P2</td><td>报表与健康总览完整版 · 无人机与卫星腿</td></tr>
+      </tbody>
     </table>
   </div>
 
@@ -185,13 +239,13 @@
   <div class="card">
     <table class="tb">
       <tr><th style="width:17%">派生条款</th><th style="width:71%">内容(数值均为假设值)</th><th style="width:12%">派生自</th></tr>
-      <tr><td class="k">抽查参数</td><td>冷启动加倍:记台账 5% / 自动并入 10% / 校验驳回 5% / 批量确认 15% / 复验通过 10% / <b>机器直派全量</b>,时限 48 小时。抽查推翻自动动作 → 规则降版建议;同类错误率超阈值 → 该类目自动处理自动关闭(实际抽查覆盖率可导出)。</td><td>硬②</td></tr>
+      <tr><td class="k">抽审参数</td><td>冷启动加倍,<b>按道分档</b>:记账道 5% / 自动升格道 10% / 规则驳回道 5% / 批量确认件 15% / 复验通过件 10% / <b>机器直派件全量</b>(超时兜底派单件同为全量),时限 48 小时。抽审推翻自动动作 → 规则降版建议;同类错误率超阈值 → 该类目自动处理自动关闭(实际抽审覆盖率可导出)。</td><td>硬②</td></tr>
       <tr><td class="k">复验人裁</td><td>复验结论本身只是「建议」;判不出 = 存疑待人裁,<b>永不默认打回</b>;打回 = 显名动作附对比证据,班组可申诉。</td><td>硬①</td></tr>
       <tr><td class="k">误报原因回流</td><td>人工驳回必选原因,不同原因走不同回流(回模型 / 回规则 / 回台账 / 人工周审);原因口径与客户共同评审后固化,是误报率月报的数据源之一。</td><td>硬②</td></tr>
       <tr><td class="k">断流降级明示</td><td>数据源中断或质量塌方 → 总览与队列打降级横幅,写明哪片区、哪条数据源;自动开设备维修单;降级态可复现,本身是一条验收项。</td><td>硬①</td></tr>
       <tr><td class="k">责任情形表<br>(双方签署)</td><td>(a) 模型漏报且观测记录证明数据源正常、(b) 规则误判且版本号可查 → <b>乙方</b>,配套承诺:免费重训 / 该类目退出自动处理 / 不计入本期验收;(c) 复核员误判、(d) 客户未按依赖供给致超时 → 甲方,时限豁免留痕。审计链是<b>分责</b>工具,不是甩责工具。</td><td>硬②</td></tr>
-      <tr><td class="k">紧急越权<br>(红色动作)</td><td>主管以上可跳流程行动,强制事后审计;任何决定都有<b>显名推翻动作</b>(写理由 + 记日志 + 触发抽查);单人确认不叠审批层数——问责靠审计链,不靠审批层数。</td><td>硬②</td></tr>
-      <tr><td class="k">三方交替检验</td><td><b>机械会错、AI 会错、人也会错,格格有人纠</b>:机械查 AI = 规则校验第二道关口 · AI 查机械 = 驳回池二次扫描抓「规则误杀」· AI 查人 = 与历史样本高相似即进抽查 · 机械查人 = 提交校验与无理由撤回拦截 · 人查两者 = 复核 / 驳回原因回流 / 显名推翻 · 人查人 = 主管抽查、改判、撤销。格格留痕。</td><td>硬①</td></tr>
+      <tr><td class="k">紧急越权<br>(红色动作)</td><td>主管以上可跳流程行动,强制事后审计;任何决定都有<b>显名推翻动作</b>(写理由 + 记日志 + 触发抽审);单人确认不叠审批层数——问责靠审计链,不靠审批层数。</td><td>硬②</td></tr>
+      <tr><td class="k">三方交替检验</td><td><b>机械会错、AI 会错、人也会错,格格有人纠</b>:机械查 AI = 规则校验第二道关口 · AI 查机械 = 驳回池二次扫描抓「规则误杀」· AI 查人 = 与历史样本高相似即进抽审 · 机械查人 = 提交校验与无理由撤回拦截 · 人查两者 = 复核 / 驳回原因回流 / 显名推翻 · 人查人 = 主管抽审、改判、撤销。格格留痕。</td><td>硬①</td></tr>
     </table>
   </div>
 
@@ -209,8 +263,8 @@
 
   <!-- ============ ⑥ 业务规则总表(判据透明化;含线索原子性定义) ============ -->
   <h2 class="sec" id="rules"><span class="no">⑥</span>业务规则总表:判据可见、参数可配</h2>
-  <p class="sec-lead">规则引擎不是黑盒。每条判据规则都写明<b>人话判据句</b>、<b>路由到哪档通道</b>、<b>可配参数</b>、<b>版本号</b>与<b>谁能改</b>;行底色 = 路由去向,与 ② 三线路由表同色系。<b>参数值全为假设值</b>,试点首周核实标定;规则变更走审批与影子试算,改动逐条留痕带版本号。</p>
-  <p class="src-note">来源:与工作台<span class="mono">「系统管理 · 规则引擎」</span>页同源(同一份 <span class="mono">assets/data.js · RULES</span> 表,该页可展示、可改参数、可影子试算);《方案与 PRD》PDF 页 2 的通道表是它的总纲。</p>
+  <p class="sec-lead">规则引擎不是黑盒。<b>七组共 36 条</b>判据规则(井盖 8 / 路面 7 / 管网 5 / 派单 5 / 线索归并 3 / AI 复验 4 / 观测调度 4)逐条写明<b>规则号</b>、<b>人话判据句</b>、<b>路由到哪档通道</b>、<b>全部可配参数(值 + 单位 + 一句话定义)</b>、<b>版本号</b>与<b>谁能改</b>;行底色 = 路由去向,与 ② 三线路由表同色系;不路由到通道的规则(产出动作或服务机制)不着色。<b>参数值全为假设值</b>,试点首周核实标定;规则变更走审批与影子试算,改动逐条留痕带版本号。</p>
+  <p class="src-note">来源:与工作台<span class="mono">「系统管理 · 规则引擎」</span>页<b>同源同序</b>——同一份 <span class="mono">assets/data.js · RULES</span> 表(36 条),该页可展示、可改参数、可影子试算;本表条数 / 判据句 / 参数 / 版本 / 可改权五层与之逐字对齐。《方案与 PRD》PDF 页 2 的通道表是它的总纲。</p>
 
   <h3 class="sub">先定一条口径:线索的原子性(什么算「同一条线索」)</h3>
   <div class="card" style="margin-bottom:16px">
@@ -218,81 +272,196 @@
     <p style="margin:0"><b>观测</b> = 一次检测事件(车载过检帧 / 固定相机扫描 / 传感器报警 / 人工巡查 / 班组现场新增),各带自己的时刻、来源、证据图与置信度;线索卡头部显示「观测 N 次 · 首见 · 最近 · 来源分布」。归并的具体参数见本节末「线索归并」两条规则。</p>
   </div>
 
-  <h3 class="sub">线 B · 排水与井盖</h3>
+  <h3 class="sub">线 B · 排水与井盖(8 条)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr class="lane-red"><td class="k">井盖-1<br>双传感器互证</td><td>井盖位移越限<b>而且</b>液位同时突变——两个传感器互相佐证,报文都带有效签名</td><td><b>机器直派</b>(先派后审)+ 15 分钟并行复核</td><td>位移 &gt; 15° · 液位突变 20cm / 5min · 并行复核窗 15 分钟</td><td>v1.3</td><td>上级主管部门</td></tr>
-      <tr class="lane-orange"><td class="k">井盖-2<br>单一位移越限</td><td>只有位移越限,<b>没有第二个传感器佐证</b></td><td><b>加急人工</b>(先审后派 · 分钟级)</td><td>时限 30 分钟</td><td>v1.3</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-red"><td class="k">井盖-3<br>视觉确认盖体缺失</td><td>相机多帧一致地看到盖体不在(高置信),按硬证据同等对待</td><td><b>升机器直派</b>(先派后审)</td><td>多帧一致 ≥ 3 帧 · 置信 ≥ 0.90</td><td>v1.1</td><td>上级主管部门</td></tr>
-      <tr class="lane-grey"><td class="k">井盖-4<br>传感器自检失败</td><td>传感器自己报自检不过或断流,数据不可信</td><td><b>驳回与转办</b>:开设备维修单,不进业务队列</td><td>连续自检失败 2 次</td><td>v1.0</td><td>平台运维</td></tr>
-      <tr class="lane-grey"><td class="k">井盖-5<br>台账不符</td><td>台账里查无此井盖</td><td><b>驳回与转办</b>:<b>高危不自动归档</b>,证据置顶转加急人工复核</td><td>台账完整率未达标期间只标注不驳回</td><td>v1.2</td><td>区(全市护栏内)</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr class="lane-red"><td class="k">双传感器互证 → 机器直派</td><td><span class="rid">MH-R01</span> 位移角越限 且 同井液位突变,两只传感器在互证窗内先后命中 → 硬证据齐,先派后审</td><td><b>机器直派</b></td><td><div class="pm"><b>位移角阈值</b> <span class="pv">15 °</span><br><span class="pd">井盖偏离水平多少度算越限;不到这个角度按盖体正常轻微晃动处理。</span></div><div class="pm"><b>液位突变阈值</b> <span class="pv">20 cm</span><br><span class="pd">同一口井的液位在互证窗内跳变多少,才算第二只传感器给出了佐证。</span></div><div class="pm"><b>互证窗</b> <span class="pv">90 秒</span><br><span class="pd">两只传感器先后命中的最长间隔;超过这个时间算两件独立的事,不再互证。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-orange"><td class="k">单一位移越限(无第二传感器佐证)→ 加急人工</td><td><span class="rid">MH-R02</span> 只有位移传感器越限,同井无第二传感器佐证 → 不满足两道关口硬条件,进分钟级人工确认</td><td><b>加急人工</b></td><td><div class="pm"><b>位移角阈值</b> <span class="pv">15 °</span><br><span class="pd">单只位移传感器越限的判定角度,与双传感器规则同一口径。</span></div><div class="pm"><b>人工确认档长</b> <span class="pv">30 分钟</span><br><span class="pd">这类件从进队列到复核员必须给出结论的时限,超时逐级升级。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-red"><td class="k">AI 视觉确认盖体缺失(多帧一致)→ 升机器直派</td><td><span class="rid">MH-R03</span> AI 在连续多帧上一致判定盖体缺失,且置信不低于阈值 → 视觉可当硬证据用,升先派后审</td><td><b>机器直派</b></td><td><div class="pm"><b>连续帧数</b> <span class="pv">5 帧</span><br><span class="pd">同一处异常要在连续多少帧画面上出现,才算稳定识别而不是单帧闪现。</span></div><div class="pm"><b>帧间一致率</b> <span class="pv">0.8</span><br><span class="pd">这些帧里判为同一处异常的比例,防的是单帧误检。</span></div><div class="pm"><b>置信阈值</b> <span class="pv">0.85</span><br><span class="pd">视觉判定的把握度下限,低于这个数不拿视觉当硬证据用。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-green"><td class="k">传感器自检失败 → 设备维修单</td><td><span class="rid">MH-R04</span> 心跳/方差/量程三态自检任一失败 → 先排设备故障,不报业务异常;承接方=传感网运维方</td><td><b>自动处理</b><br>开设备工单</td><td><div class="pm"><b>心跳缺失容忍</b> <span class="pv">10 分钟</span><br><span class="pd">传感器多久没上报心跳就判为掉线,转设备侧排查。</span></div><div class="pm"><b>方差为零判定窗</b> <span class="pv">60 分钟</span><br><span class="pd">读数在这段时间里一动不动就判为卡死,不再当真实读数用。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-grey"><td class="k">台账不符 → 驳回复核</td><td><span class="rid">MH-R05</span> 报警点位在台账缓冲区外,或该点位无登记设施 → 转人工驳回确认(高危件零自动归档)</td><td><b>驳回与转办</b></td><td><div class="pm"><span class="pd">语义说明:台账完整率未达标期间<b>只标注不驳回</b>;高危件零自动归档,证据置顶转加急人工复核。</span></div><div class="pm"><b>台账点位匹配半径</b> <span class="pv">25 米</span><br><span class="pd">报警坐标与台账登记点位允许的最大偏差,超出就认为对不上账。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-blue"><td class="k">雨水口箅面堵塞(养护级)→ 常规人工</td><td><span class="rid">MH-R06</span> 固定相机判定箅面堵塞、无液位异常 → 批量例行确认后并入清掏计划</td><td><b>常规人工</b></td><td><div class="pm"><b>置信阈值</b> <span class="pv">0.7</span><br><span class="pd">相机判定箅面堵塞的把握度下限,低于这个数不进清掏计划。</span></div><div class="pm"><b>单批上限</b> <span class="pv">20 条</span><br><span class="pd">一次批量确认最多带多少条,防止一屏点过、看不过来。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><td class="k">气象预警接入 → 雨前清掏专项任务包</td><td><span class="rid">MH-R07</span> 气象部门强对流预警生效 → 按预警提前量起雨前清掏专项任务包,与客户清掏计划对接;在池件分级不变,派单准入标准不变</td><td>开雨前清掏专项任务包(计划性)</td><td><div class="pm"><b>预警提前量</b> <span class="pv">6 小时</span><br><span class="pd">气象预警生效前多久开始起雨前清掏专项任务包。</span></div><div class="pm"><b>单包点位数</b> <span class="pv">20 个</span><br><span class="pd">一个专项任务包最多带多少个雨水口/井位,按一个班组一夜能走完的量切包。</span></div></td><td>v2.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-red"><td class="k">加急人工件超时无人审 → 超时兜底派单</td><td><span class="rid">MH-R08</span> 井盖线加急人工件的人工确认档到期,再等一个兜底等待期(三级升级已走完)仍无人给结论 → 系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审</td><td><b>机器直派</b></td><td><div class="pm"><b>兜底等待</b> <span class="pv">180 分钟</span><br><span class="pd">人工确认档到期后再等这么久 —— 复核员→复核主管→上级主管部门三级升级全走完仍无人给结论,系统就自己把单发出去。</span></div><div class="pm"><b>须有可用班组</b> <span class="pv">是</span><br><span class="pd">辖区里得有一个能接这单的班组才自动派;一个都没有时走抢占三步,不在这条规则里解决。</span></div><div class="pm"><b>兜底件抽审</b> <span class="pv">全量</span><br><span class="pd">兜底派出去的件全部拘进主管抽审 —— 自动派不豁免审计。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
     </table>
   </div>
 
-  <h3 class="sub">线 A · 路面病害</h3>
+  <h3 class="sub">线 A · 路面病害(7 条)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr class="lane-orange"><td class="k">路面-1<br>高置信多源主干道</td><td>AI 置信达标、<b>而且</b>有第二来源(固定相机复扫或车载复检)确证、<b>而且</b>落在主干道或学校医院段</td><td><b>加急人工</b>(先审后派 · 分钟级)</td><td>置信 ≥ 0.85 · 时限 30 分钟</td><td>v2.0</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-blue"><td class="k">路面-2<br>单源中置信</td><td>只有一个来源、置信中等,不构成行车安全急件</td><td><b>常规人工</b>(先审后派 · 批量 / 例行)</td><td>置信 0.60–0.85 · 当日 4 小时内确认</td><td>v2.0</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-grey"><td class="k">路面-3<br>低置信 / 误报特征</td><td>置信低,或命中树影、水渍、补丁等已知误报特征</td><td><b>驳回与转办</b>:机械驳回,留样进抽样标注台</td><td>置信 &lt; 0.60 · 误报特征表 v3</td><td>v2.0</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-green"><td class="k">路面-4<br>周期定检漏扫</td><td>某路段超过 N 天没被任何数据源扫过</td><td><b>自动处理</b>:自动下发补扫任务,不占复核人力</td><td>N = 14 天</td><td>v1.0</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-red"><td class="k">路面-5<br>超时兜底派单</td><td>加急人工件的人工确认档已到期,再等一个兜底等待期、三级升级全走完仍<b>无人给结论</b></td><td><b>机器直派</b>(先派后审):系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审</td><td>兜底等待 180 分钟 · 件全量拘抽审</td><td>v1.0</td><td>上级主管部门</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr class="lane-orange"><td class="k">高置信 + 多源确证 + 主干道 → 加急人工</td><td><span class="rid">RD-R01</span> AI 置信达标,且固定相机复扫或车载复检构成第二来源,且落在主干道 → 分钟级人工确认后派</td><td><b>加急人工</b></td><td><div class="pm"><b>AI 置信阈值</b> <span class="pv">0.85</span><br><span class="pd">视觉识别的把握度下限,达标才进分钟级人工确认。</span></div><div class="pm"><b>最少来源数</b> <span class="pv">2 个</span><br><span class="pd">同一处异常至少要有几路来源印证(车载过检、固定相机复扫、现场巡查各算一路)。</span></div><div class="pm"><b>道路等级</b> <span class="pv">主干道</span><br><span class="pd">哪一级道路适用这条加急口径;支路与背街按常规队列走。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-blue"><td class="k">单源中置信 → 常规人工</td><td><span class="rid">RD-R02</span> 仅车载单源、置信落在中档区间 → 进批量半审,人逐条或成批确认</td><td><b>常规人工</b></td><td><div class="pm"><b>中档下界</b> <span class="pv">0.6</span><br><span class="pd">把握度低于这个数不进人工队列,按规则驳回处理。</span></div><div class="pm"><b>中档上界</b> <span class="pv">0.85</span><br><span class="pd">把握度高于这个数改走加急人工,不再排批量。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-grey"><td class="k">低置信 / 树影类误报特征 → 规则驳回</td><td><span class="rid">RD-R03</span> 置信低于下界,或命中夜间树影、路面污渍等已知误报特征 → 规则驳回按原因码①回流样本</td><td><b>驳回与转办</b></td><td><div class="pm"><b>置信下界</b> <span class="pv">0.6</span><br><span class="pd">把握度低于这个数即规则驳回,不占人工工时。</span></div><div class="pm"><b>树影特征分阈值</b> <span class="pv">0.7</span><br><span class="pd">画面命中夜间树影、路面污渍等已知误报特征的程度,越高越像误报。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-green"><td class="k">养护级 × 高置信 × 规则校验全过 → 自动升格</td><td><span class="rid">RD-R04</span> 养护级、置信高、五项规则校验全过 → 免人工并入周期养护计划,事后抽审兜底</td><td><b>自动处理</b></td><td><div class="pm"><b>置信阈值</b> <span class="pv">0.88</span><br><span class="pd">免人工直接并入养护计划所需的把握度下限。</span></div><div class="pm"><b>规则校验须全过项数</b> <span class="pv">5 项</span><br><span class="pd">五项规则校验要全部通过才允许免人工,缺一项就回人审。</span></div><div class="pm"><b>事后抽审率</b> <span class="pv">10 %</span><br><span class="pd">免人工处置的件按这个比例抽出来事后复看,机械自动化不豁免审计。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-green"><td class="k">观察级 → 记账(自动)</td><td><span class="rid">RD-R05</span> 观察级且规则校验通过 → 不开单,自动记台账入劣化曲线</td><td><b>自动处理</b></td><td><div class="pm"><b>劣化曲线回看窗</b> <span class="pv">90 天</span><br><span class="pd">记账件往回看多长时间的历史,用来判断这处路面是不是在持续变差。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-red"><td class="k">加急人工件超时无人审 → 超时兜底派单</td><td><span class="rid">RD-R07</span> 路面线加急人工件的人工确认档到期,再等一个兜底等待期仍无人给结论 → 系统自动派可用班组;告警不成立、定性仍悬,复核员事后补审</td><td><b>机器直派</b></td><td><div class="pm"><b>兜底等待</b> <span class="pv">180 分钟</span><br><span class="pd">人工确认档到期后再等这么久,三级升级全走完仍无人给结论,系统就自己把单发出去。</span></div><div class="pm"><b>须有可用班组</b> <span class="pv">是</span><br><span class="pd">辖区里得有一个能接这单的班组才自动派;一个都没有时走抢占三步。</span></div><div class="pm"><b>兜底件抽审</b> <span class="pv">全量</span><br><span class="pd">兜底派出去的件全部拘进主管抽审 —— 自动派不豁免审计。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-green"><td class="k">周期定检漏扫 → 补扫任务(自动)</td><td><span class="rid">RD-R06</span> 路段超过定检周期仍无有效过检帧 → 自动排补扫任务,不产线索</td><td><b>自动处理</b><br>开补扫任务</td><td><div class="pm"><b>定检周期</b> <span class="pv">14 天</span><br><span class="pd">同一路段两次有效过检之间的最长间隔。</span></div><div class="pm"><b>宽限期</b> <span class="pv">3 天</span><br><span class="pd">超过定检周期后再宽限几天,仍无过检才排补扫任务。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
     </table>
   </div>
 
-  <h3 class="sub">线 C · 灌溉管网</h3>
+  <h3 class="sub">线 C · 灌溉管网(5 条)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr class="lane-red"><td class="k">管网-1<br>爆管水力学特征</td><td>压降速率超阈值<b>而且</b>与阀门事件对齐——机械直判,不经 AI</td><td><b>机器直派</b>(先派后审)+ 关阀预案与影响面提示</td><td>压降速率 &gt; 0.15 MPa / min</td><td>v1.4</td><td>上级主管部门</td></tr>
-      <tr class="lane-blue"><td class="k">管网-2<br>水量平衡越限</td><td>分区进出水量差超阈值<b>而且</b>持续够久</td><td><b>常规人工</b>:自动开调查案,人在立案 / 结案两点拍板</td><td>差值 &gt; 8% · 持续 &gt; 30 分钟</td><td>v1.4</td><td>区(全市护栏内)</td></tr>
-      <tr class="lane-blue"><td class="k">管网-3<br>判不出型</td><td>两个机械判定都不命中,AI 对剩余嫌疑也判不出渗漏类型</td><td><b>常规人工</b>:按「不明异常」立调查案(<b>宁升不降</b>,不静默丢弃)</td><td>—</td><td>v1.2</td><td>上级主管部门</td></tr>
-      <tr class="lane-grey"><td class="k">管网-4<br>信号自检异常</td><td>流量计 / 压力计自检不过或数据断流</td><td><b>驳回与转办</b>:开设备维修单;片区标「观测降级」横幅</td><td>断流 ≥ 3 个采样周期</td><td>v1.0</td><td>平台运维</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr class="lane-blue"><td class="k">水量平衡越限持续 → 立案(常规人工)</td><td><span class="rid">PL-R01</span> 按灌溉事件比对实配水量与计划应配水量,偏差越限并持续 → 开调查案,人在立案/结案两点拍板</td><td><b>常规人工</b></td><td><div class="pm"><b>水量偏差阈值</b> <span class="pv">12 %</span><br><span class="pd">本次灌溉实配水量与计划应配水量的差,超过这个比例就认为有异常损失。</span></div><div class="pm"><b>持续时长</b> <span class="pv">30 分钟</span><br><span class="pd">偏差要持续多久才算数,防的是阀门切换那一下的抖动。</span></div><div class="pm"><b>连续灌溉事件数</b> <span class="pv">3 次</span><br><span class="pd">连续几次灌溉都偏,才开调查案。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-red"><td class="k">水力学爆管特征 → 机器直派 + 关阀预案</td><td><span class="rid">PL-R02</span> 压降速率越限且阀事件对齐为计划外 → 先派后审,同时下发关阀预案</td><td><b>机器直派</b></td><td><div class="pm"><b>压降速率阈值</b> <span class="pv">0.15 bar/分</span><br><span class="pd">管压下跌多快算爆管特征;慢降按正常用水波动看。</span></div><div class="pm"><b>阀事件对齐窗</b> <span class="pv">5 分钟</span><br><span class="pd">压降前后这段时间内如有计划内阀门动作,判为计划操作不报警。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr class="lane-green"><td class="k">自检信号异常 → 设备维修单</td><td><span class="rid">PL-R03</span> 流量计/压力计自检异常或读数卡死 → 免人工定性,自动开设备维护工单</td><td><b>自动处理</b><br>开设备工单</td><td><div class="pm"><b>读数方差为零窗</b> <span class="pv">60 分钟</span><br><span class="pd">流量、压力读数在这段时间里毫无波动,就判为仪表卡死。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr class="lane-blue"><td class="k">AI 判不出 → 不明异常调查案(宁升不降)</td><td><span class="rid">PL-R04</span> AI 渗漏判型只对规则腿筛出的剩余嫌疑作判;判不出时不降级归档,按「不明异常」开调查案</td><td><b>常规人工</b></td><td><div class="pm"><b>判型可用置信</b> <span class="pv">0.6</span><br><span class="pd">AI 判型把握度低于这个数就不给结论,按不明异常开调查案,不降级归档。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">流量回归基线 → 建议结案</td><td><span class="rid">PL-R05</span> 水量平衡偏差回落至阈值内并保持 → 绿标点亮,系统只出建议,结案签字仍在人</td><td>建议结案(签字仍在人)</td><td><div class="pm"><b>回归判定偏差</b> <span class="pv">5 %</span><br><span class="pd">水量偏差回落到这个范围内,才算恢复正常。</span></div><div class="pm"><b>保持事件数</b> <span class="pv">2 次</span><br><span class="pd">回落之后还要连续保持几次灌溉事件,才建议结案。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
     </table>
   </div>
 
-  <h3 class="sub">派单与调度(不分线,全站共用)</h3>
+  <h3 class="sub">派单与调度(5 条,不分线、全站共用)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr><td class="k">派单-1<br>就近可用</td><td>距离最近、当前空闲的班组优先</td><td>候选班组排序第一权重</td><td>优先半径 5 km;位置缺失退化为按辖区派</td><td>v1.1</td><td>区(全市护栏内)</td></tr>
-      <tr><td class="k">派单-2<br>技能与持证匹配</td><td>井盖与管网件必须派持证班组,不持证的直接排除</td><td>硬过滤(不可被负载均衡覆盖)</td><td>持证类目清单(井盖 / 管网带压作业)</td><td>v1.1</td><td>上级主管部门</td></tr>
-      <tr><td class="k">派单-3<br>负载均衡</td><td>同等条件下,派给当前在手工单最少的班组</td><td>候选班组排序第二权重</td><td>在手上限 5 单</td><td>v1.1</td><td>区(全市护栏内)</td></tr>
-      <tr><td class="k">派单-4<br>抢占调度三步</td><td>没有空闲班组时按顺序试:① 让占用中<b>优先级最低</b>的件让位 ② 跨班组借调 ③ 升当班复核主管人裁</td><td>抢占留痕、原单挂起并事后回补</td><td>仅养护级可被让位;紧急件不被抢占</td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr><td class="k">就近可用班组优先</td><td><span class="rid">DP-R01</span> 能接这单的班组按到现场路程从近到远排;超出就近半径的不剔除,只往后排</td><td>候选班组排序</td><td><div class="pm"><b>就近半径</b> <span class="pv">8 公里</span><br><span class="pd">超过这个路程的班组排序往后放,但仍留在候选里。</span></div><div class="pm"><b>到场时间上限</b> <span class="pv">30 分钟</span><br><span class="pd">预计到场超过这个时间的,派单时标出来给复核主管(值班)看。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><td class="k">技能与持证匹配</td><td><span class="rid">DP-R02</span> 井盖线要密闭空间作业证、管网线要带压作业证;没证的不进候选,班组也可显名拒单</td><td>候选班组过滤</td><td><div class="pm"><b>硬性持证项</b> <span class="pv">密闭空间作业 / 带压作业</span><br><span class="pd">这些证缺一不可,系统不放行,也不允许口头替代。</span></div><div class="pm"><b>装备匹配要求</b> <span class="pv">必需</span><br><span class="pd">车辆与器具不满足作业要求的班组不进候选。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">先派尽派:有能接的就先发出去</td><td><span class="rid">DP-R03</span> 只要辖区里还有一个能接这单的班组(含跨类目可胜任的),单就先发出去;班组手上有在办件只把它往后排,不构成把单压在系统里不派的理由</td><td>候选班组指派</td><td><div class="pm"><b>单班组在办提醒上限</b> <span class="pv">2 件</span><br><span class="pd">手上超过这么多件的班组仍然可以派,只是派单时标出来提醒复核主管(值班)。</span></div><div class="pm"><b>班组都在办时压单</b> <span class="pv">不允许</span><br><span class="pd">所有班组都在办,也不许把单压在系统里等人;先发出去,再走抢占程序。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><td class="k">辖区零可用班组 → 抢占调度三步</td><td><span class="rid">DP-R04</span> 只有当辖区里一个能接单的班组都没有时才进抢占:先从在办件里挑一件让位,让不出来就跨班组借调,还不解决就交复核主管(值班)裁定;三步各自留痕,每一步系统都先算好具体方案再交人<ol class="steps"><li><b>在办件让位</b> —— 从占用班组手上的在办件里挑出优先级最低、且中断不会造成二次风险的一件,系统建议把它挂起让位;原件停表并回队重派。</li><li><b>跨班组借调</b> —— 本线让不出人时,向相邻责任区或相邻班次借一个持证可胜任的班组;证不符的不进借调候选。</li><li><b>复核主管(值班)裁定</b> —— 前两步系统都已经给出具体建议单,复核主管(值班)收到待裁定卡(含建议方案与执行后果),一键采纳或改派;不是等人想办法,是人只做确认或改。</li></ol></td><td>在办件让位 → 跨班组借调 → 复核主管(值班)裁定</td><td><div class="pm"><span class="pd">语义说明:<b>仅养护级件可被让位</b>,紧急件不被抢占;原单挂起停表并事后回补。</span></div><div class="pm"><b>让位优先级差</b> <span class="pv">2 档</span><br><span class="pd">新来的件要比在办件高出这么多档,才允许让位。</span></div><div class="pm"><b>借调半径</b> <span class="pv">15 公里</span><br><span class="pd">向多远范围内的相邻责任区或相邻班次借人。</span></div><div class="pm"><b>升主管裁定等待</b> <span class="pv">10 分钟</span><br><span class="pd">前两步这么久还没解决,就直接推给复核主管(值班)裁定,不再等。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">SLA 档位</td><td><span class="rid">DP-R05</span> 派工后按档计时:接单、到场、完工三段各自计时;挂起与待条件期间停表,条件解除后接着算</td><td>工单计时档</td><td><div class="pm"><b>接单</b> <span class="pv">10 分钟</span><br><span class="pd">从派工到班组点接单的时限。</span></div><div class="pm"><b>到场</b> <span class="pv">30 分钟</span><br><span class="pd">从接单到人车抵达现场的时限。</span></div><div class="pm"><b>当日档完工</b> <span class="pv">240 分钟</span><br><span class="pd">当日队列的件从派工到提交完工的时限。</span></div><div class="pm"><b>井盖急修档完工</b> <span class="pv">120 分钟</span><br><span class="pd">井盖线急修级的件从派工到提交完工的时限,2 小时。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
     </table>
   </div>
 
-  <h3 class="sub">AI 复验策略(完工回传即触发;判据与提示词模板都可查可配)</h3>
+  <h3 class="sub">线索归并(3 条,线索原子性的可配参数)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr><td class="k">复验-1<br>先判是不是同一处</td><td>拿到修复后照先与修复前照配准:同一设施、同一视角才继续比;配准不上就<b>不出结论</b></td><td>判定同一设施 / 换了地方;配准失败转人裁</td><td>配准相似度 ≥ 0.75 · 拍摄点位偏差 ≤ 8 m</td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
-      <tr><td class="k">复验-2<br>修复完成判定</td><td>同一设施确认后取多帧比对异常是否消除;<b>帧间一致且置信达标</b>才给结论</td><td>判定修复完成 / 未完成</td><td>取 3 帧 · 帧间一致率 0.8 · 置信 ≥ 0.8</td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
-      <tr class="lane-orange"><td class="k">复验-3<br>判不出 → 存疑待人裁</td><td>置信落在存疑区间、帧间不一致、或配准失败 → 一律转「存疑待人裁」;<b>系统不默认打回,也不默认通过</b></td><td>转存疑待人裁(宁升不降)</td><td>存疑下界 0.6 · 人裁时限 60 分钟</td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
-      <tr class="lane-grey"><td class="k">复验-4<br>打回须附证据</td><td>人要把完工件打回时须附复验对比证据;证据不足的打回请求被拦下,班组可申诉 → 主管裁</td><td>拦截无证据的打回</td><td>至少 2 件对比证据</td><td>v1.0</td><td>复核主管</td></tr>
-    </table>
-    <p class="src-note">复验提示词模板(生产口吻,{占位符} 由工单上下文填入)与上表三条判定规则同源同权:在<span class="mono">「系统管理 · 规则引擎 · AI 复验」</span>组内可查、可编辑,改模板与改参数走同一条审批语义 —— 提交只写留痕,线上跑的仍是当前版本,正式生效需审批。</p>
-  </div>
-
-  <h3 class="sub">观测调度(采集侧的节奏也是参数,不是玄学)</h3>
-  <div class="card">
-    <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">服务机制</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr><td class="k">观测-1<br>固定相机推理频率</td><td>固定相机不是每帧都进模型:按设定间隔抽帧推理;夜间照度不达标的时段自动降频并<b>标注覆盖缺口</b></td><td>采集调度服务按此参数推流</td><td>5 分钟 / 帧 · 夜间照度门限 30 lux</td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
-      <tr><td class="k">观测-2<br>车载按巡线班次</td><td>车载过检不是随机跑:按巡线班次排班,同一路段两次有效过检的间隔受定检周期约束,漏扫自动排补扫</td><td>采集调度服务按此参数排班</td><td>3 班 / 日 · 路段定检周期 14 天</td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
-      <tr><td class="k">观测-3<br>传感器秒级直连</td><td>位移 / 液位 / 流量 / 压力读数按秒级<b>直连规则腿,不进视觉模型</b>;只做自检与阈值判定</td><td>采集调度服务直连规则腿</td><td>上报间隔 1 秒 · 心跳缺失容忍 10 分钟</td><td>v1.0</td><td>复核主管</td></tr>
-      <tr><td class="k">观测-4<br>复验事件触发</td><td>AI 复验不按周期跑:班组<b>完工回传那一刻</b>触发一次,判不出转人裁,不重复轮询占算力</td><td>采集调度服务按事件触发</td><td>触发事件 = 完工回传 · 触发延迟 30 秒</td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr><td class="k">一处设施上的同类异常只记一条线索</td><td><span class="rid">CL-R01</span> 一处设施上又发现同一类异常,而原线索还没关闭 → 并进原线索记一次观测,不新开一条</td><td>并入既有线索作一次观测</td><td><div class="pm"><b>线索保活时长</b> <span class="pv">72 小时</span><br><span class="pd">线索开出后多久之内的新发现算同一件事并进去;超过这个时长再发现就另开一条。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">路面无设施锚点按路段栅格并</td><td><span class="rid">CL-R02</span> 路面异常没有设施编号可锚时按路段格子归并,落在同一个格子里的同类异常算一处</td><td>并入既有线索作一次观测</td><td><div class="pm"><b>路段栅格</b> <span class="pv">50 米</span><br><span class="pd">路面没有设施编号时按这么大的格子归并,同格同类算一处。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><td class="k">跨类目不并 / 关闭后再发现另开新线索</td><td><span class="rid">CL-R03</span> 不同类的异常各自成线索;线索关闭后又发现 → 新开一条,并挂上旧线索作「历史关联」</td><td>新开线索 + 历史关联</td><td><div class="pm"><b>关闭后另开判定间隔</b> <span class="pv">0 分钟</span><br><span class="pd">线索关闭后再发现同类异常即另开新线索,不做等待。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
     </table>
   </div>
 
-  <h3 class="sub">线索归并(线索原子性的可配参数)</h3>
+  <h3 class="sub">AI 复验策略(4 条;完工回传即触发,判据与提示词模板都可查可配)</h3>
   <div class="card">
     <table class="tb">
-      <tr><th style="width:13%">规则名</th><th style="width:33%">人话判据</th><th style="width:20%">路由去向</th><th style="width:20%">参数(假设值)</th><th style="width:7%">版本</th><th style="width:7%">可改权</th></tr>
-      <tr><td class="k">归并-1<br>同设施同类目</td><td>同一设施 × 同一类目、线索仍在活跃期 → 这次发现并入既有线索记一次观测</td><td>不新开线索;证据卡多图并排</td><td>跨类目不并;线索关闭后再发现新开一条</td><td>v1.0</td><td>上级主管部门</td></tr>
-      <tr><td class="k">归并-2<br>路段栅格</td><td>路面件没有设施锚点,按路段栅格判「是不是同一处」</td><td>同栅格同类目并入同一线索</td><td>栅格 50 m</td><td>v1.0</td><td>区(全市护栏内)</td></tr>
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr><td class="k">先判是不是同一处设施(前后照配准)</td><td><span class="rid">AV-R01</span> 拿到修复后照先与修复前照配准:同一设施、同一视角才继续比;配准不上就不出结论,直接转人裁</td><td>判定同一设施 / 换了地方</td><td><div class="pm"><b>配准相似度阈值</b> <span class="pv">0.75</span><br><span class="pd">前后两张照片要有多像才算拍的是同一处;低于这个数一律不比,转人裁。</span></div><div class="pm"><b>拍摄点位偏差上限</b> <span class="pv">8 米</span><br><span class="pd">前后照拍摄位置差多远之内仍算同一处;超出就当换了地方。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">修复完成判定(多帧一致 + 置信达标)</td><td><span class="rid">AV-R02</span> 同一设施确认后,取多帧比对异常是否消除;帧间一致且置信达标才给「修复完成 / 未完成」的结论</td><td>判定修复完成 / 未完成</td><td><div class="pm"><b>复验取帧数</b> <span class="pv">3 帧</span><br><span class="pd">修复后照取几帧一起看,单帧不作数。</span></div><div class="pm"><b>帧间一致率</b> <span class="pv">0.8</span><br><span class="pd">这几帧给出同一结论的比例,低于这个数按判不出处理。</span></div><div class="pm"><b>判定置信阈值</b> <span class="pv">0.8</span><br><span class="pd">给出「修复完成 / 未完成」结论所需的把握度下限。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">判不出 → 存疑待人裁(宁升不降)</td><td><span class="rid">AV-R03</span> 置信落在存疑区间、或帧间不一致、或配准失败 → 一律转「存疑待人裁」;系统不默认打回,也不默认通过</td><td>转存疑待人裁(永不默认打回)</td><td><div class="pm"><b>存疑下界</b> <span class="pv">0.6</span><br><span class="pd">把握度低于这个数就不出结论,直接转人裁 —— 判不出时宁可占用人力,也不替人做定性。</span></div><div class="pm"><b>人裁时限</b> <span class="pv">60 分钟</span><br><span class="pd">转人裁后复核员多久之内要给结论,超时按加急人工的三级升级走。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">打回须附对比证据</td><td><span class="rid">AV-R04</span> 人要把完工件打回时须附复验对比证据;证据不足的打回请求被拦下,班组可申诉 → 主管裁</td><td>拦截无证据的打回</td><td><div class="pm"><b>打回须附证据件数</b> <span class="pv">2 件</span><br><span class="pd">打回时至少要附几件对比证据(前照 / 后照 / 复验截图),不足不放行。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+    </table>
+    <p class="src-note">上表三条判定规则(AV-R01/R02/R03)各带一份<b>复验提示词模板</b>(生产口吻,{占位符} 由工单上下文填入),与参数同源同权:在<span class="mono">「系统管理 · 规则引擎 · AI 复验」</span>组内可查、可编辑,改模板与改参数走同一条审批语义 —— 提交只写留痕,线上跑的仍是当前版本,正式生效需审批。</p>
+  </div>
+
+  <h3 class="sub">观测调度(4 条;采集侧的节奏也是参数,不是玄学)</h3>
+  <div class="card">
+    <table class="tb">
+      <tr><th style="width:13%">规则名</th><th style="width:27%">人话判据(规则号 + 判据句)</th><th style="width:14%">路由去向</th><th style="width:30%">参数(全为假设值)</th><th style="width:6%">版本</th><th style="width:10%">可改权</th></tr>
+      <tr><td class="k">固定相机推理频率</td><td><span class="rid">OB-R01</span> 固定相机不是每帧都进模型:按设定间隔抽帧推理,夜间照度不达标的时段自动降频并标注观测降级</td><td>采集调度:按频率推流给识别服务<br><span class="pd">采集调度服务按此参数推流</span></td><td><div class="pm"><b>推理间隔</b> <span class="pv">5 分钟/帧</span><br><span class="pd">同一路相机多久抽一帧进识别服务;调密了算力涨,调稀了漏检窗变长。</span></div><div class="pm"><b>夜间照度门限</b> <span class="pv">30 lux</span><br><span class="pd">照度低于这个值的时段不推理,直接标「观测降级」,不假装看过。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">车载按巡线班次采集</td><td><span class="rid">OB-R02</span> 车载过检不是随机跑:按巡线班次排班,每个路段两次有效过检的间隔受定检周期约束,漏扫自动排补扫</td><td>采集调度:按班次排巡线<br><span class="pd">采集调度服务按此参数推流</span></td><td><div class="pm"><b>巡线班次</b> <span class="pv">3 班/日</span><br><span class="pd">一天排几班车载巡线;班次越多同一路段的复现越密。</span></div><div class="pm"><b>路段定检周期</b> <span class="pv">14 天</span><br><span class="pd">同一路段两次有效过检之间的最长间隔,超期自动排补扫任务(RD-R06)。</span></div></td><td>v1.0</td><td>复核主管 / 上级主管部门</td></tr>
+      <tr><td class="k">传感器秒级直连,不经 AI</td><td><span class="rid">OB-R03</span> 位移 / 液位 / 流量 / 压力这类传感器读数按秒级直连规则腿,不进视觉模型;只做自检与阈值判定</td><td>采集调度:直连规则腿<br><span class="pd">采集调度服务按此参数推流</span></td><td><div class="pm"><b>上报间隔</b> <span class="pv">1 秒</span><br><span class="pd">传感器多久上报一次读数;这条腿不经模型,延迟就是它的价值。</span></div><div class="pm"><b>心跳缺失容忍</b> <span class="pv">10 分钟</span><br><span class="pd">多久没上报就判掉线,转设备侧排查(MH-R04 / PL-R03)。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+      <tr><td class="k">AI 复验 = 事件触发,不轮询</td><td><span class="rid">OB-R04</span> AI 复验不按周期跑:班组完工回传那一刻触发一次,判不出转人裁(AV-R03),不重复轮询占算力</td><td>采集调度:完工回传即触发复验<br><span class="pd">采集调度服务按此参数推流</span></td><td><div class="pm"><b>触发事件</b> <span class="pv">完工回传</span><br><span class="pd">哪个事件把复验叫起来;当前只认「班组完工提交」这一个。</span></div><div class="pm"><b>触发延迟</b> <span class="pv">30 秒</span><br><span class="pd">完工回传后等多久开跑,留出照片上传与落库的时间。</span></div></td><td>v1.0</td><td>复核主管</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ ⑦ 对象字段表(兑现 PDF 三处指路;字段取自 assets/data.js 与 assets/store.js 的实际对象)============ -->
+  <h2 class="sec" id="objects"><span class="no">⑦</span>对象字段表:线索 / 工单镜像 / 调查案</h2>
+  <p class="sec-lead">硬② 本体化日志底座说「一切行为按对象-链接-动作结构化」,这里把三个主对象的<b>字段名、类型、说明与示例</b>逐个摊开——字段名与演示站运行态一字不差(取自 <span class="mono">assets/data.js</span> 的对象构造与 <span class="mono">assets/store.js</span> 的动作写入),看得见字段才谈得上看得见留痕。<b>★ = R88/R89 新增字段。</b></p>
+  <p class="src-note">来源:演示站运行态对象(<span class="mono">assets/data.js · clue() / TICKETS / UNLOCKS.investigations</span> + <span class="mono">assets/store.js</span> 动作写入的运行期字段);PDF 三处「字段表见产品协议」指路由本章兑现。示例值取自 T0 数据。</p>
+
+  <h3 class="sub">对象一 · 线索(clue)——识别侧的原子单位</h3>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:16%">字段</th><th style="width:16%">类型 / 取值域</th><th style="width:44%">说明</th><th style="width:24%">示例</th></tr></thead>
+      <tbody>
+        <tr><td class="k">id</td><td>string</td><td>线索号,全站唯一;所有链接以它为一端</td><td class="mono">CL-0417</td></tr>
+        <tr><td class="k">line</td><td>enum:井盖 / 路面 / 管网</td><td>业务线,决定走哪张线卡与哪组规则</td><td class="mono">井盖</td></tr>
+        <tr><td class="k">level</td><td>enum(线内档名)</td><td>线内分级档:井盖 = 紧急 / 急修 / 养护 / 雨前专项;路面 = 急修 / 养护 / 观察;管网 = 紧急 / 调查 / 设备</td><td class="mono">紧急</td></tr>
+        <tr><td class="k">conf</td><td>number | null</td><td>首次观测的 AI 置信度;传感器直连件不经视觉模型,值为 null</td><td class="mono">0.87</td></tr>
+        <tr><td class="k">source</td><td>string</td><td>首次观测来源(城市移动传感网 / 固定相机网 / 传感器 / 人工巡查 / 班组现场新增)</td><td class="mono">城市移动传感网</td></tr>
+        <tr><td class="k">facility</td><td>string(外键 → 设施台账)</td><td>设施编号;线索原子性的聚合键之一</td><td class="mono">MH-0417</td></tr>
+        <tr><td class="k">block</td><td>string</td><td>街区名(地址口径 = 设施编号 + 街区名 + Al Ain)</td><td class="mono">Al Jimi</td></tr>
+        <tr><td class="k">kindText</td><td>string</td><td>异常类目;聚合键的另一半(跨类目不并)</td><td class="mono">沉陷(主干道路口)</td></tr>
+        <tr><td class="k">checks[]</td><td>{ id, name, rule_ver, result }</td><td>规则校验逐项留痕,变长:路面 5 项 / 井盖 4 项 / 管网 3 项;result = pass / warn / fail / na;每项带规则版本号</td><td class="mono">{ id:'MH2', name:'传感器交叉窗', rule_ver:'rules-2026.08.1', result:'pass' }</td></tr>
+        <tr><td class="k">evidence[]</td><td>{ kind, label }</td><td>证据卡图,全观测证据的累积展平数组(按时间序)</td><td class="mono">{ kind:'pothole', label:'AI 生成示意' }</td></tr>
+        <tr><td class="k">status</td><td>enum</td><td>open 待核查 / confirmed 已确认 / rejected 已驳回 / archived_doubt 存疑归档 / merged 已合并 / recalled 已撤回</td><td class="mono">open</td></tr>
+        <tr><td class="k">lane</td><td>string(车道名)</td><td>当前所在车道;渲染层的通道归类见 ② 三档通道 + 两类出口</td><td class="mono">加急人工</td></tr>
+        <tr><td class="k">slaDeadline</td><td>string | null</td><td>人工确认档到期时刻;到期后进三级升级,再等兜底等待期触发超时兜底派单</td><td class="mono">18:50</td></tr>
+        <tr><td class="k">t</td><td>string(HH:MM)</td><td>入池时刻</td><td class="mono">18:20</td></tr>
+        <tr><td class="k">batchId</td><td>string | null</td><td>批次号;批量确认按批取件</td><td class="mono">BT-2608091</td></tr>
+        <tr><td class="k">fastlane</td><td>bool</td><td>是否机器直派件(先派后审,带并行复核窗)</td><td class="mono">true</td></tr>
+        <tr><td class="k">mechFail</td><td>bool</td><td>规则校验存在未过项(未过项在详情页逐项展开)</td><td class="mono">false</td></tr>
+        <tr><td class="k">auditHeld</td><td>bool</td><td>已被拘进主管抽审队列</td><td class="mono">true</td></tr>
+        <tr><td class="k">evidenceViewed</td><td>bool</td><td>证据卡是否被打开过;未看证据即定性会被规则拦下并记入抽审打回原因码</td><td class="mono">false</td></tr>
+        <tr><td class="k">rejectCode</td><td>string | null</td><td>驳回原因码 ①-⑥,各自对应不同回流消费者(模型样本 / 去重规则 / 定位校准 / 类目体系 / 资产归属库 / 人工周审)</td><td class="mono">④</td></tr>
+        <tr><td class="k">note</td><td>string</td><td>件上备注(演示站里也承载口径注解)</td><td class="mono">加急人工件:确认档已到期…</td></tr>
+        <tr><td class="k">★ assignee</td><td>string | null</td><td><b>认领位</b>:锁到谁手上;null = 还在公共任务池。他人视图灰化,要接手须填原因</td><td class="mono">区复核员·B 坐席</td></tr>
+        <tr><td class="k">★ claimLog[]</td><td>{ t, by, way, from, reason }</td><td>认领与接手留痕;way = 认领 / 接手 / 批量隐式认领;from = 从谁手上接的</td><td class="mono">{ t:'19:12', by:'区复核员', way:'接手', from:'区复核员·B 坐席', reason:'原坐席交接' }</td></tr>
+        <tr><td class="k">★ observations[]</td><td>{ t, source, conf, evidence[], note, kind }</td><td><b>一次检测事件 = 一条观测</b>;kind = 传感器 / 固定相机 / 车载过检 / 人工巡查 / 其他。同设施 × 同类目活跃期内的反复发现并入同一条线索,逐次追加一条观测</td><td class="mono">{ t:'18:40', source:'固定相机网', conf:0.72, kind:'固定相机' }</td></tr>
+        <tr><td class="k">obsCount / firstSeen /<br>lastSeen / maxConf /<br>sourceMix</td><td>派生字段</td><td>由 observations[] 同步而来(条数 / 首见 / 最近 / 最高置信 / 来源分布),线索卡头部「观测 N 次 · 首见 · 最近 · 来源分布」即读它们</td><td class="mono">obsCount: 3 · sourceMix: { 传感器:2, 固定相机:1 }</td></tr>
+        <tr><td class="k">★ overdueFallback</td><td>object | null<br>{ ticketId, t, deadline, crew }</td><td><b>超时兜底派单留痕</b>:哪张单、什么时候兜底派的、原确认档到期时刻、派给谁。件上打「超时兜底已派单 · 定性待补审」标,告警不成立、定性仍悬</td><td class="mono">{ ticketId:'WO-9021', t:'21:50', deadline:'18:50', crew:'CR-03' }</td></tr>
+        <tr><td class="k">mergedInto</td><td>string | null</td><td>被并入哪条线索(归并规则 CL-R01/R02/R03)</td><td class="mono">CL-0311</td></tr>
+        <tr><td class="k">ticketId / alertId</td><td>string | null</td><td>关联工单号 / 告警号;确认动作的副作用写入</td><td class="mono">WO-8871 / AL-0771</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">对象二 · 工单镜像(ticket)——处置侧的执行单,状态以客户系统为准</h3>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:16%">字段</th><th style="width:16%">类型 / 取值域</th><th style="width:44%">说明</th><th style="width:24%">示例</th></tr></thead>
+      <tbody>
+        <tr><td class="k">id</td><td>string</td><td>我方工单号</td><td class="mono">WO-8871</td></tr>
+        <tr><td class="k">type</td><td>string</td><td>紧急工单 / 急修工单 / 养护批量工单 / 雨前专项任务 / 设备维修单 / 管网核查工单</td><td class="mono">急修工单</td></tr>
+        <tr><td class="k">clueId</td><td>string | null</td><td>源线索;计划批量派与设备维修单可无源线索</td><td class="mono">CL-0198</td></tr>
+        <tr><td class="k">facility</td><td>string</td><td>作业设施</td><td class="mono">GR-1147</td></tr>
+        <tr><td class="k">crew</td><td>string | null</td><td>承接班组;null 表示暂无可用班组,单落「待改派」</td><td class="mono">CR-02</td></tr>
+        <tr><td class="k">state</td><td>enum(客户系统五状态)</td><td>已派工 / 已接单 / 已到场 / 已完工 / 已验收;另有本地态「待改派」。<b>处置状态以客户系统为准,巡检定性以我方为准</b>,不一致进对账异常队列</td><td class="mono">已到场</td></tr>
+        <tr><td class="k">source</td><td>enum(派单四来源)</td><td>① 机器直派自动派 / ② 人确认派 / ③ 计划批量派 / ④ 超时兜底派</td><td class="mono">② 人确认派</td></tr>
+        <tr><td class="k">createdT</td><td>string(HH:MM)</td><td>派工时刻</td><td class="mono">17:30</td></tr>
+        <tr><td class="k">mirror</td><td>string</td><td>客户工单系统里的镜像单号(回写与对账的锚)</td><td class="mono">MUN-WO-77198</td></tr>
+        <tr><td class="k">sla</td><td>{ accept, arrive, done }</td><td>接单 / 到场 / 完工三段各自计时(DP-R05 档位:10 / 30 / 240 分钟,假设值)</td><td class="mono">{ accept:'17:40', arrive:'18:10', done:'21:30' }</td></tr>
+        <tr><td class="k">suspended</td><td>bool</td><td>是否挂起;<b>挂起期间 SLA 停表</b>,条件解除后接着算</td><td class="mono">false</td></tr>
+        <tr><td class="k">resumeCond</td><td>object | null<br>{ cond, owner, eta }</td><td>挂起件的恢复条件:等什么、谁负责、预计什么时候;未挂起为 null</td><td class="mono">{ cond:'交通导改审批', owner:'交管', eta:'22:30' }</td></tr>
+        <tr><td class="k">photos[]</td><td>数组</td><td>班组现场回传照(完工回传即触发 AI 复验,见 AV-R01~R04)</td><td class="mono">[]</td></tr>
+        <tr><td class="k">line</td><td>enum:井盖 / 路面 / 管网</td><td>业务线</td><td class="mono">井盖</td></tr>
+        <tr><td class="k">summary</td><td>string</td><td>事项一句话(类目 + 街区 + 设施号),队列与地图上直接读它</td><td class="mono">雨水口堵塞(箅面) · Al Jimi GR-1147</td></tr>
+        <tr><td class="k">★ overdueFallback</td><td>bool</td><td>本单是否由超时兜底派单产生;为真时工单卡与队列打「超时兜底派单」标,件全量拘抽审</td><td class="mono">true</td></tr>
+        <tr><td class="k">note</td><td>string</td><td>派工备注(来源口径写在这里)</td><td class="mono">确认动作的派工副作用(来源② 人确认派)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">对象三 · 调查案(investigation)——管网线专有,人在立案 / 结案两点拍板</h3>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:16%">字段</th><th style="width:16%">类型 / 取值域</th><th style="width:44%">说明</th><th style="width:24%">示例</th></tr></thead>
+      <tbody>
+        <tr><td class="k">id</td><td>string</td><td>调查案号</td><td class="mono">IV-0071</td></tr>
+        <tr><td class="k">dma</td><td>string</td><td>分区计量区(水量平衡以 DMA 为单位算)</td><td class="mono">DMA-07</td></tr>
+        <tr><td class="k">facility</td><td>string</td><td>嫌疑管段 / 阀门 / 泵站</td><td class="mono">PL-3007</td></tr>
+        <tr><td class="k">line / level</td><td>enum</td><td>固定为 管网 / 调查</td><td class="mono">管网 / 调查</td></tr>
+        <tr><td class="k">status</td><td>enum</td><td>观察中 / 已结案</td><td class="mono">观察中</td></tr>
+        <tr><td class="k">phase</td><td>enum(动作推进时写入)</td><td>核查中 → 渗漏确认 → 维修中 → 复验通过 → 已归档;每一步都是显名动作,不自动跳步</td><td class="mono">核查中</td></tr>
+        <tr><td class="k">openedT / closedT</td><td>string | null</td><td>立案 / 结案时刻;结案签字仍在人(PL-R05 只出建议)</td><td class="mono">20:30 / null</td></tr>
+        <tr><td class="k">window</td><td>string</td><td>观察窗口述(起算时刻 + 连续灌溉事件数)</td><td class="mono">观察窗 20:30 起 · 连续 M 次灌溉事件</td></tr>
+        <tr><td class="k">basis</td><td>string</td><td>立案判据句(PL-R01 的人话版,带参数占位)</td><td class="mono">按灌溉事件的水量平衡:实配 vs 计划应配偏差 ≥ y%,连续 M 次</td></tr>
+        <tr><td class="k">evidence[]</td><td>{ kind, label }</td><td>证据卡(流量曲线等)</td><td class="mono">{ kind:'flow-curve', label:'AI 生成示意' }</td></tr>
+        <tr><td class="k">survey</td><td>object<br>{ t, methods[], segments, done, segs[] }</td><td><b>核查任务包</b>:夜间听漏 + 分段关阀试验;segs[i] = { no, done, preFlow, postFlow, t, by, note },班组按段回传关阀前 / 后流量读数,嫌疑区间按段收敛</td><td class="mono">{ methods:['夜间听漏','分段关阀试验'], segments:4, done:2 }</td></tr>
+        <tr><td class="k">leak</td><td>object | null<br>{ segment, t, note }</td><td>现场确认渗漏的管段与时刻;<b>定性权在人</b>,AI 判型只作嫌疑排序</td><td class="mono">{ segment:'第 3 段', t:'22:10' }</td></tr>
+        <tr><td class="k">repairTicketId</td><td>string | null</td><td>转出的维修工单号</td><td class="mono">WO-9034</td></tr>
+        <tr><td class="k">flowGreen / verifiedT</td><td>bool / string</td><td>水量平衡偏差回落至阈值内并保持 → 绿标点亮;未回归则自动重开</td><td class="mono">true / 23:05</td></tr>
+        <tr><td class="k">ruleVer</td><td>string</td><td>结案归档时钉住的规则版本(事后复盘用哪版规则判的)</td><td class="mono">rules-2026.08.1</td></tr>
+        <tr><td class="k">caseLog[]</td><td>{ t, txt }</td><td>案内时间线:开包、每段试验读数、现场确认、转维修、复验、签字归档</td><td class="mono">{ t:'21:40', txt:'第 1 段关阀试验数据回传:关阀前 42.6 → 关阀后 11.2(落差 31.4)' }</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">附 · 动作日志记录与 links[](硬② 的落点:对象-链接-动作)</h3>
+  <div class="card">
+    <table class="tb">
+      <thead><tr><th style="width:16%">字段</th><th style="width:16%">类型 / 取值域</th><th style="width:44%">说明</th><th style="width:24%">示例</th></tr></thead>
+      <tbody>
+        <tr><td class="k">rid / t / actor</td><td>string</td><td>记录号 / 时刻 / 动作发起人;<b>非人动作同样入账</b>(规则引擎 / AI 服务 / 班组账号三个服务账号)</td><td class="mono">LG-0001 / 17:41 / 区复核员</td></tr>
+        <tr><td class="k">action / params</td><td>string / object</td><td>动作名与入参;动作注册表在「系统管理 · 本体建模」可查</td><td class="mono">confirm / { clueId:'CL-0198' }</td></tr>
+        <tr><td class="k">snapshot</td><td>string</td><td>当时的世界状态快照号,配合规则 / 模型 / 参数版本字段做事后复盘</td><td class="mono">RS-1</td></tr>
+        <tr><td class="k">sum</td><td>string</td><td>这条动作干了什么的一句话(时间线直接读它)</td><td class="mono">确认线索 CL-0198 → 告警 AL-0771 成立;副作用开急修工单</td></tr>
+        <tr><td class="k">★ links[]</td><td>{ type, fromId, toId }</td><td><b>动作产生的对象间链接</b>,由动作声明推导、不手写:类型如 告警↦线索 / 告警↦设施 / 线索↦处置人 / 工单↦班组 / 抽审↦线索。链接类型表 = 全部动作声明的聚合,条数在本体建模页实时可数</td><td class="mono">{ type:'告警↦线索', fromId:'AL-0771', toId:'CL-0198' }</td></tr>
+      </tbody>
     </table>
   </div>
 

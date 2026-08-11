@@ -54,7 +54,7 @@
   var LANE_CLASS = {
     '机器直派':   { key: 'machine' },
     '加急人工':   { key: 'urgent' },
-    '当日队列':   { key: 'urgent', sub: '当日队列(参数)' },
+    '当日队列':   { key: 'normal', sub: '当日队列(参数)' },
     '批量':       { key: 'normal', sub: '批量' },
     '批量加急分诊(显名降级)': { key: 'normal', sub: '批量加急分诊 · 显名降级' },
     '批量半审':   { key: 'normal', sub: '批量半审' },
@@ -175,11 +175,14 @@
         '<path d="M40 98 H200" stroke="#8c97a3" stroke-width="9" opacity=".8"></path>' +
         box(36, 56, 168, 52, '#1a5fb4', '车辙 · 表观连续长度(深度现场回填)');
     },
-    'tree-shadow': function () {
+    /* Z4 口径 8:井盖线的误报特征 = 盖体反光误判(强日照);树影特征归路面线 RD-R03,不在井盖语境出现 */
+    'glare-reflect': function () {
       return road() +
-        '<path d="M96 62 q22 -14 40 6 q16 20 -6 34 q-30 12 -42 -8 z" fill="#2b3a4a" opacity=".45"></path>' +
-        '<path d="M40 40 q18 -18 34 -6" stroke="#2e7d32" stroke-width="5" fill="none" opacity=".7"></path>' +
-        box(88, 54, 62, 56, '#9a6b00', '树影 · 持续假目标(机械闸拦不住)');
+        '<ellipse cx="112" cy="84" rx="30" ry="14" fill="#8c97a3" stroke="#5b6b7c"></ellipse>' +
+        '<ellipse cx="104" cy="80" rx="17" ry="7" fill="#ffffff" opacity=".85"></ellipse>' +
+        '<path d="M150 34 L172 46 M158 26 L176 32 M146 24 L152 40" stroke="#e0a400" stroke-width="3" fill="none"></path>' +
+        '<circle cx="182" cy="24" r="11" fill="#f2c14e" opacity=".85"></circle>' +
+        box(80, 56, 70, 52, '#9a6b00', '盖体反光误判(强日照)· 持续假目标(规则校验闸拦不住)');
     },
     'flow-curve': function () {
       return '<rect x="0" y="0" width="240" height="150" fill="#ffffff"></rect>' +
@@ -472,13 +475,13 @@
       '</div>';
   };
 
-  /* ---------------- 机械校验卡(变长 checks[],路面 5 / 井盖 4 / 管网 3)---------------- */
+  /* ---------------- 规则校验卡(变长 checks[],路面 5 / 井盖 4 / 管网 3)---------------- */
   var MARK = { pass: ['✓', 'check-pass'], fail: ['✗', 'check-fail'], warn: ['!', 'check-fail'], na: ['—', 'check-na'] };
   U.checksCard = function (clue) {
     var cs = clue.checks || [];
     if (!cs.length) {
-      return '<div class="checks"><div class="checks-hd">机械校验闸</div>' +
-        '<div class="check-row"><span class="check-na">本件无机械校验记录(来源=现场发现 / 人工巡查,直接进人审甄别)</span></div></div>';
+      return '<div class="checks"><div class="checks-hd">规则校验闸</div>' +
+        '<div class="check-row"><span class="check-na">本件无规则校验记录(来源=现场发现 / 人工巡查,直接进人审甄别)</span></div></div>';
     }
     var pass = cs.filter(function (c) { return c.result === 'pass'; }).length;
     var rows = cs.map(function (c) {
@@ -489,7 +492,7 @@
         '<span class="check-ver">' + esc(c.rule_ver) + '</span></div>';
     }).join('');
     return '<div class="checks">' +
-      '<div class="checks-hd">机械校验闸 · ' + esc(clue.line) + '线 ' + cs.length + ' 项 —— 通过 ' + pass + '/' + cs.length +
+      '<div class="checks-hd">规则校验闸 · ' + esc(clue.line) + '线 ' + cs.length + ' 项 —— 通过 ' + pass + '/' + cs.length +
       (clue.mechFail ? ' · <b style="color:var(--red)">硬失败:高危零自动归档,转人工驳回确认</b>' : '') + '</div>' +
       rows + '</div>';
   };

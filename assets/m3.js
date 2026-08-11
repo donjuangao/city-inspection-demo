@@ -316,7 +316,7 @@
             '<td class="tiny">' + UI.esc(s.window || '—') + '</td></tr>';
         }).join('') + '</tbody></table>';
     } else {
-      covBlock = UI.banner('warn', '本设施暂无绑定传感器/相机 —— 观测覆盖缺口:AI 无产出时,无法区分是「模型漏报」还是「覆盖缺失」。');
+      covBlock = UI.banner('warn', '本设施暂无绑定传感器/相机 —— 观测降级:AI 无产出时,无法区分是「模型漏报」还是「覆盖缺失」。');
     }
     var covPanel = '<div class="card">' + UI.secTitle('观测覆盖窗', 'facility') + covBlock + '</div>';
 

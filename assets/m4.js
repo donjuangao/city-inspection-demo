@@ -18,7 +18,7 @@
     if (!src) return 'grey';
     if (src.indexOf('高危') >= 0) return 'red';
     if (src.indexOf('override') >= 0 || src.indexOf('自动拘审') >= 0) return 'red';
-    if (src.indexOf('推翻机械判定') >= 0) return 'blue';
+    if (src.indexOf('推翻规则判定') >= 0) return 'blue';
     if (src.indexOf('机器直派') >= 0 || src.indexOf('批量') >= 0 || src.indexOf('降级') >= 0 || src.indexOf('自动升格') >= 0) return 'amber';
     return 'grey';
   }

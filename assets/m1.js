@@ -120,9 +120,9 @@
       params: function (m, f) { return { clueId: m.id, code: f.code, note: f.note || '' }; }
     },
     overrule: {
-      title: '推翻机械判定',
+      title: '推翻规则判定',
       action: 'overrule_mech', submit: '推翻并复活线索',
-      intro: function () { return '人可以推翻机械闸:理由码必填,线索复活进人审车道,同时自动触发抽审 —— 误杀样本回流规则组。'; },
+      intro: function () { return '人可以推翻规则校验闸:理由码必填,线索复活进人审车道,同时自动触发抽审 —— 误杀样本回流规则组。'; },
       fields: [{ k: 'reason', label: '推翻理由码', opts: rcOpts('overrule') }],
       probe: function (id) { return { clueId: id, reason: '预检' }; },
       params: function (m, f) { return { clueId: m.id, reason: f.reason }; }
@@ -147,24 +147,41 @@
       probe: function (id) { return { clueId: id, owner: '预检' }; },
       params: function (m, f) { return { clueId: m.id, owner: f.owner }; }
     },
-    /* R88 A1⑬ 后半 · 主管主动提级(推翻「重复观测计数达阈值自动提级」):原因必填,显名留痕 */
+    /* R88 A1⑬ 后半 · 主管主动提级(推翻「重复观测计数达阈值自动提级」):原因必填,显名留痕
+       Z4 口径 6:提级两级 —— 目标档可选(养护/观察 → 急修;急修 × 多源确证 ≥2 → 机器直派) */
     escalate: {
-      title: '提级为急修 · 复核主管',
+      title: '提级 · 复核主管(目标档二选一)',
       action: 'clue_escalate', submit: '提交提级',
       cls: 'btn-primary',
       intro: function (m) {
         var c = S.find.clue(m.id);
+        var n = c ? (((c.observations || []).length) || 1) : 0;
         return '提级是<b>人做的显名动作</b>,不是系统按重复观测计数自动定性。' +
-          (c ? ('当前档「' + esc(c.level) + '」→「急修」,车道转单条必审,SLA 按急修档重算。') : '');
+          (c ? ('当前档「' + esc(c.level) + '」· 本件观测 ' + n + ' 次。<br>' +
+            '<b>提级① → 急修</b>(复核主管):车道转单条必审,SLA 按急修档重算。<br>' +
+            '<b>提级② → 机器直派</b>(复核员即可发起):须<b>急修级 × 多源确证(观测 ≥ 2 次)</b>,当场开急修工单先派后审,并行复核窗内可撤回,件全量拘抽审。') : '');
       },
-      fields: [{ k: 'reason', label: '提级原因(必填 · 进动作日志可回查)', opts: [
-        ['同点位险情升级', '同点位险情升级(现场反馈异常扩大)'],
-        ['临近学校/医院等敏感点', '临近学校 / 医院等敏感点位'],
-        ['同点位重复观测集中', '同点位重复观测集中(计数只作输入,提级由我判定)'],
-        ['雨前风险窗口', '雨前风险窗口(气象预警前处置提前)']
-      ] }],
-      probe: function (id) { return { clueId: id, reason: '预检' }; },
-      params: function (m, f) { return { clueId: m.id, reason: f.reason || '' }; }
+      fields: [
+        { k: 'target', label: '提级目标档(判据随档不同)', opts: [
+          ['急修', '提级① 急修 —— 养护 / 观察 → 急修(单条必审 + 急修档 SLA;复核主管发起)'],
+          ['机器直派', '提级② 机器直派 —— 急修级 × 多源确证 ≥2(先派后审、窗内可撤回;复核员即可发起)']
+        ] },
+        { k: 'reason', label: '提级原因(必填 · 进动作日志可回查)', opts: [
+          ['同点位险情升级', '同点位险情升级(现场反馈异常扩大)'],
+          ['临近学校/医院等敏感点', '临近学校 / 医院等敏感点位'],
+          ['同点位重复观测集中', '同点位重复观测集中(计数只作输入,提级由我判定)'],
+          ['多源确证成立', '多源确证成立(第二观测源印证,够先派后审的硬条件)'],
+          ['雨前风险窗口', '雨前风险窗口(气象预警前处置提前)']
+        ] }
+      ],
+      /* 探针按本件当前档挑更可能可行的那一档:已在急修/紧急的件探「机器直派」,否则探「急修」——
+         否则高档件会被「已在最高档」一条把整个提级入口灰掉,人反而够不着第二级。 */
+      probe: function (id) {
+        var c = S.find.clue(id);
+        var hi = c && (c.level === '急修' || c.level === '紧急');
+        return { clueId: id, target: hi ? '机器直派' : '急修', reason: '预检' };
+      },
+      params: function (m, f) { return { clueId: m.id, target: f.target || '急修', reason: f.reason || '' }; }
     },
     /* R89 A1 · 接手:从他人手上接过件 —— 原因必填,进动作日志与本件认领日志,不静默夺件 */
     takeover: {
@@ -350,7 +367,7 @@
     body:
       '<p><b>这一页干什么:</b>对 AI 与规则产出的线索做定性 —— 确认 / 驳回 / 转办 / 升格,每一次定性都留痕。复核员约九成工作时间在这一页。</p>' +
       '<p><b>线索 vs 告警:</b>AI 与规则只产「线索」;人确认签字后才叫「告警」—— 定性权永远在人。</p>' +
-      '<p><b>双闸:</b>第一闸 = AI 识别;第二闸 = 机械证据校验(硬编码判据逐项打钩)。两闸都过的紧急件才有资格走机器直派。</p>' +
+      '<p><b>两道关口:</b>第一道 = AI 识别;第二道 = 规则校验(硬编码判据逐项打钩)。两道都过的紧急件才有资格走机器直派。</p>' +
       '<p><b>三档通道判据:</b>机器直派 = 先派后审(机器先把单派出去,人 15 分钟并行复核可撤回);加急人工 / 常规人工 = 先审后派(分钟级单条确认 / 批量例行确认);另有自动处理(不派人)与驳回与转办(不进处置)。</p>' +
       '<p><b>线索的原子性:</b>同一设施(或 50m 路段栅格)× 同一异常类目 = 同一条线索;活跃期内每次新发现并入为一次「观测」,不新开线索。线索关闭后再发现才开新线索。</p>' +
       '<p><b>与客户系统的关系:</b>本平台负责巡检定性与证据链;派工与处置的记录系统是区市政工单系统,本模块产生的工单为镜像 + 写回,处置状态以客户系统为准。</p>' +
@@ -360,8 +377,8 @@
       '<p><b>机器直派件的代价:</b>该通道件全量拘进主管抽审(误派率月报口径);撤回件班组白跑不计考核,班组可申诉。</p>' +
       '<p><b>加急人工档的兜底:</b>超时走三级升级(区复核员 → 复核主管 → 上级主管部门),并发只读预警不定性也不派工;本档的确认与驳回都拘进主管抽审。' +
       '三级升级走完仍无人给结论,<b>系统自动派单兜底</b>(宁可多看一眼,不漏掉):单先发出去,告警仍不成立、定性仍悬,复核员事后补审,该件全量拘抽审。</p>' +
-      '<p><b>机械闸的实际拦截面:</b>定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行。树影这类物理上持续存在的假目标,机械闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。推翻机械判定 = 线索复活进人审 + 自动触发抽审,误杀样本回流规则组。</p>' +
-      '<p><b>免人工车道的判据与兜底:</b>养护级 × 高置信 × 机械全过 = 自动并入周期养护计划;观察级 × 机械过 = 自动记台账入劣化曲线。免人工不豁免审计:每条一条动作日志,按抽审率捞回复查,抽审可推翻。</p>' +
+      '<p><b>规则校验闸的实际拦截面:</b>定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行。盖体反光误判(强日照)这类物理上持续存在的假目标,规则校验闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。推翻规则判定 = 线索复活进人审 + 自动触发抽审,误杀样本回流规则组。</p>' +
+      '<p><b>免人工车道的判据与兜底:</b>养护级 × 高置信 × 规则校验全过 = 自动并入周期养护计划;观察级 × 规则校验过 = 自动记台账入劣化曲线。免人工不豁免审计:每条一条动作日志,按抽审率捞回复查,抽审可推翻。</p>' +
       '<p><b>存疑归档:</b>既不算确认也不算驳回,计入模型评估统计;只在批量半审车道内可用。</p>' +
       /* R89 A1:认领制的机制说明从卡片挪进来 —— 界面上只留状态徽章与按钮,不在卡上讲机制 */
       '<p><b>认领制怎么用:</b>件默认在公共池,谁处置谁先认领 —— 认领后件锁到你名下,他人视图该件灰化标「已由 XX 认领」。未认领也能直接点处置动作:系统隐式认领并记两条日志(认领 + 处置),不必先点一次认领。他人手上的件要动,须走「接手」并填原因,认领转移进日志,原认领人可回查是谁在什么时候接走的 —— 不做静默夺件。</p>' +
@@ -517,7 +534,7 @@
       UI.kv([
         ['通道', laneBadgeH(c) + ' <span class="tiny">' + esc(UI.laneKind(c.lane) || '') + '</span>', true],
         ['SLA 倒计时', c.slaDeadline ? (UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline)) : '批量车道 · 按批计', true],
-        ['机械校验', ((c.checks || []).filter(function (x) { return x.result === 'pass'; }).length) + '/' + (c.checks || []).length + ' 项通过'],
+        ['规则校验', ((c.checks || []).filter(function (x) { return x.result === 'pass'; }).length) + '/' + (c.checks || []).length + ' 项通过'],
         ['来源', esc(c.source || '—')],
         ['异常', esc(c.kindText || '—')]
       ]) + '</div>' +
@@ -688,7 +705,7 @@
     var tk = c.ticketId ? S.find.ticket(c.ticketId) : null;
     var cw = tk && tk.crew ? S.find.crew(tk.crew) : null;
     var body =
-      UI.banner('info', '<b>机器派单,人复核中</b> —— ' + esc(c.id) + ' 双闸硬证据齐,系统已自动派 ' +
+      UI.banner('info', '<b>机器派单,人复核中</b> —— ' + esc(c.id) + ' 两道关口硬证据齐,系统已自动派 ' +
         esc(cw ? cw.name : '班组') + (tk ? '(紧急工单 ' + esc(tk.id) + ' · 镜像 ' + esc(tk.mirror) + ')' : '') + '。') +
       UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
@@ -714,20 +731,50 @@
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
+  /* Z4c#23 · 加急人工卡的判据句按线渲染:校验项数取本件 checks[](CHECK_DEFS 变长:路面 5 / 井盖 4 / 管网 3),
+     档名取本件 level(路面加急件 = 急修级 / 井盖加急件 = 紧急级),准入条取本线 RULES 里那条机器直派规则 ——
+     一个数字都不写死,改 data.js 这句跟着变。 */
+  function fastlaneRuleOf(line) {
+    var rs = (S.rules && S.rules()) || [];
+    for (var i = 0; i < rs.length; i++) {
+      if (rs[i].line === line && rs[i].lane === '机器直派' && !/超时兜底/.test(rs[i].name || '')) return rs[i];
+    }
+    return null;
+  }
+  function gateWhyText(c) {
+    var cs = c.checks || [];
+    var defs = (S.dict() || {}).checkDefs || {};
+    var tot = cs.length || (defs[c.line] || []).length;
+    var pass = cs.filter(function (x) { return x.result === 'pass'; }).length;
+    /* 只列真正没满足的那几条 —— 校验全过就别说成没过(同屏 kv 里写着 x/N 项通过,两句不能打架) */
+    var srcs = {}; (UI.obsList(c) || []).forEach(function (o) { srcs[o.kind || o.source] = 1; });
+    var nSrc = Object.keys(srcs).length || 1;
+    var miss = [];
+    if (c.line === '井盖' && !/传感器/.test(c.source || '')) miss.push('<b>无传感器硬证据</b>');
+    if (nSrc < 2) miss.push('<b>来源只有 ' + nSrc + ' 路,不构成多源确证</b>');
+    if (pass < tot) miss.push('<b>规则校验 ' + tot + ' 项未全过</b>(通过 ' + pass + '/' + tot + ')');
+    var r = fastlaneRuleOf(c.line);
+    return '<b>为什么它不走机器直派:</b>置信 ' + esc(conf2(c.conf)) + ';' +
+      (miss.length ? miss.join('、') : '<b>硬证据不齐</b>') +
+      (pass === tot ? '(规则校验 ' + pass + '/' + tot + ' 项全过 —— 卡住它的是硬证据,不是校验)' : '') + ' —— ' +
+      (r ? ('不满足 ' + esc(r.id) + '「' + esc(r.name) + '」的硬条件') :
+        '本线<b>系统不自动直派</b>,唯一入口是<b>人显名提级②</b>(急修 × 多源确证 ≥ 2 次观测,复核员即可发起)') + '。' +
+      '低置信不等于放过:<b>' + esc(c.level) + '级</b>本身不看置信度,强制人核。';
+  }
+
   /* ============ 加急人工卡(T5 · 0.31 件,与机器直派成对照)============ */
   function urgentReviewCard(c, ro) {
     var body =
       fallbackBanner(c) +
       '<div class="banner banner-warn"><span class="banner-ico">!</span><span>' +
-      '<b>为什么它不走机器直派:</b>置信 ' + esc(conf2(c.conf)) + ' 纯视觉、<b>无传感器硬证据</b>,机械四项未全过 —— 双闸硬条件不满足。' +
-      '低置信不等于放过:紧急级<b>不看置信度</b>,强制人核。</span></div>' +
+      gateWhyText(c) + '</span></div>' +
       UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
       '<div class="grow" style="min-width:230px">' +
       UI.kv([
         ['通道', laneBadgeH(c) + ' <span class="tiny">' + esc(UI.laneKind(c.lane) || '') + '</span>', true],
         ['SLA 倒计时', UI.sla(c.slaDeadline) + ' · 截止 ' + esc(c.slaDeadline || '—') + ' ' + UI.assume('(档长 30 分钟)', '加急人工 SLA 30 分钟 = 假设值,区可配'), true],
-        ['机械校验', ((c.checks || []).filter(function (x) { return x.result === 'pass'; }).length) + '/' + (c.checks || []).length + ' 项通过'],
+        ['规则校验', ((c.checks || []).filter(function (x) { return x.result === 'pass'; }).length) + '/' + (c.checks || []).length + ' 项通过'],
         ['来源', esc(c.source || '—')]
       ]) + '</div>' +
       evCol(c, ro) +
@@ -743,27 +790,27 @@
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
   }
 
-  /* ============ 机械驳回置顶证据卡(T6 树影件:高危零自动归档)============ */
+  /* ============ 机械驳回置顶证据卡(T6 盖体反光误判件:高危零自动归档)============ */
   function mechRejectCard(c, ro) {
     var bad = (c.checks || []).filter(function (x) { return x.result === 'fail' || x.result === 'warn'; })
       .map(function (x) { return x.name; }).join(' / ');
     var done = c.status === 'rejected';
     var body =
       '<div class="banner banner-warn"><span class="banner-ico">!</span><span>' +
-      '<b>机械校验硬失败,但高危件零自动归档</b> —— 未过项:' + esc(bad || '—') +
+      '<b>规则校验硬失败,但高危件零自动归档</b> —— 未过项:' + esc(bad || '—') +
       '。证据卡<b>置顶</b>,转加急人工驳回确认(高危零自动归档验收线)。</span></div>' +
       (done ? UI.banner('warn', '<b>高危驳回已拘主管抽审</b> —— ' + esc(c.id) + ' 原因码 ' + esc(c.rejectCode || '') +
-        ';复核员把真异常驳回成树影时,由抽审发现。') : '') +
+        ';复核员把真异常驳回成反光误判时,由抽审发现。') : '') +
       UI.obsLine(c) +
       '<div class="row wrap" style="align-items:flex-start">' +
       evCol(c, ro) +
       '<div class="grow" style="min-width:240px">' + UI.checksCard(c) + '</div></div>' +
       (ro ? roNote(ro) : '<div class="sep"></div>' + claimBar(c) +
         '<div class="row wrap"><div class="grow">' +
-        pw(UI.actionPanel([{ action: 'reject', params: { clueId: c.id, code: '①' }, label: '认可机械判定 · 驳回(码① 拍摄干扰)', cls: 'btn-rej' }]) +
+        pw(UI.actionPanel([{ action: 'reject', params: { clueId: c.id, code: '①' }, label: '认可规则判定 · 驳回(码① 拍摄干扰)', cls: 'btn-rej' }]) +
         modalBtn('其他原因码驳回…', 'reject', c.id, 'btn-rej')) +
         '</div><div class="grow">' +
-        pw(modalBtn('推翻机械判定(理由码必填)', 'overrule', c.id, 'btn-esc')) +
+        pw(modalBtn('推翻规则判定(理由码必填)', 'overrule', c.id, 'btn-esc')) +
         '</div></div>');
     return tcard('clue', '机械驳回置顶 · ' + clueTitle(c),
       body, '<a href="#/m1/clue/' + esc(c.id) + '" class="tiny">进详情 →</a>', { line: c.line });
@@ -818,7 +865,7 @@
       '<div class="sep"></div>' +
       '<table class="tb"><thead><tr><th></th>' + (M.expanded ? '<th>缩略证据</th>' : '') +
       '<th style="width:126px">线索号</th><th>设施 · 地址</th><th style="width:66px">级别</th><th style="width:64px">置信度</th>' +
-      '<th style="width:88px">车道</th><th style="width:56px">机械校验</th><th style="width:92px">状态</th><th>动作</th></tr></thead><tbody>' +
+      '<th style="width:88px">车道</th><th style="width:56px">规则校验</th><th style="width:92px">状态</th><th>动作</th></tr></thead><tbody>' +
       rows + '</tbody></table>';
     return card('批量半审工作台 · ' + list.length + ' 条(路面养护流)', body,
       '<span class="tiny">提交校验:单批 ≤20 + 批内缩略证据展开过</span>');
@@ -928,7 +975,7 @@
       ['覆盖方式', ways.join(' / ') || '—']
     ]) +
       (rows ? '<table class="tb"><thead><tr><th style="width:110px">数据源点位</th><th style="width:120px">类型</th><th style="width:110px">自检</th><th>覆盖窗</th></tr></thead><tbody>' + rows + '</tbody></table>'
-        : '<div class="tiny">本设施<b>无传感器绑定</b>(观测覆盖缺口)。</div>');
+        : '<div class="tiny">本设施<b>无传感器绑定</b>(观测降级)。</div>');
     return card('本设施观测状况 · ' + esc(c.facility), body,
       '<span class="tiny">按本设施派生 · 全线汇总见 <a href="#/m5">m5</a></span>');
   }
@@ -984,7 +1031,7 @@
       '', { line: L.line, tag: L.line + '线' });
 
     /* ⑤ 动作日志(折叠) */
-    html += UI.fold('m1-log-' + key, '<b>最近动作日志</b>(机械自动步也逐条留痕)',
+    html += UI.fold('m1-log-' + key, '<b>最近动作日志</b>(规则引擎自动步也逐条留痕)',
       UI.timeline(null, { limit: 8, desc: true }), { right: '按需展开' });
     return html;
   }
@@ -1037,9 +1084,9 @@
       c.evidenceViewed ? UI.badge('已查看(高危确认前置已满足)', 'green') : UI.badge('高危件确认前须查看', 'grey'),
       { line: c.line, tag: '证据' });
 
-    /* R88 A4① · 机械校验四项 = 证据性区块,保留但降为折叠区(它是确认的前置凭据,不是动作) */
+    /* R88 A4① · 规则校验四项 = 证据性区块,保留但降为折叠区(它是确认的前置凭据,不是动作) */
     var mechPass = (c.checks || []).filter(function (x) { return x.result === 'pass'; }).length;
-    left += UI.fold('m1-mech-' + c.id, '<b>机械校验闸(第二闸)</b> · ' + mechPass + '/' + (c.checks || []).length + ' 项通过' +
+    left += UI.fold('m1-mech-' + c.id, '<b>规则校验闸(第二道关口)</b> · ' + mechPass + '/' + (c.checks || []).length + ' 项通过' +
       (c.mechFail ? ' ' + UI.badge('硬失败', 'red') : ''), UI.checksCard(c), { right: '证据区 · 按需展开' });
 
     /* R88 A4⑯ · 数据源健康下沉:每条线索详情带「本设施观测状况」(该设施传感器健康 + 最近观测 + 覆盖方式) */
@@ -1076,7 +1123,7 @@
     /* R89 A4⑤ 语义分色(页级 CSS 在 ui.js):确认 / 通过 = 实心绿 btn-ok;驳回 / 打回 / 撤回 / 撤销 = 红描边 btn-rej;
        转办 / 挂起 / 归档 = 灰 btn-neu;查看证据 = 蓝描边 btn-evi;提级 / 升格 = 橙 btn-esc;
        紧急 override 保持实心红 btn-danger(最危险的主动作,实心 ≠ 次动作描边)。 */
-    var G1 = '定性动作 · 区复核员', G2 = '机械闸 / 机器直派', G3 = '复验人裁', G4 = '复核主管以上';
+    var G1 = '定性动作 · 区复核员', G2 = '规则校验闸 / 机器直派', G3 = '复验人裁', G4 = '复核主管以上';
     var items = [
       { g: G1, kind: 'raw', html: '<button type="button" class="btn btn-evi" data-ev="' + esc(c.id) + '">' +
         (c.evidenceViewed ? '✓ 查看证据卡(已满足)' : '查看证据卡') + '</button>' },
@@ -1086,11 +1133,15 @@
       { g: G1, kind: 'modal', modal: 'transfer', id: c.id, cls: 'btn-neu', label: '转办产权单位' },
       { g: G1, kind: 'act', action: 'archive_doubt', params: { clueId: c.id }, cls: 'btn-neu', label: '存疑归档(仅批量半审车道)' }
     ];
-    /* R88 A1⑬ 后半:提级入口显式化 —— 养护 / 观察件由复核主管主动提级为急修(原因必填) */
-    if (['养护', '观察'].indexOf(c.level) >= 0) {
-      items.push({ g: G4, kind: 'modal', modal: 'escalate', id: c.id, cls: 'btn-esc', label: '提级为急修(原因必填)' });
+    /* R88 A1⑬ 后半:提级入口显式化 —— 复核主管主动提级(原因必填)
+       Z4 口径 6:两级都从这一个入口进,目标档在弹层里选 —— 养护 / 观察 → 急修;急修 / 紧急 × 多源确证 → 机器直派 */
+    if (['养护', '观察', '急修', '紧急'].indexOf(c.level) >= 0 && !c.fastlane) {
+      var lo = ['养护', '观察'].indexOf(c.level) >= 0;
+      /* 提级① 是主管动作 → G4;提级② 复核员就能发起,归机器直派那一组,跟「机器直派撤回」摆在一起 */
+      items.push({ g: lo ? G4 : G2, kind: 'modal', modal: 'escalate', id: c.id, cls: 'btn-esc',
+        label: lo ? '提级①(养护 / 观察 → 急修 · 复核主管)' : '提级②(急修 × 多源确证 → 机器直派)' });
     }
-    items.push({ g: G2, kind: 'modal', modal: 'overrule', id: c.id, cls: 'btn-esc', label: '推翻机械判定' });
+    items.push({ g: G2, kind: 'modal', modal: 'overrule', id: c.id, cls: 'btn-esc', label: '推翻规则判定' });
     /* R87 A1:复核窗内 = 撤回召回班组;窗过 = 误报申诉(交复核主管裁定) */
     items.push(inWindow || !al
       ? { g: G2, kind: 'modal', modal: 'recall', id: c.id, cls: 'btn-rej',

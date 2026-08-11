@@ -365,10 +365,10 @@
   };
 
   A.overrule_mech = {
-    label: '推翻机械判定', actors: ['区复核员', '复核主管'], hint: '理由码必填;线索复活进人审 + 自动触发抽审',
+    label: '推翻规则判定', actors: ['区复核员', '复核主管'], hint: '理由码必填;线索复活进人审 + 自动触发抽审',
     v: function (s, p) {
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
-      if (!c.mechFail) return '本件机械校验无硬失败,无可推翻';
+      if (!c.mechFail) return '本件规则校验无硬失败,无可推翻';
       if (!p.reason) return '理由码必填';
       return null;
     },
@@ -376,8 +376,8 @@
       var c = clueOf(p.clueId); c.mechFail = false; c.status = 'open';
       c.lane = isHigh(c) ? '加急人工' : '单条必审';
       c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
-      hold('推翻机械判定', c.id, '人推翻机械判定自动触发抽审;误杀样本回流规则组');
-      return '推翻机械判定 ' + c.id + ':理由「' + p.reason + '」→ 线索复活进「' + c.lane + '」;自动触发抽审';
+      hold('推翻规则判定', c.id, '人推翻规则判定自动触发抽审;误杀样本回流规则组');
+      return '推翻规则判定 ' + c.id + ':理由「' + p.reason + '」→ 线索复活进「' + c.lane + '」;自动触发抽审';
     }
   };
 
@@ -798,7 +798,7 @@
     }
   };
 
-  /* ============ 规则引擎 / AI 服务自动步(机械不豁免审计,每步一条日志)============ */
+  /* ============ 规则引擎 / AI 服务自动步(规则自动化不豁免审计,每步一条日志)============ */
   function autoDef(label, hint, run, v) {
     return { label: label, actors: ['规则引擎', 'AI 服务', '*'], hint: hint, auto: true, v: v || function () { return null; }, run: run };
   }
@@ -818,19 +818,19 @@
 
   A.auto_work_window = autoDef('合法开井作业窗比对', '报警先比对客户工单系统开井作业时间窗;拿不到数据时注明「未排除合法作业」',
     function (s, p) {
-      return '合法开井抑制比对 ' + p.clueId + ':客户工单系统当前时窗无该点位开井作业单 → 不抑制,继续走双闸';
+      return '合法开井抑制比对 ' + p.clueId + ':客户工单系统当前时窗无该点位开井作业单 → 不抑制,继续走两道关口';
     });
 
-  A.auto_mech_check = autoDef('机械校验闸', '第二闸:硬编码可执行判据,逐条留痕',
+  A.auto_mech_check = autoDef('规则校验闸', '第二道关口:硬编码可执行判据,逐条留痕',
     function (s, p) {
-      var c = clueOf(p.clueId); if (!c) return '机械校验:线索 ' + p.clueId + ' 不在池中';
+      var c = clueOf(p.clueId); if (!c) return '规则校验:线索 ' + p.clueId + ' 不在池中';
       var pass = c.checks.filter(function (x) { return x.result === 'pass'; }).length;
       var tot = c.checks.length;
-      return '机械校验闸 ' + c.id + '(' + c.line + '线 ' + tot + ' 项):通过 ' + pass + '/' + tot +
-        (pass === tot ? ' → 全过,双闸硬条件满足' : ' → 存在未过项,证据卡置顶');
+      return '规则校验闸 ' + c.id + '(' + c.line + '线 ' + tot + ' 项):通过 ' + pass + '/' + tot +
+        (pass === tot ? ' → 全过,两道关口硬条件满足' : ' → 存在未过项,证据卡置顶');
     });
 
-  A.auto_dispatch = autoDef('自动派单(机器直派)', '提交校验:紧急级 + 双闸硬条件 + 该类目机器直派开关开启;产出紧急工单,不产出告警',
+  A.auto_dispatch = autoDef('自动派单(机器直派)', '提交校验:紧急级 + 两道关口硬条件 + 该类目机器直派开关开启;产出紧急工单,不产出告警',
     function (s, p) {
       var c = clueOf(p.clueId); var cw = crewOf(p.crew);
       var tk = {
@@ -852,7 +852,7 @@
       if (c.level !== '紧急') return '非紧急级,不进机器直派';
       if (!s.gov.fastlane[c.kindText] && !s.gov.fastlane['井盖缺失']) return '该类目机器直派开关已关闭';
       if (s.gov.fastlane[c.kindText] === false) return '该类目机器直派开关已关闭(上级主管部门治理),回退人审';
-      if (c.checks.some(function (x) { return x.result === 'fail'; })) return '机械校验存在硬失败,不满足双闸硬条件';
+      if (c.checks.some(function (x) { return x.result === 'fail'; })) return '规则校验存在硬失败,不满足两道关口硬条件';
       if (c.ticketId) return '本件已有工单,防抖冷却窗内不重复派单';
       return null;
     });
@@ -874,7 +874,7 @@
     function (s, p) {
       var c = ensureClue(p.clueId);
       if (!c) return '创建线索:模板 ' + p.clueId + ' 缺失';
-      return 'AI 识别产出线索 ' + c.id + '(' + c.line + '线 · ' + c.kindText + ' · 置信 ' + (c.conf === null ? '—' : c.conf) + ')→ 入池待双闸';
+      return 'AI 识别产出线索 ' + c.id + '(' + c.line + '线 · ' + c.kindText + ' · 置信 ' + (c.conf === null ? '—' : c.conf) + ')→ 入池待两道关口';
     });
 
   A.auto_route = autoDef('车道路由', '闸果进各业务线自己的车道表',
@@ -893,14 +893,14 @@
       var bad = c.checks.filter(function (x) { return x.result === 'fail'; }).map(function (x) { return x.name; });
       if (isHigh(c)) {
         c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
-        banner('warn', '机械校验硬失败但不自动归档(高危零自动归档):' + c.id + ' 证据卡置顶,转加急人工驳回确认。', 'm1', routeOf('clue', c.id));
+        banner('warn', '规则校验硬失败但不自动归档(高危零自动归档):' + c.id + ' 证据卡置顶,转加急人工驳回确认。', 'm1', routeOf('clue', c.id));
         return '机械驳回判定 ' + c.id + ':未过项「' + bad.join(' / ') + '」;高危件不自动归档 → 转加急人工驳回确认';
       }
       c.status = 'rejected'; c.rejectCode = '②';
       return '机械驳回自动归档 ' + c.id + ':未过项「' + bad.join(' / ') + '」;原因码自动填,待核查池抽样兜底(批量车道)';
     });
 
-  A.auto_upgrade = autoDef('自动升格(免人工车道)', '养护级 × 高置信 × 机械全过 = 免人工并入周期养护计划;事后抽审',
+  A.auto_upgrade = autoDef('自动升格(免人工车道)', '养护级 × 高置信 × 规则校验全过 = 免人工并入周期养护计划;事后抽审',
     function (s, p) {
       var ids = p.clueIds || [], n = 0;
       ids.forEach(function (id) {
@@ -1434,27 +1434,80 @@
 
   /* ---- 提级 = 复核主管主动做的显名动作,原因必填(R88 A1⑬ 已推翻「按计数自动提级」那条;
      R89 A2 后市民渠道整条不在系统内,提级的输入只剩现场与观测证据)。---- */
+  /* Z4 口径 6 · 提级两级(PDF p7 口径落 demo):target 参数决定提到哪一档 ——
+     '急修'      = 养护 / 观察 → 急修(单条必审,SLA 按急修档重算);
+     '机器直派'  = 已在急修档 × 多源确证(观测数 ≥ 2)→ 直接开机器直派工单走先派后审,
+                   副作用与 auto_dispatch 同款(紧急工单 + 镜像 + 班组占用 + 并行复核窗 + 全量抽审),
+                   区别只在触发者是人(显名提级②),不是规则引擎。 */
+  var ESC_TARGETS = ['急修', '机器直派'];
+  function obsCount(c) { return ((c && c.observations) || []).length || 1; }
+
+  /* 两级提级的发起权不同档,不同人 —— actors 是动作级的粗闸,细分在 v() 里按 target 收:
+     ① → 急修      = 复核主管(R88 A1⑬「主管主动提级」;m6 角色表 复核主管条也写死「提级(养护→急修)」)
+     ② → 机器直派  = 区复核员也能发起(Z4 口径 6 字面「复核员发起」+ PDF p7/p13「复核员一键升级」)——
+                     它跟复核员本来就有的「机器直派撤回」是一对:能撤的人才该能发,发完 15 分钟窗内谁都能撤回。 */
+  var ESC_ROLE = { '急修': ['复核主管'], '机器直派': ['区复核员', '复核主管'] };
+
   A.clue_escalate = {
-    label: '提级', actors: ['复核主管'],
-    hint: '主管主动把养护 / 观察件提为急修:原因必填,显名留痕;提级是人做的动作,不是系统按计数自动定性',
-    v: function (s, p) {
+    label: '提级', actors: ['区复核员', '复核主管'],
+    hint: '人主动提级:目标档二选一(养护/观察→急修,复核主管;急修×多源确证→机器直派,复核员即可发起),原因必填,显名留痕;提级是人做的动作,不是系统按计数自动定性',
+    v: function (s, p, actor) {
       var c = p.clueId ? clueOf(p.clueId) : null;
+      var tg = p.target || '急修';
       if (!c) return '线索不存在(需 clueId)';
+      if (ESC_TARGETS.indexOf(tg) < 0) return '提级目标档只能是「急修」或「机器直派」';
+      if (ESC_ROLE[tg].indexOf(actor || s.role) < 0) {
+        return '目标档「' + tg + '」的发起权在' + ESC_ROLE[tg].join(' / ') + ',当前身份「' + (actor || s.role) + '」发不了这一档';
+      }
       if (c.status !== 'open') return '线索非「待核查」态,不再提级';
-      if (c.level === '急修' || c.level === '紧急') return '已在最高档(' + c.level + '),无可提级';
       if (!p.reason) return '提级原因必填(进动作日志,可回查)';
+      if (tg === '急修') {
+        if (c.level === '急修' || c.level === '紧急') return '已在最高档(' + c.level + '),要再提请选目标档「机器直派」';
+        return null;
+      }
+      /* 目标档 = 机器直派:急修级 × 多源确证(≥2 次观测)才准入,单源件一律不给先派后审 */
+      if (c.level !== '急修' && c.level !== '紧急') return '仅「急修 / 紧急」档件可提级到机器直派(当前:' + c.level + ');请先提到急修';
+      if (obsCount(c) < 2) return '多源确证不足:先派后审要求同一设施至少 2 次观测(当前 ' + obsCount(c) + ' 次)';
+      if (c.lane === '机器直派') return '本件已在机器直派车道';
+      if (c.ticketId) return '本件已有工单 ' + c.ticketId + ',不重复派单';
       return null;
     },
     run: function (s, p, actor) {
-      var c = clueOf(p.clueId), from = c.level;
-      c.level = '急修';
-      c.escalate = { from: from, to: '急修', by: actor, t: s.now, reason: p.reason };
-      if (['批量半审', '记账', '批量', '自动升格'].indexOf(c.lane) >= 0) c.lane = '单条必审';
-      c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
-      banner('amber', '线索提级:' + c.id + '(' + (c.kindText || '') + ' · ' + (c.block || '') + ' ' + c.facility + ')由「' + from +
-        '」提为「急修」,提级人 ' + actor + ',原因「' + p.reason + '」,留痕可回查。', 'm1', routeOf('clue', c.id));
-      return '提级 ' + c.id + ':' + from + ' → 急修;原因「' + p.reason + '」;车道转「' + c.lane +
-        '」,SLA 按急修档重算;提级是人做的显名动作,不是系统自动定性';
+      var c = clueOf(p.clueId), from = c.level, tg = p.target || '急修';
+      if (tg === '急修') {
+        c.level = '急修';
+        c.escalate = { from: from, to: '急修', by: actor, t: s.now, reason: p.reason };
+        if (['批量半审', '记账', '批量', '自动升格'].indexOf(c.lane) >= 0) c.lane = '单条必审';
+        c.slaDeadline = addMin(s.now, w.DATA.dict.sla.urgentReview);
+        banner('amber', '线索提级:' + c.id + '(' + (c.kindText || '') + ' · ' + (c.block || '') + ' ' + c.facility + ')由「' + from +
+          '」提为「急修」,提级人 ' + actor + ',原因「' + p.reason + '」,留痕可回查。', 'm1', routeOf('clue', c.id));
+        return '提级 ' + c.id + ':' + from + ' → 急修;原因「' + p.reason + '」;车道转「' + c.lane +
+          '」,SLA 按急修档重算;提级是人做的显名动作,不是系统自动定性';
+      }
+      /* 机器直派:与 auto_dispatch 同款副作用,来源仍记①(机器直派自动派),但触发者显名为提级人 */
+      var cw = (p.crew ? crewOf(p.crew) : null) || fallbackCrew(s, c.line);
+      var tk = {
+        id: nextId('WO-', s.tickets), type: '急修工单', clueId: c.id, facility: c.facility,
+        crew: cw ? cw.id : null, state: cw ? '已派工' : '待改派',
+        source: w.DATA.dict.ticketSources.auto, createdT: s.now, line: c.line,
+        mirror: 'MUN-WO-' + (77300 + s.tickets.length),
+        sla: { accept: addMin(s.now, w.DATA.dict.sla.accept), arrive: addMin(s.now, w.DATA.dict.sla.arrive), done: addMin(s.now, 120) },
+        suspended: false, photos: [],
+        note: '来源① 机器直派:由' + actor + '显名提级②触发(急修 × 多源确证 ' + obsCount(c) + ' 次),先派后审、窗内可撤回'
+      };
+      s.tickets.push(tk);
+      c.escalate = { from: from, to: '机器直派', by: actor, t: s.now, reason: p.reason, target: '机器直派' };
+      c.lane = '机器直派'; c.fastlane = true; c.ticketId = tk.id;
+      c.reviewEnd = addMin(s.now, w.DATA.dict.sla.fastlaneReview); c.slaDeadline = c.reviewEnd;
+      if (cw) { p.crew = cw.id; cw.load++; if (cw.status === '空闲') cw.status = '待接单'; crewMove(cw, c.facility, 'enroute'); }
+      hold('机器直派件全量抽审', c.id, '人工提级到机器直派件全量抽审(显名提级不豁免审计;误派率月报同口径)',
+        { kind: '工单', id: tk.id });
+      banner('amber', '提级到机器直派:' + c.id + '(' + (c.kindText || '') + ' · ' + (c.block || '') + ' ' + c.facility +
+        ')经' + actor + '显名提级②,已派 ' + (cw ? cw.name : '(无可用班组,进待改派)') + '(工单 ' + tk.id +
+        ');' + w.DATA.dict.sla.fastlaneReview + ' 分钟并行复核窗开启,窗内可撤回。', 'm1', routeOf('clue', c.id));
+      return '提级 ' + c.id + ':' + from + ' → 机器直派(目标档);判据 = 急修级 × 多源确证 ' + obsCount(c) + ' 次观测;' +
+        '原因「' + p.reason + '」;已开急修工单 ' + tk.id + ' → ' + (cw ? cw.name : '(无可用班组,单进待改派队列)') +
+        ';派单是处置调度不是定性,并行复核窗内可撤回,件全量拘抽审';
     }
   };
 
@@ -1865,8 +1918,10 @@
       decide: function (c, P) { return c.conf < P.confLo ? '驳回与转办' : (c.conf < P.confHi ? '常规人工' : '加急人工'); }
     },
     'RD-R03': {
-      what: '路面线在池件 + 命中树影特征的件',
-      pick: function (s) { return (s.clues || []).filter(function (c) { return c.line === '路面' || /树影/.test(c.source || ''); }); },
+      /* Z4 口径 8:树影 = 路面线专属误报特征,井盖线的对应特征是「盖体反光误判(强日照)」——
+         影响面回放不再跨线抓井盖件,只回放路面线在池件。 */
+      what: '路面线在池件(树影类误报特征为路面线专属)',
+      pick: function (s) { return lineClues(s, '路面'); },
       decide: function (c, P) {
         var shadow = /树影/.test(c.source || '') ? 0.9 : 0.2;
         if (shadow >= P.shadowScore) return '驳回与转办';
