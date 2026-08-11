@@ -303,9 +303,9 @@
           <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#e9f6ef;color:#17a05e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">⑥</span>
           <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#8e968f">21:00–21:30 · T9/T10/T12 · 图 D6/D7/E3/G4</span>
         </div>
-        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">压力测试:调度、热线与治理</h2>
+        <h2 style="margin:14px 0 0;font-size:26px;letter-spacing:-.02em;color:#0b1a12;font-weight:700;line-height:1.3">压力测试:调度、复扫与治理</h2>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#0b1a12;font-style:italic;border-left:3px solid #17a05e;padding-left:14px">「Zakher 又一口井盖——没有空闲班组了。」</p>
-        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:760px;text-wrap:pretty">过载三步:预警广播先喊现场、超额件进批量加急分诊、当班复核主管抢占在途养护班组(原单挂起,紧急件完成自动回队)。12345 热线接到同一口井盖的来电,接线员录入后被去重合并进既有线索,来电人拿到回执编号。雨真的要来了:气象预警接入,系统按提前量下发一张雨前清掏专项任务包——它是计划性任务,在池件分级与派单准入标准一条不改。上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的机器直派,该类目立刻回退人审,区可申诉。</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.85;color:#1b231f;max-width:760px;text-wrap:pretty">过载三步:预警广播先喊现场、超额件进批量加急分诊、当班复核主管抢占在途养护班组(原单挂起,紧急件完成自动回队)。固定相机复扫在同一点位再次报警,系统并入既有线索作第二次观测——同设施同类目只记一条线索。雨真的要来了:气象预警接入,系统按提前量下发一张雨前清掏专项任务包——它是计划性任务,在池件分级与派单准入标准一条不改。上级主管部门顺手演示了那把安全侧的刀——关掉一个类目的机器直派,该类目立刻回退人审,区可申诉。</p>
         <sc-if value="{{ showScript }}" hint-placeholder-val="{{ true }}">
         <div style="margin-top:20px;border:1px solid #e4e7e2;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(11,26,18,.04),0 8px 24px rgba(11,26,18,.06)">
           <div style="background:#f7f8f5;border-bottom:1px solid #e4e7e2;padding:6px 12px;font-size:12px;color:#5c6660;letter-spacing:.04em;font-weight:600">讲稿 · 约 75 秒</div>
@@ -315,11 +315,11 @@
           </div>
           <div style="padding:12px 14px;border-bottom:1px solid #eef0ec">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">台上动作</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:00 → 顶栏角色切「复核主管」→ 调度视图点「挂起 WO-8871(抢占调度)」→ 21:10 看 m4 热线上报并入清单的回执与去重合并 → 21:30 角色切「上级主管部门」→ 系统管理里关掉「井盖缺失」机器直派。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">推进到 21:00 → 顶栏角色切「复核主管」→ 调度视图点「挂起 WO-8871(抢占调度)」→ 21:10 看 m4 重复观测并入清单的证据叠加与去重合并 → 21:30 角色切「上级主管部门」→ 系统管理里关掉「井盖缺失」机器直派。</p>
           </div>
           <div style="padding:12px 14px">
             <div style="font-size:11px;color:#8e968f;letter-spacing:.06em;font-weight:600;margin-bottom:5px">预判追问</div>
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「重复来电怎么办?」→ 同点位去重合并、重复来电计数可见(只累计,不构成自动提级)。</p>
+            <p style="margin:0;font-size:13px;line-height:1.8;color:#1b231f">「同一处反复被拍到怎么办?」→ 并入既有线索作观测记录、证据叠加,重复观测计数可见(只累计,不构成自动提级)。</p>
           </div>
         </div>
         </sc-if>
@@ -345,9 +345,9 @@
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px">
-          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 兜底与质量(热线上报并入)</span>
+          <span style="align-self:flex-start;display:inline-block;padding:1px 7px;border-radius:20px;font-size:11.5px;line-height:1.7;background:#e9f6ef;color:#17a05e;border:1px solid #c7e6d5">LIVE · 兜底与质量(重复观测并入)</span>
           <div style="overflow:hidden;border-radius:26px;border:1px solid #e4e7e2;background:#fff;box-shadow:0 18px 44px rgba(11,26,18,.16);width:390px;height:802px;flex:none">
-            <iframe data-src="app.html#/m4" title="工作台 · 兜底与质量(热线上报并入清单/去重合并)" style="width:100%;height:100%;border:0;display:block"></iframe>
+            <iframe data-src="app.html#/m4" title="工作台 · 兜底与质量(重复观测并入清单/去重合并)" style="width:100%;height:100%;border:0;display:block"></iframe>
           </div>
         </div>
       </div>

@@ -71,9 +71,11 @@
   /* R88 布局靶单①⑥ + A5⑦ 新增视图态:
      rulingOpen = 待裁定横条是否展开(默认收成一行)· seg = 调度视图两段的开合(总览默认开、操作台默认收)
      done = 工单镜像各分组「已完结(已完工/已验收)」紧凑行是否展开(默认收) */
+  /* R89 A4⑦ 追加 sub:操作台段内三个子折叠(班组负载 / 改派与合并拆单 / 抢占与挂起记录),
+     各自默认收 —— 段一打开不再是三块内容一摊到底,组头带计数,想动哪块开哪块。 */
   var VS = {
     line: '', state: '', crew: '', group: 'line', open: {}, alStatus: '',
-    rulingOpen: false, seg: { ov: true, ops: false }, done: {}
+    rulingOpen: false, seg: { ov: true, ops: false }, sub: { load: false, disp: false, pre: false }, done: {}
   };
   var FOLD = 5;
   var DONE_STATES = ['已完工', '已验收'];
@@ -92,6 +94,7 @@
   M2.toggleDone = function (k) { VS.done[k] = !VS.done[k]; rerender(); };
   M2.toggleRuling = function () { VS.rulingOpen = !VS.rulingOpen; rerender(); };
   M2.toggleSeg = function (k) { VS.seg[k] = !VS.seg[k]; rerender(); };
+  M2.toggleSub = function (k) { VS.sub[k] = !VS.sub[k]; rerender(); };
   M2.jump = function (id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -99,7 +102,8 @@
   };
   /* 待裁定卡的备选动作要跳到改派表 —— 表在「操作台」段里,段可能是收着的:先展开再跳 */
   M2.openOps = function (id) {
-    if (!VS.seg.ops) { VS.seg.ops = true; rerender(); }
+    /* 改派表现在收在「改派与合并拆单」子段里:段与子段都得先开,否则跳过去是一片收着的头 */
+    if (!VS.seg.ops || !VS.sub.disp) { VS.seg.ops = true; VS.sub.disp = true; rerender(); }
     window.setTimeout(function () { M2.jump(id || 'm2-dispatch-table'); }, 0);
   };
 
@@ -112,6 +116,13 @@
       '.m2-strip-hd{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;',
       'font-family:inherit;font-size:13px;color:#8d2f22;padding:9px 12px;cursor:pointer;text-align:left}',
       '.m2-strip-hd:hover{background:#fbe9e5}',
+      /* R89 ⑦:收合条右侧的一键采纳(与展开按钮同一行,不必先展开) */
+      '.m2-strip-row{display:flex;align-items:center;gap:8px;padding-right:10px}',
+      '.m2-strip-row>.m2-strip-hd{flex:1 1 auto;min-width:0}',
+      '.m2-strip-act{flex:none;display:flex;align-items:center;gap:6px}',
+      '.m2-strip-act .act-why{font-size:11px;color:#a4685c;max-width:190px}',
+      '@media (max-width:760px){.m2-strip-row{flex-wrap:wrap;padding-bottom:8px}',
+      '.m2-strip-act{padding-left:12px}}',
       '.m2-strip-ico{flex:none;width:17px;height:17px;line-height:17px;text-align:center;border-radius:50%;',
       'background:#c0392b;color:#fff;font-size:11px;font-weight:700}',
       '.m2-strip-t{flex:1 1 auto;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
@@ -126,6 +137,12 @@
       '.m2-seg-t{font-weight:700}',
       '.m2-seg-d{flex:1 1 auto;font-size:11.5px;color:var(--faint,#8e968f);font-weight:400}',
       '.m2-seg-n{flex:none;font-size:11.5px;color:var(--faint,#8e968f)}',
+      /* 操作台内部子折叠(比段头轻一级:无底色、左侧一道竖线) */
+      '.m2-sub{display:flex;align-items:center;gap:8px;width:100%;background:#fff;border:1px solid var(--line,#e4e7e2);',
+      'border-left:3px solid #7b8794;border-radius:6px;font-family:inherit;font-size:12.5px;color:var(--ink,#1b231f);',
+      'padding:7px 11px;cursor:pointer;text-align:left;margin:10px 0 6px}',
+      '.m2-sub:hover{border-color:#1a5fb4;border-left-color:#1a5fb4}',
+      '.m2-sub-t{font-weight:600}',
       /* 工单镜像:已完结紧凑行 */
       '.m2-done{display:flex;flex-direction:column;gap:0;border:1px solid var(--line,#e4e7e2);border-radius:8px;',
       'background:#fbfcfa;margin:4px 0 2px;overflow:hidden}',
@@ -173,6 +190,38 @@
     if (!tid) return '<span class="faint">—</span>';
     return '<a href="#/m2/tickets/' + UI.esc(tid) + '">' + UI.esc(tid) + '</a>';
   }
+  /* R89 A3 · 「关联对象」区的实链列表:kv 那几行是这张卡自己的外键字段,
+     下面这张表是 S.linksOf(objId) —— 动作日志里所有连到这个对象的链接实例,含它是被谁连过来的那一端。 */
+  function anyLink(id) {
+    if (!id) return '<span class="faint">—</span>';
+    if (/^CL-/.test(id)) return clueLink(id);
+    if (/^WO-/.test(id)) return ticketLink(id);
+    if (/^AL-/.test(id)) return '<a href="#/m2/alerts/' + UI.esc(id) + '">' + UI.esc(id) + '</a>';
+    if (/^CR-/.test(id)) return crewLink(id);
+    var kind = /^(MH|RD|PL|GR)-\d/.test(id) ? 'facility'
+      : (/^RC-/.test(id) ? 'recon' : (/^IV-/.test(id) ? 'case' : null));
+    var h = kind && S.route && S.route(kind, id);
+    if (h) return '<a href="' + UI.esc(h) + '">' + UI.esc(id) + '</a>';
+    /* 认不出的端点(角色名 / 类目 / 规则号 / 管段 / 传感器)按纯文本 —— 不造没有落点的链接 */
+    return '<span class="mono">' + UI.esc(id) + '</span>';
+  }
+  function linkList(objId) {
+    var ls = (S.linksOf && S.linksOf(objId)) || [];
+    if (!ls.length) return '<div class="tiny faint">本对象当前无链接实例。</div>';
+    var rows = ls.map(function (ln) {
+      var def = S.ACTIONS[ln.action] || {};
+      return '<tr><td class="tiny">' + UI.esc(ln.type) + '</td>' +
+        '<td>' + anyLink(ln.fromId) + ' <span class="faint">↦</span> ' + anyLink(ln.toId) + '</td>' +
+        '<td class="tiny">' + UI.esc(def.label || ln.action) + '</td>' +
+        '<td class="tiny mono">' + UI.esc(ln.t || '') + '</td></tr>';
+    }).join('');
+    return '<div class="tiny" style="margin-bottom:4px">链接实例 ' + ls.length +
+      ' 条 · 全量与筛选见系统管理 · 本体日志审计</div>' +
+      '<div style="overflow-x:auto;max-height:260px"><table class="tb"><thead><tr>' +
+      '<th style="width:130px">链接类型</th><th>两端(可点)</th><th style="width:140px">产生动作</th><th style="width:56px">时刻</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
   // 状态机五格进度(施工图 §7 m2);非五格内状态(例外分支)单独标注
   function progressLine(t) {
     var idx = TICKET_STATES.indexOf(t.state);
@@ -186,17 +235,27 @@
     if (t.recalled) extra += ' ' + UI.badge('已召回', 'amber');
     return seq + extra;
   }
-  function stateBadge(t) {
+  /* R89 A4② · 徽章去重:卡上的徽章先摆成 {kind,text,html} 再过 UI.dedupeBadges —— 通道名与来源名
+     重叠时只留通道(来源本就在卡脚详情行)、级别词与类型词重叠时只显一次。函数未就绪则原样渲染。 */
+  function badgeRow(items) {
+    var list = (items || []).filter(function (b) { return b && b.text; });
+    if (UI.dedupeBadges) list = UI.dedupeBadges(list) || list;
+    return list.map(function (b) { return b.html; }).join(' ');
+  }
+  function ticketBadges(t) {
     var idx = TICKET_STATES.indexOf(t.state);
     var tone = idx < 0 ? 'red' : (idx === TICKET_STATES.length - 1 ? 'green' : 'blue');
-    var b = UI.badge(t.state, tone);
-    if (t.suspended) b += ' ' + UI.badge('挂起', 'amber');
-    if (t.grade === '灰档') b += ' ' + UI.badge('灰档', 'grey');
-    if (t.kpiExempt) b += ' ' + UI.badge('白跑不计考核', 'grey');
-    /* R88 A2:超时兜底自动派的单要一眼看出来源 —— 定性仍悬,复核员事后补审 */
-    if (t.overdueFallback) b += ' ' + UI.badge('超时兜底派单', 'amber');
-    return b;
+    var out = [{ kind: 'state', text: t.state, html: UI.badge(t.state, tone) }];
+    if (t.suspended) out.push({ kind: 'state', text: '挂起', html: UI.badge('挂起', 'amber') });
+    if (t.grade === '灰档') out.push({ kind: 'grade', text: '灰档', html: UI.badge('灰档', 'grey') });
+    if (t.kpiExempt) out.push({ kind: 'kpi', text: '白跑不计考核', html: UI.badge('白跑不计考核', 'grey') });
+    /* R88 A2:超时兜底自动派的单要一眼看出来源 —— 定性仍悬,复核员事后补审。
+       它与卡脚「来源 ④ 超时兜底派」说的是同一件事:按 A4② 的规则留通道徽章,来源留在详情行(卡脚),
+       两处不各挂一枚 —— 所以这里不把 t.source 也做成徽章。 */
+    if (t.overdueFallback) out.push({ kind: 'lane', text: '超时兜底派单', html: UI.badge('超时兜底派单', 'amber') });
+    return out;
   }
+  function stateBadge(t) { return badgeRow(ticketBadges(t)); }
   var AL_TONE = { '成立': 'green', '申诉复核中': 'amber', '误报撤销': 'grey', '已撤销': 'grey' };
   function alertStatusBadge(st) { return UI.badge(st || '成立', AL_TONE[st] || 'grey'); }
   function selOpts(list, cur) {
@@ -306,7 +365,8 @@
         ['确认时间', al.t],
         ['源线索', clueLink(al.clueId), true],
         ['关联工单', tk ? (ticketLink(tk.id) + ' <span class="faint">· ' + UI.esc(tk.summary || '') + '</span>') : '—', true]
-      ]);
+      ]) +
+      '<div class="sep"></div>' + UI.secTitle('链接实例', 'alert') + linkList(al.id);
     if (al.status === '已撤销') {
       html += '<div class="sep"></div>' + UI.banner('warn',
         '已撤销:理由「' + UI.esc(al.revokeReason || '') + '」· ' + UI.esc(al.revokeT || '') + ' —— 记录不删除,状态置「已撤销」。');
@@ -366,7 +426,10 @@
     return '<div' + UI.cardAttrs('ticket', { cls: 'card card-tight', line: t.line }) + ' id="tk-' + UI.esc(t.id) + '">' +
       '<div class="card-hd"><b class="oc-t1"><a href="#/m2/tickets/' + UI.esc(t.id) + '">' +
       UI.esc(t.summary || S.ticketSummary(t)) + '</a></b>' +
-      '<span class="row" style="gap:6px;align-items:center">' + lineBadge(t.line) + UI.cardTag('ticket', t.type) + '</span></div>' +
+      '<span class="row" style="gap:6px;align-items:center">' + badgeRow([
+        { kind: 'line', text: t.line, html: lineBadge(t.line) },
+        { kind: 'type', text: t.type, html: UI.cardTag('ticket', t.type) }
+      ]) + '</span></div>' +
       '<div class="small muted">' + facLink(t.facility) + (f ? ' · ' + UI.esc(f.kind) : '') + '</div>' +
       '<div style="margin:6px 0">' + stateBadge(t) + ' <span class="faint">·</span> 承办:' + crewLink(t.crew) + '</div>' +
       '<div style="margin:6px 0">' + progressLine(t) + '</div>' +
@@ -452,7 +515,8 @@
           (t.overdueFallback ? ' ' + UI.badge('超时兜底派单', 'amber') +
             ' <span class="tiny">加急人工档到期无人给结论,系统先派;告警未成立、定性仍悬,复核员事后补审</span>' : ''), true],
         ['灰档说明', t.greyNote || '']
-      ]) + '</div>';
+      ]) +
+      '<div class="sep"></div>' + UI.secTitle('链接实例', 'ticket') + linkList(t.id) + '</div>';
     var hist = (t.resumeHistory || []).map(function (h) {
       return '<li>' + UI.esc(h.t) + ' · ' + UI.esc(h.way) + ' · ' + UI.esc(h.by) +
         ' · 条件「' + UI.esc(h.cond) + '」' + (h.stopMin ? ' · 停表 ' + h.stopMin + ' 分钟' : '') + '</li>';
@@ -656,9 +720,16 @@
 
   /* ---------------- ④ 调度视图 ---------------- */
   /* ④-1 待裁定卡(抢占第三步:前两步试过什么 + 建议方案 + 后果 + 采纳 / 备选) */
+  /* 采纳建议的入参:收合条上的一键按钮与展开卡里的按钮同一份 —— 同一个动作、同一条链
+     (preempt_arbitrate 内含被让位件的挂起与 SLA 停表),不是两个近似入口。 */
+  function adoptParams(pr) {
+    return {
+      clueId: pr.clueId, crew: (pr.proposal || {}).crew || '',
+      reason: '采纳系统建议:' + (pr.proposal && pr.proposal.text ? pr.proposal.text : '')
+    };
+  }
   function rulingPendingCard(pr) {
-    var reason = '采纳系统建议:' + (pr.proposal && pr.proposal.text ? pr.proposal.text : '');
-    var p = { clueId: pr.clueId, crew: (pr.proposal || {}).crew || '', reason: reason };
+    var p = adoptParams(pr);
     var chk = S.check('preempt_arbitrate', p);
     var tried = (pr.tried || []).map(function (x) {
       return '<li><b>' + UI.esc(x.no + ' · ' + x.name) + ':</b> ' + UI.esc(x.result) + '</li>';
@@ -699,6 +770,8 @@
   }
   /* R88 布局靶单①:待裁定不再是压在地图上面的大卡 —— 收成地图上方一条醒目横条,
      默认一行(「⚠ 待裁定 RL-100 · 抢占方案等复核主管确认 ▾」),点开才是全卡。 */
+  /* R89 A4⑦:采纳建议一键化 —— 按钮就在收合条上,不必先展开。
+     展开卡仍在(前两步试了什么 / 后果 / 备选改派),它是「想细看再看」,不是「必须先看才能点」。 */
   function rulingStrip() {
     var list = S.pendingRulings();
     if (!list.length) return '';
@@ -707,12 +780,24 @@
     var title = '待裁定 ' + pr.id + ' · 抢占方案等复核主管确认 ' + (on ? '▴ 收起' : '▾ 点开看方案与后果');
     var side = (list.length > 1 ? '共 ' + list.length + ' 件 · ' : '') +
       (pr.suggestedBy ? pr.suggestedBy + ' · 建议' : '');
+    var p = adoptParams(pr);
+    var chk = S.check('preempt_arbitrate', p);
+    var adopt = '<div class="m2-strip-act">' +
+      '<button type="button" class="btn btn-sm btn-primary' + (chk.ok ? '' : ' is-off') + '"' +
+      (chk.ok ? '' : ' disabled') + ' data-act="preempt_arbitrate" data-p="' + UI.attr(p) + '"' +
+      ' title="' + UI.esc(chk.ok
+        ? '采纳 ' + ((pr.proposal || {}).text || '') + '(含被让位件挂起与 SLA 停表)'
+        : '未满足:' + chk.reason) + '">一键采纳建议</button>' +
+      (chk.ok ? '' : '<span class="act-why">未满足:' + UI.esc(chk.reason) + '</span>') +
+      '</div>';
     return '<div class="m2-strip">' +
+      '<div class="m2-strip-row">' +
       '<button type="button" class="m2-strip-hd" aria-expanded="' + (on ? 'true' : 'false') +
       '" onclick="M2.toggleRuling()">' +
       '<span class="m2-strip-ico">!</span>' +
       '<span class="m2-strip-t">' + UI.esc(title) + '</span>' +
-      '<span class="m2-strip-n">' + UI.esc(side) + '</span></button>' +
+      '<span class="m2-strip-n">' + UI.esc(side) + '</span></button>' + adopt +
+      '</div>' +
       (on ? '<div class="m2-strip-body">' + list.map(rulingPendingCard).join('') + '</div>' : '') +
       '</div>';
   }
@@ -904,21 +989,46 @@
       '<span class="m2-seg-d">' + UI.esc(desc) + '</span>' +
       '<span class="m2-seg-n">' + UI.esc(right + (on ? '' : ' · 点开')) + '</span></button>';
   }
+  /* 操作台内部的子折叠头(比段头轻一级:段 = 全局态 / 操作台,子段 = 操作台里的三件事) */
+  function subHead(key, title, desc, right) {
+    var on = !!VS.sub[key];
+    return '<button type="button" class="m2-sub" aria-expanded="' + (on ? 'true' : 'false') +
+      '" onclick="M2.toggleSub(\'' + key + '\')">' +
+      '<span class="m2-seg-cev">' + (on ? '▾' : '▸') + '</span>' +
+      '<span class="m2-sub-t">' + UI.esc(title) + '</span>' +
+      '<span class="m2-seg-d">' + UI.esc(desc) + '</span>' +
+      '<span class="m2-seg-n">' + UI.esc(right + (on ? '' : ' · 点开')) + '</span></button>';
+  }
+  /* 抢占与挂起记录子段:在途抢占卡 + 当前所有挂起件(挂起是抢占的直接后果,同一处看) */
+  function suspendedList(exceptId) {
+    var list = S.get().tickets.filter(function (t) { return t.suspended && t.id !== exceptId; });
+    if (!list.length) return '';
+    return '<div class="m2-done" style="margin-top:8px">' + list.map(function (t) {
+      return '<div class="m2-done-row">' +
+        '<span class="m2-done-id">' + ticketLink(t.id) + '</span>' +
+        '<span class="m2-done-s">' + UI.esc(t.summary || S.ticketSummary(t)) +
+        (t.resumeCond ? ' · 等:' + UI.esc(t.resumeCond.cond) : '') + '</span>' +
+        '<span class="m2-done-st">' + stateBadge(t) + '</span></div>';
+    }).join('') + '</div>';
+  }
   function renderDispatch() {
-    var crews = S.get().crews;
+    var st = S.get();
+    var crews = st.crews;
     var idle = crews.filter(function (c) { return c.status === '空闲'; }).length;
-    var openN = S.get().tickets.filter(function (t) { return t.state !== '已验收' && t.state !== '已合并'; }).length;
+    var openN = st.tickets.filter(function (t) { return t.state !== '已验收' && t.state !== '已合并'; }).length;
+    var susN = st.tickets.filter(function (t) { return t.suspended; }).length;
+    var ops =
+      subHead('load', '班组负载', '在办 / 在途 / 空闲,点班组名进详情', crews.length + ' 班组 · 空闲 ' + idle) +
+      (VS.sub.load ? '<div class="grid3">' + crews.map(crewCard).join('') + '</div>' : '') +
+      subHead('disp', '改派与合并拆单', '理由码必填,动作入日志', openN + ' 单可调度') +
+      (VS.sub.disp ? dispatchTable() : '') +
+      subHead('pre', '抢占与挂起记录', '在途抢占的让位口 + 当前挂起件与恢复条件', '挂起 ' + susN + ' 单') +
+      (VS.sub.pre ? (preemptCard() + suspendedList('WO-8871')) : '');
     return rulingStrip() +
       segHead('ov', '总览', '班组位置地图 + 最近调度动作流(全区态)', crews.length + ' 班组 · 空闲 ' + idle) +
       (VS.seg.ov ? (crewMap() + dispatchFeed()) : '') +
-      segHead('ops', '操作台', '班组负载卡 · 抢占调度(单工单)· 改派 / 合并 / 拆单', openN + ' 单可调度') +
-      (VS.seg.ops
-        ? (UI.secTitle('班组负载卡(在办 / 在途 / 空闲)', 'ticket') +
-          '<div class="grid3">' + crews.map(crewCard).join('') + '</div>' +
-          '<div style="margin-top:10px">' + preemptCard() + '</div>' +
-          '<div style="margin-top:10px">' + UI.secTitle('改派 / 合并 / 拆单', 'ticket') + '</div>' +
-          dispatchTable())
-        : '');
+      segHead('ops', '操作台', '班组负载 · 改派与合并拆单 · 抢占与挂起记录(三段各自收放)', openN + ' 单可调度') +
+      (VS.seg.ops ? ops : '');
   }
 
   /* ---------------- 待裁定的全局横幅(渲染层加,不动 store)----------------

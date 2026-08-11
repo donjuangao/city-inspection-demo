@@ -429,11 +429,43 @@
     html += mirrorFold(t);
     html += '</div>';
 
+    /* R89 A4⑧ 渲染侧:关阀读数回传与双照回传同属「回传区」—— 同一道门槛(到场之后)、同一层级(工单卡下方的回传卡),
+       排在双照之前(核查任务的主回传是读数,照片是并行证据);「更多操作」抽屉留给异常出口(受阻/交接/拒单/部分完工),不混。 */
     if (['已到场', '已完工', '已验收'].indexOf(t.state) >= 0) {
+      html += surveyCard(t);
       html += fieldReturnCard(t);
       html += completionCard(t);
     }
     return html;
+  }
+
+  /* ---------------- 管网核查工单 · 回传关阀试验数据(R89 A4⑧;写回 investigation.survey 对应段)---------------- */
+  function surveyCard(t) {
+    if (t.type !== '核查任务') return '';
+    var k = (w.S.get().investigations || []).filter(function (x) { return x.ticketId === t.id; })[0];
+    if (!k) return '';
+    if (!k.survey) {
+      return '<div class="c-job"><div class="c-sec" style="margin:0 0 10px"><b>关阀试验数据</b><span>' + esc(k.id) + '</span></div>' +
+        '<div class="c-note" style="margin-top:0">核查任务包尚未开启(复核员在工作台开包后,本表可填)。</div></div>';
+    }
+    var segs = k.survey.segs || [], todo = segs.filter(function (g) { return !g.done; });
+    var done = segs.filter(function (g) { return g.done; });
+    var chk = w.S.check('survey_report', { caseId: k.id, seg: (todo[0] || {}).no, preFlow: 1, postFlow: 1, actor: '班组账号' });
+    return '<div class="c-job c-form">' +
+      '<div class="c-sec" style="margin:0 0 4px"><b>回传试验数据</b><span>分段关阀 · ' + done.length + '/' + segs.length + '</span></div>' +
+      '<div class="c-note" style="margin-top:0">每段关阀前后各读一次流量,读数写回核查任务包对应段,嫌疑区间按段收敛;拍照回传并行保留,两者不互相替代。</div>' +
+      '<label class="fl">试验段</label><select id="sv-seg-' + esc(t.id) + '">' +
+      segs.map(function (g) {
+        return '<option value="' + g.no + '"' + (g.done ? ' disabled' : '') + '>' + esc(g.name) + (g.done ? '(已回传)' : '') + '</option>';
+      }).join('') + '</select>' +
+      '<label class="fl">关阀前流量(m³/h)</label><input type="text" id="sv-pre-' + esc(t.id) + '" placeholder="如 42.5">' +
+      '<label class="fl">关阀后流量(m³/h)</label><input type="text" id="sv-post-' + esc(t.id) + '" placeholder="如 12.1">' +
+      '<label class="fl">现场备注(选填)</label><input type="text" id="sv-note-' + esc(t.id) + '" placeholder="如:关阀后仍有余流">' +
+      '<div style="margin-top:12px"><button type="button" class="btn btn-primary btn-block' + (chk.ok ? '' : ' is-off') + '"' +
+      (chk.ok ? '' : ' disabled') + ' onclick="CREW_ACT.surveyReport(\'' + esc(t.id) + '\',\'' + esc(k.id) + '\')">回传本段读数</button></div>' +
+      (chk.ok ? '' : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
+      (done.length ? '<div class="c-note">已回传:' + done.map(function (g) { return esc(g.name) + ' ' + g.preFlow + ' → ' + g.postFlow; }).join(' · ') + '</div>' : '') +
+      '</div>';
   }
 
   /* ---------------- 现场回传 · 修复前/后双照 ---------------- */
@@ -594,6 +626,16 @@
     safety: function () {
       var el = d.getElementById('sf-note'), note = el ? el.value : '';
       var r = w.S.commit('crew_safety', { note: note, actor: '班组账号' });
+      if (!r.ok) UI.toast('动作未执行:' + r.reason, 'bad'); else if (r.log) UI.toast(r.log.sum, 'ok');
+    },
+    /* R89 A4⑧:分段关阀试验读数回传(表单当前值 → survey_report) */
+    surveyReport: function (ticketId, caseId) {
+      var g = d.getElementById('sv-seg-' + ticketId), pre = d.getElementById('sv-pre-' + ticketId);
+      var post = d.getElementById('sv-post-' + ticketId), nt = d.getElementById('sv-note-' + ticketId);
+      var r = w.S.commit('survey_report', {
+        caseId: caseId, seg: g ? g.value : '', preFlow: pre ? pre.value : '',
+        postFlow: post ? post.value : '', note: nt ? nt.value : '', actor: '班组账号'
+      });
       if (!r.ok) UI.toast('动作未执行:' + r.reason, 'bad'); else if (r.log) UI.toast(r.log.sum, 'ok');
     },
     reportNew: function (crewId) {

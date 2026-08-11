@@ -86,6 +86,11 @@
     var sub = def.sub ? ' <span class="lane-sub">(' + esc(def.sub) + ')</span>' : '';
     return '<span class="badge lane-badge ' + def.tone + '" title="' + esc((laneDef(def.key) || {}).kind || '') + '">' + esc(def.name) + '</span>' + sub;
   };
+  /* 通道主名(纯文本;R89 A4② 徽章去重的比对用) */
+  U.laneText = function (laneRaw) {
+    var def = LANE_CLASS[laneRaw];
+    return def ? def.name : (laneRaw || '');
+  };
   /* 通道判据句(先派后审 / 先审后派 / 不派人 / 不进处置) */
   U.laneKind = function (laneRaw) {
     var c = LANE_CLASS[laneRaw]; var d = c ? laneDef(c.key) : null;
@@ -254,7 +259,7 @@
     if (!mix) { mix = {}; os.forEach(function (o) { var k = o.kind || '其他'; mix[k] = (mix[k] || 0) + 1; }); }
     return Object.keys(mix).map(function (k) { return k + '×' + mix[k]; }).join(' / ');
   }
-  /* 线索卡/详情头部观测行:观测 N 次 · 首见 xx:xx · 最近 xx:xx · 来源:传感器×2/热线×1 */
+  /* 线索卡/详情头部观测行:观测 N 次 · 首见 xx:xx · 最近 xx:xx · 来源:传感器×2/巡查×1 */
   U.obsLine = function (c) {
     if (!c) return '';
     var os = obsList(c);
@@ -300,7 +305,7 @@
     ticket: { color: '#1a5fb4', label: '工单' },
     case: { color: '#6b3fa0', label: '调查案' },
     audit: { color: '#9a6b00', label: '抽审' },
-    report: { color: '#2e7d32', label: '热线上报' },
+    report: { color: '#2e7d32', label: '并入观测' },
     facility: { color: '#5b6b7c', label: '设施' }
   };
   var LINE_COLOR = { '井盖': '#c2410c', '路面': '#1a5fb4', '管网': '#0e7490' };
@@ -441,12 +446,16 @@
     opts = opts || {};
     var kind = opts.kind || '线索';
     var f = obj.facility ? (w.S.find.facility(obj.facility) || null) : null;
+    /* R89 A4②:徽章先去重再拼(通道 vs 来源 / level vs type 重叠只显一次)—— 来源仍在下方 l3 详情行 */
     var badges = [];
-    if (obj.level) badges.push(U.levelBadge(obj.level));
-    if (obj.lane) badges.push(U.laneBadge(obj.lane));
-    if (obj.status) badges.push(U.statusBadge(obj.status));
-    if (obj.fastlane) badges.push(U.badge('机器直派自动派', 'amber'));
-    if (obj.conf !== undefined && obj.conf !== null) badges.push(U.badge('置信 ' + obj.conf, 'grey'));
+    if (obj.level) badges.push({ kind: 'level', text: obj.level, html: U.levelBadge(obj.level) });
+    if (obj.lane) badges.push({ kind: 'lane', text: U.laneText(obj.lane), html: U.laneBadge(obj.lane) });
+    if (obj.type) badges.push({ kind: 'type', text: obj.type, html: U.badge(obj.type, 'blue') });
+    if (obj.source) badges.push({ kind: 'source', text: obj.source, html: '' });   // 只参与去重判据,自身不出徽章
+    if (obj.status) badges.push({ kind: 'status', text: U.statusText(obj.status), html: U.statusBadge(obj.status) });
+    if (obj.fastlane) badges.push({ kind: 'other', text: '机器直派自动派', html: U.badge('机器直派自动派', 'amber') });
+    if (obj.conf !== undefined && obj.conf !== null) badges.push({ kind: 'other', text: '置信', html: U.badge('置信 ' + obj.conf, 'grey') });
+    badges = U.dedupeBadges(badges).map(function (x) { return x.html; }).filter(Boolean);
 
     var l2 = f ? ('关于:' + esc(f.kind) + ' ' + U.addr(f.id) + (f.landmark ? ' <span class="faint">(' + esc(f.landmark) + ')</span>' : ''))
       : ('关于:' + esc(obj.facility || obj.dma || '—'));
@@ -469,7 +478,7 @@
     var cs = clue.checks || [];
     if (!cs.length) {
       return '<div class="checks"><div class="checks-hd">机械校验闸</div>' +
-        '<div class="check-row"><span class="check-na">本件无机械校验记录(来源=现场发现/热线上报,直接进人审甄别)</span></div></div>';
+        '<div class="check-row"><span class="check-na">本件无机械校验记录(来源=现场发现 / 人工巡查,直接进人审甄别)</span></div></div>';
     }
     var pass = cs.filter(function (c) { return c.result === 'pass'; }).length;
     var rows = cs.map(function (c) {
@@ -612,7 +621,6 @@
     { key: 'alertId', type: '告警', route: 'alert' },
     { key: 'caseId', type: '调查案', route: 'case' },
     { key: 'reconId', type: '对账件', route: 'recon' },
-    { key: 'reportId', type: '热线上报', route: null },
     { key: 'sensorId', type: '传感器', route: null },
     { key: 'facility', type: '设施', route: 'facility' },
     { key: 'crew', type: '班组', route: null },
@@ -635,16 +643,56 @@
     return { type: '—', id: '—', href: null };
   }
 
-  var LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' };
+  /* R89 A3 · 链接列:每条日志把「这一步动作把哪两个对象连起来了」渲染成 类型:from ↦ to,两端可点。
+     端点 id → 路由靠前缀识别(S.route 认的 kind 交给它;班组走 m2 的班组详情子路由);
+     认不出的端点(角色名 / 类目 / 规则号 / 管段)按纯文本渲染 —— 不造假链接。 */
+  var LA_LK_ROUTE = [
+    [/^CL-/, 'clue'], [/^WO-/, 'ticket'], [/^AL-/, 'alert'], [/^IV-/, 'case'], [/^RC-/, 'recon'],
+    [/^(MH|RD|PL)-\d/, 'facility']
+  ];
+  function laEndHref(id) {
+    for (var i = 0; i < LA_LK_ROUTE.length; i++) {
+      if (!LA_LK_ROUTE[i][0].test(id)) continue;
+      return (w.S.route && w.S.route(LA_LK_ROUTE[i][1], id)) || null;
+    }
+    if (/^CR-/.test(id)) return '#/m2/crew/' + id;
+    return null;
+  }
+  function laEnd(id) {
+    var h = laEndHref(id);
+    return h
+      ? '<a class="la-lk" href="' + esc(h) + '" data-la="go" data-h="' + esc(h) + '">' + esc(id) + '</a>'
+      : '<span class="la-lk-x">' + esc(id) + '</span>';
+  }
+  function laLinkCell(links) {
+    if (!links.length) return '<span class="faint">—</span>';
+    return links.map(function (ln) {
+      return '<div class="la-lk-row"><span class="la-lk-t">' + esc(ln.type) + '</span>' +
+        laEnd(ln.fromId) + '<span class="la-lk-a">↦</span>' + laEnd(ln.toId) + '</div>';
+    }).join('');
+  }
+  function laLinkText(links) {
+    return links.map(function (ln) { return ln.type + ':' + ln.fromId + '↦' + ln.toId; }).join(' | ');
+  }
+
+  var LA_BLANK = { q: '', actor: '', act: '', otype: '', ltype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' };
+  function laReset() {
+    var o = {};
+    for (var k in LA_BLANK) if (Object.prototype.hasOwnProperty.call(LA_BLANK, k)) o[k] = LA_BLANK[k];
+    return o;
+  }
+  var LA = laReset();
   var LA_ROOT = 'la-root';
 
   function laRows() {
     return (w.S.get().actionLog || []).map(function (g) {
       var o = laObjOf(g);
+      var links = (g.links || []).slice();
       return {
         t: g.t || '', actor: g.actor || '', auto: !!g.auto,
         action: g.action || '', label: g.label || g.action || '',
         otype: o.type, oid: o.id, href: o.href,
+        links: links, ltype: (links[0] && links[0].type) || '', ltxt: laLinkText(links),
         sum: g.sum || '', par: U.logParams(g), rid: g.rid || '', snap: g.snapshot || ''
       };
     });
@@ -653,14 +701,15 @@
     if (LA.actor && r.actor !== LA.actor) return false;
     if (LA.act && r.action !== LA.act) return false;
     if (LA.otype && r.otype !== LA.otype) return false;
+    if (LA.ltype && !r.links.some(function (ln) { return ln.type === LA.ltype; })) return false;
     if (LA.t0 && r.t < LA.t0) return false;
     if (LA.t1 && r.t > LA.t1) return false;
     var q = LA.q.trim().toLowerCase();
     if (!q) return true;
-    return [r.t, r.actor, r.action, r.label, r.otype, r.oid, r.sum, r.par, r.rid, r.snap]
+    return [r.t, r.actor, r.action, r.label, r.otype, r.oid, r.ltxt, r.sum, r.par, r.rid, r.snap]
       .join(' ').toLowerCase().indexOf(q) >= 0;
   }
-  var LA_SORT_KEY = { t: 't', actor: 'actor', action: 'label', obj: 'oid' };
+  var LA_SORT_KEY = { t: 't', actor: 'actor', action: 'label', obj: 'oid', link: 'ltype' };
   function laSorted(rows) {
     var key = LA_SORT_KEY[LA.sk] || 't', dir = LA.sd === 'asc' ? 1 : -1;
     return rows.map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) {
@@ -688,6 +737,12 @@
         return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(tx) + '</option>';
       }).join('') + '</select>';
   }
+  /* 链接类型下拉的选项 = S.linkTypes()(动作声明聚合的唯一真源),带当前日志里的实例数;
+     零实例的类型也列出来 —— 它是「声明了但今天没发生」,不是不存在。 */
+  function laLinkOpts() {
+    var ts = (w.S.linkTypes && w.S.linkTypes()) || [];
+    return ts.map(function (x) { return { v: x.type, t: x.type + '(' + x.count + ')' }; });
+  }
   function laTh(k, text, width) {
     var on = LA.sk === k;
     return '<th style="width:' + width + 'px"><button type="button" class="la-th' + (on ? ' is-on' : '') +
@@ -705,6 +760,7 @@
       '<label class="la-f">账号' + laSel('actor', actors, LA.actor, '全部') + '</label>' +
       '<label class="la-f">动作类型' + laSel('act', acts, LA.act, '全部') + '</label>' +
       '<label class="la-f">对象类型' + laSel('otype', types, LA.otype, '全部') + '</label>' +
+      '<label class="la-f">链接类型' + laSel('ltype', laLinkOpts(), LA.ltype, '全部') + '</label>' +
       '<label class="la-f">时间段<span class="la-range">' +
       '<input type="text" data-la="i" data-k="t0" value="' + esc(LA.t0) + '" placeholder="19:00" size="5">' +
       '<span class="la-dash">—</span>' +
@@ -728,6 +784,7 @@
         '<td>' + esc(r.actor) + (r.auto ? ' ' + U.badge('自动', 'amber') : '') + '</td>' +
         '<td><b>' + esc(r.label) + '</b><div class="tiny mono">' + esc(r.action) + '</div></td>' +
         '<td><span class="tiny">' + esc(r.otype) + '</span><div class="mono">' + esc(r.oid) + '</div></td>' +
+        '<td class="la-lks">' + laLinkCell(r.links) + '</td>' +
         '<td class="small">' + esc(r.sum) + (r.par ? '<div class="tiny">' + esc(r.par) + '</div>' : '') + '</td>' +
         '<td class="tiny mono">' + esc(r.rid) + ' · ' + esc(r.snap) + '</td>' +
         '</tr>';
@@ -749,7 +806,7 @@
         bag[k].push(r);
       });
       body = order.map(function (k) {
-        return '<tbody><tr class="la-grp"><td colspan="6"><b>' + esc(k) + '</b> · ' + bag[k].length + ' 条</td></tr>' +
+        return '<tbody><tr class="la-grp"><td colspan="7"><b>' + esc(k) + '</b> · ' + bag[k].length + ' 条</td></tr>' +
           laTrs(bag[k]) + '</tbody>';
       }).join('');
     } else {
@@ -757,6 +814,7 @@
     }
     return head + '<div class="la-scroll"><table class="tb la-tb"><thead><tr>' +
       laTh('t', '时刻', 62) + laTh('actor', '账号', 104) + laTh('action', '动作', 176) + laTh('obj', '对象', 138) +
+      laTh('link', '链接', 210) +
       '<th>摘要 · 关键参数</th><th style="width:132px">记录号 · 快照</th>' +
       '</tr></thead>' + body + '</table></div>';
   }
@@ -764,11 +822,11 @@
   function laCsv() {
     var rows = laSorted(laRows().filter(laMatch));
     function cell(v) { return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"'; }
-    var lines = [['时刻', '账号', '动作', '动作码', '对象类型', '对象', '摘要', '关键参数', '记录号', '版本组']
+    var lines = [['时刻', '账号', '动作', '动作码', '对象类型', '对象', '链接', '摘要', '关键参数', '记录号', '版本组']
       .map(cell).join(',')];
     rows.forEach(function (r) {
-      lines.push([r.t, r.actor + (r.auto ? '(服务账号)' : ''), r.label, r.action, r.otype, r.oid, r.sum, r.par, r.rid, r.snap]
-        .map(cell).join(','));
+      lines.push([r.t, r.actor + (r.auto ? '(服务账号)' : ''), r.label, r.action, r.otype, r.oid, r.ltxt,
+        r.sum, r.par, r.rid, r.snap].map(cell).join(','));
     });
     var blob = new w.Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
     var url = w.URL.createObjectURL(blob);
@@ -782,12 +840,36 @@
     U.toast('已导出 ' + rows.length + ' 条动作记录(CSV)', 'ok');
   }
 
+  /* R89 A3 穷尽自检行:类型表与日志同源(链接类型 = 动作声明的聚合),所以「未归类」应恒为 0;
+     这行不是装饰 —— 它是那条穷尽判据的活机制:非 0 就标红,并把出问题的记录号列出来。
+     顺带核「有没有动作漏写 links 声明 / 声明表里有动作表没有的键」,两项也是 0 才算对齐。 */
+  function laAudit() {
+    var a = (w.S.linkAudit && w.S.linkAudit()) || null;
+    if (!a) return '';
+    var bad = a.unclassified, undecl = (a.undeclaredActions || []).length, stale = (a.staleLinkKeys || []).length;
+    var ok = !bad && !undecl && !stale;
+    var txt = '链接完整性:' + a.types + ' 类 · ' + a.instances + ' 实例 · 未归类 ' + bad + (ok ? ' ✓' : '');
+    var more = '';
+    if (bad) {
+      more += '<div class="la-au-x">未归类记录:' +
+        esc(a.items.slice(0, 8).map(function (x) { return x.rid + ' ' + x.type; }).join(' · ')) +
+        (a.items.length > 8 ? ' …' : '') + '</div>';
+    }
+    if (undecl) more += '<div class="la-au-x">未声明 links 的动作 ' + undecl + ' 个:' + esc(a.undeclaredActions.slice(0, 8).join(' · ')) + '</div>';
+    if (stale) more += '<div class="la-au-x">声明表里有、动作表没有的键 ' + stale + ' 个:' + esc(a.staleLinkKeys.join(' · ')) + '</div>';
+    return '<div class="la-au' + (ok ? '' : ' is-bad') + '"><b>' + esc(txt) + '</b>' +
+      '<span class="la-au-n">动作 ' + a.actions + ' 类 · 每条日志逐条核对</span>' +
+      more + '</div>';
+  }
+
   function laRoot() { return w.document.getElementById(LA_ROOT); }
   function laPaint(barToo) {
     var root = laRoot();
     if (!root) return;
     var out = root.querySelector('.la-out');
     if (barToo) {
+      var au = root.querySelector('.la-au');
+      if (au) au.outerHTML = laAudit();
       var bar = root.querySelector('.la-bar');
       if (bar) bar.outerHTML = laBar(laRows());
     }
@@ -821,7 +903,20 @@
       '.la-th.is-on{color:#243342;font-weight:700}',
       '.la-grp td{background:#eef2f6;font-size:12px;color:#243342}',
       '.la-tb tr.la-go{cursor:pointer}',
-      '.la-tb tr.la-go:hover td{background:#f2f6fd}'
+      '.la-tb tr.la-go:hover td{background:#f2f6fd}',
+      /* R89 A3 · 链接列与穷尽自检行 */
+      '.la-au{padding:7px 10px;border:1px solid #cfe3d2;border-left:3px solid #2e7d32;border-radius:6px;',
+      'background:#f4fbf5;margin-bottom:8px;font-size:12.5px;color:#1f5d29}',
+      '.la-au.is-bad{border-color:#e6bfb8;border-left-color:#c0392b;background:#fdf3f1;color:#8d2f22}',
+      '.la-au-n{display:block;margin-top:2px;font-size:11.5px;color:var(--mute,#5c6660)}',
+      '.la-au-x{margin-top:3px;font-size:11.5px}',
+      '.la-lks{font-size:11.5px;line-height:1.5}',
+      '.la-lk-row{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.la-lk-row+.la-lk-row{margin-top:2px}',
+      '.la-lk-t{color:var(--mute,#5c6660);margin-right:5px}',
+      '.la-lk{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}',
+      '.la-lk-x{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mute,#5c6660)}',
+      '.la-lk-a{color:var(--faint,#8e968f);margin:0 4px}'
     ].join('');
     var s = w.document.createElement('style');
     s.id = 'origen-la-css';
@@ -833,8 +928,9 @@
   U.logAudit = function (opts) {
     opts = opts || {};
     laInject();
-    if (opts.reset) LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' };
-    return '<div id="' + LA_ROOT + '" class="la">' + laBar(laRows()) + '<div class="la-out">' + laOut() + '</div></div>';
+    if (opts.reset) LA = laReset();
+    return '<div id="' + LA_ROOT + '" class="la">' + laAudit() + laBar(laRows()) +
+      '<div class="la-out">' + laOut() + '</div></div>';
   };
   U.logAudit.refresh = function () { laPaint(true); };
 
@@ -850,7 +946,8 @@
       var el = e.target;
       if (!el || !el.getAttribute || el.getAttribute('data-la') !== 'f') return;
       var k = el.getAttribute('data-k');
-      if (k === 'actor') LA.actor = el.value; else if (k === 'act') LA.act = el.value; else if (k === 'otype') LA.otype = el.value;
+      if (k === 'actor') LA.actor = el.value; else if (k === 'act') LA.act = el.value;
+      else if (k === 'otype') LA.otype = el.value; else if (k === 'ltype') LA.ltype = el.value;
       laPaint(false);
     });
     w.document.addEventListener('click', function (e) {
@@ -860,11 +957,14 @@
       var a = el.getAttribute('data-la');
       if (a === 'sort') {
         var k = el.getAttribute('data-k');
-        if (LA.sk === k) LA.sd = LA.sd === 'asc' ? 'desc' : 'asc'; else { LA.sk = k; LA.sd = k === 't' ? 'desc' : 'asc'; }
+        /* 首次点某列的默认方向:时刻按最新在前;链接列按类型倒序 —— 否则无链接的行(空串最小)全堆在头上,
+           而点这一列的人要看的正是有链接的那些行。 */
+        if (LA.sk === k) LA.sd = LA.sd === 'asc' ? 'desc' : 'asc';
+        else { LA.sk = k; LA.sd = (k === 't' || k === 'link') ? 'desc' : 'asc'; }
         laPaint(false);
       } else if (a === 'g') { LA.group = el.getAttribute('data-g') || ''; laPaint(true); }
       else if (a === 'csv') laCsv();
-      else if (a === 'reset') { LA = { q: '', actor: '', act: '', otype: '', t0: '', t1: '', group: '', sk: 't', sd: 'desc' }; laPaint(true); }
+      else if (a === 'reset') { LA = laReset(); laPaint(true); }
       else if (a === 'go') {
         var h = el.getAttribute('data-h');
         if (h) w.location.hash = h;
@@ -1473,6 +1573,183 @@
       catch (err) { var ev = w.document.createEvent('Event'); ev.initEvent('render', false, false); w.dispatchEvent(ev); }
       try { w.scrollTo(0, y); } catch (e2) { /* noop */ }
     });
+  }
+
+  /* ================================================================
+     R89 Z1 分区 · 认领态 / 语义分色 / 双栏滚动 / 徽章去重 / 导航红点(本区只归 Z1 维护)
+     —— app.html 是壳层(不许改),导航红点因此做成本文件的注入器:监听 renderNav 的 DOM 重写补角标。
+     ================================================================ */
+  function z1Css() {
+    if (!w.document || w.document.getElementById('origen-z1-css')) return;
+    var css = [
+      /* ---- A4⑤ 动作按钮语义分色(主动作实心 / 次动作描边;灰态 .is-off 仍胜出)---- */
+      '.btn-rej:not(.is-off):not([disabled]){background:#fff;border-color:var(--red,#c93b2b);color:var(--red,#c93b2b)}',
+      '.btn-rej:not(.is-off):not([disabled]):hover{background:var(--red-soft,#fbebe8);border-color:var(--red,#c93b2b);color:var(--red,#c93b2b)}',
+      '.btn-neu:not(.is-off):not([disabled]){background:#f4f6f2;border-color:var(--line,#e4e7e2);color:var(--mute,#5c6660)}',
+      '.btn-neu:not(.is-off):not([disabled]):hover{background:#eceee9;border-color:#cfd5cd;color:var(--ink,#1b231f)}',
+      '.btn-evi:not(.is-off):not([disabled]){background:#fff;border-color:var(--info,#2e7c9b);color:var(--info,#2e7c9b)}',
+      '.btn-evi:not(.is-off):not([disabled]):hover{background:var(--info-soft,#eaf3f7);border-color:var(--info,#2e7c9b);color:var(--info,#2e7c9b)}',
+      '.btn-esc:not(.is-off):not([disabled]){background:var(--amberw-soft,#faf5e0);border-color:var(--amberw,#8a7420);color:var(--amberw,#8a7420);font-weight:700}',
+      '.btn-esc:not(.is-off):not([disabled]):hover{background:#f3ead0;border-color:#6f5d15;color:#6f5d15}',
+      /* 分色图例(动作面板脚注) */
+      '.btn-lg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--faint,#8e968f);margin-top:8px}',
+      '.btn-lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:0}',
+      /* ---- A4① 详情双栏各自独立滚动(overscroll-behavior:contain = 互不带动)---- */
+      '.dtl-cols{display:flex;gap:var(--gap,12px);align-items:flex-start}',
+      '.dtl-col{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:6px;',
+      'max-height:calc(100vh - var(--top-h,56px) - var(--dtl-off,150px))}',
+      '.dtl-col::-webkit-scrollbar{width:9px}',
+      '.dtl-col::-webkit-scrollbar-thumb{background:#d3d9d2;border-radius:20px;border:2px solid transparent;background-clip:content-box}',
+      '.dtl-col::-webkit-scrollbar-thumb:hover{background:#b7c0b5;background-clip:content-box;border:2px solid transparent}',
+      '.dtl-l{flex:1 1 auto;min-width:320px}',
+      '.dtl-r{flex:0 0 352px;min-width:300px}',
+      '@media (max-width:1080px){.dtl-cols{flex-wrap:wrap}.dtl-col{max-height:none;overflow:visible;padding-right:0}.dtl-r{flex:1 1 100%}}',
+      /* ---- A1 认领态:他人已认领的件灰化(仍可点「接手」,不禁用交互)---- */
+      '.is-held{opacity:.66;filter:grayscale(.5)}',
+      '.is-held:hover{opacity:.92;filter:grayscale(.12)}',
+      '.is-mine{box-shadow:inset 3px 0 0 var(--green,#0c7a45)}',
+      '.clm-log{font-size:11.5px;color:var(--mute,#5c6660);line-height:1.65}',
+      '.clm-log b{color:var(--ink-hi,#0b1a12)}',
+      '.clm-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#f5f7f4;border:1px solid var(--line,#e4e7e2);',
+      'border-radius:var(--radius-xs,6px);padding:7px 10px;margin-bottom:8px}',
+      '.clm-bar.is-held-bar{background:var(--amberw-soft,#faf5e0);border-color:var(--amberw-line,#e6ddb0)}',
+      '.clm-bar.is-mine-bar{background:var(--green-soft,#e4f2e9);border-color:var(--green-line,#c2e0cf)}',
+      /* ---- A1 认领过滤 tab(我的 / 公共池 / 全部)---- */
+      '.ctab{display:flex;gap:6px;flex-wrap:wrap}',
+      '.ctab button{border:1px solid var(--line,#e4e7e2);background:#fff;color:var(--mute,#5c6660);border-radius:20px;',
+      'padding:3px 12px;font-size:12px;cursor:pointer;font-family:inherit}',
+      '.ctab button:hover{border-color:var(--blue,#17a05e);color:var(--blue,#17a05e)}',
+      '.ctab button.is-on{background:var(--blue,#17a05e);border-color:var(--blue,#17a05e);color:#fff;font-weight:600}',
+      /* ---- A1 侧边导航红点角标(注入进壳层 nav,壳层本身不改)---- */
+      '.nav-dot{margin-left:auto;flex:none;background:var(--red,#c93b2b);color:#fff;border-radius:20px;',
+      'min-width:19px;height:18px;padding:0 6px;font-size:11px;font-weight:700;line-height:18px;text-align:center;',
+      'font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px rgba(201,59,43,.18)}',
+      '.nav-list a.is-on .nav-dot{background:#fff;color:var(--blue-dark,#10804a);box-shadow:none}'
+    ].join('');
+    var s = w.document.createElement('style');
+    s.id = 'origen-z1-css';
+    s.textContent = css;
+    (w.document.head || w.document.documentElement).appendChild(s);
+  }
+  z1Css();
+
+  /* ---- A4② 徽章去重(通道 vs 来源重叠只显通道;「紧急」level 与「紧急工单」type 只显一次)----
+     入参 [{kind,text,html}](kind: lane/type/level/status/source/…),返回去重后的同结构数组。
+     判据:归一化后(去空白/括号/尾缀「工单·线索·车道·档·件」)相等或互相包含 = 同一件事;冲突时留 kind 优先级高的。 */
+  var BADGE_PRI = { lane: 0, type: 1, level: 2, status: 3, source: 4 };
+  function bNorm(t) {
+    return String(t === undefined || t === null ? '' : t)
+      .replace(/<[^>]*>/g, '')
+      .replace(/[（(][^）)]*[）)]/g, '')
+      .replace(/[\s·、,,]/g, '')
+      /* 来源码常带序号前缀(「④超时兜底派」),剥掉才认得出它和通道名「超时兜底派单」是同一件事(Z2 2026-08-11 实测) */
+      .replace(/^[①②③④⑤⑥⑦⑧⑨⑩⑪⑫0-9]+[.、)）]?/, '')
+      .replace(/(工单|线索|告警|车道|通道|档位|档|件)$/, '');
+  }
+  U.dedupeBadges = function (list) {
+    var out = [];
+    (list || []).filter(function (x) { return x && (x.html || x.text); }).forEach(function (it) {
+      var t = bNorm(it.text);
+      if (t.length < 2) { out.push(it); return; }
+      for (var i = 0; i < out.length; i++) {
+        var o = bNorm(out[i].text);
+        if (o.length < 2) continue;
+        if (o === t || o.indexOf(t) >= 0 || t.indexOf(o) >= 0) {
+          var pa = BADGE_PRI[out[i].kind], pb = BADGE_PRI[it.kind];
+          if (pa === undefined) pa = 9;
+          if (pb === undefined) pb = 9;
+          if (pb < pa) out[i] = it;
+          return;
+        }
+      }
+      out.push(it);
+    });
+    return out;
+  };
+  /* 去重 + 拼装:各卡直接用它出徽章行 */
+  U.badgeRow = function (list, sep) {
+    return U.dedupeBadges(list).map(function (x) { return x.html || U.badge(x.text, x.tone); }).join(sep === undefined ? ' ' : sep);
+  };
+
+  /* ---- A1 认领态徽章 / 认领条(线索卡、行、详情动作面板共用一套判据 = S.claimOf)---- */
+  U.claimOf = function (clueId) { return (w.S && w.S.claimOf) ? w.S.claimOf(clueId) : null; };
+  /* 徽章:公共池 = 灰「公共池」;我认领 = 绿「我的」;他人认领 = 琥珀「已由 XX 认领」 */
+  U.claimBadge = function (clueId) {
+    var q = U.claimOf(clueId);
+    if (!q) return '';
+    if (q.mine) return U.badge('我的', 'green');
+    if (q.lockedByOther) return U.badge('已由 ' + q.assignee + ' 认领', 'amber');
+    return U.badge('公共池', 'grey');
+  };
+  /* 认领日志行:谁、什么时候、怎么来的(认领 / 接手 + 原因) */
+  U.claimLogHtml = function (clueId) {
+    var q = U.claimOf(clueId);
+    if (!q || !q.log.length) return '<div class="clm-log">认领日志:暂无(本件还没人碰过)</div>';
+    return '<div class="clm-log">' + q.log.map(function (g) {
+      return '· ' + esc(g.t) + ' <b>' + esc(g.by) + '</b> ' + esc(g.way) +
+        (g.from ? '(自 ' + esc(g.from) + ')' : '') +
+        (g.reason ? ' · 原因「' + esc(g.reason) + '」' : '');
+    }).join('<br>') + '</div>';
+  };
+  /* 卡壳 class:他人认领 → 灰化;我认领 → 左侧绿条 */
+  U.claimCls = function (clueId) {
+    var q = U.claimOf(clueId);
+    if (!q) return '';
+    return q.lockedByOther ? ' is-held' : (q.mine ? ' is-mine' : '');
+  };
+
+  /* ---- A1 侧边导航红点角标注入 ----
+     app.html 的 renderNav 每次 render 都整块重写 navList,这里靠 MutationObserver 补挂角标;
+     paint 幂等(值没变不动 DOM)→ 观察者不会自激。 */
+  function navPaint() {
+    var list = w.document && w.document.getElementById('navList');
+    if (!list || !w.S || !w.S.todoCount) return;
+    var st = w.S.get ? w.S.get() : null;
+    var cnt = w.S.todoCount();
+    if (!cnt) return;
+    var det = Object.keys(cnt.detail || {}).map(function (k) { return k + ' ' + cnt.detail[k]; }).join(' · ');
+    var as = list.querySelectorAll('a[href^="#/m"]');
+    for (var i = 0; i < as.length; i++) {
+      var a = as[i];
+      var id = (a.getAttribute('href') || '').replace('#/', '').split('/')[0];
+      var n = cnt[id] || 0;
+      var old = a.querySelector('.nav-dot');
+      if (!n) { if (old) a.removeChild(old); continue; }
+      var txt = String(n);
+      if (old) { if (old.textContent !== txt) old.textContent = txt; }
+      else {
+        var sp = w.document.createElement('span');
+        sp.className = 'nav-dot';
+        sp.textContent = txt;
+        a.appendChild(sp);
+        old = sp;
+      }
+      old.title = '当前身份「' + ((st && st.role) || '') + '」在本模块待办 ' + n + ' 件' + (det ? ' · ' + det : '');
+    }
+  }
+  U.navBadges = navPaint;
+  /* 详情双栏可用高度 = 视口 - 顶栏 - (导览条 + 余量);导览条高度随其展开态变,故每次重绘重算 */
+  function dtlOffset() {
+    if (!w.document || !w.document.documentElement) return;
+    var dock = w.document.querySelector('.tour-dock');
+    var h = (dock && dock.offsetHeight ? dock.offsetHeight : 0) + 42;
+    w.document.documentElement.style.setProperty('--dtl-off', h + 'px');
+  }
+  if (w.document) {
+    var _z1tick = function () { try { dtlOffset(); navPaint(); } catch (e) { /* noop */ } };
+    w.addEventListener('render', function () { w.setTimeout(_z1tick, 0); });
+    w.addEventListener('hashchange', function () { w.setTimeout(_z1tick, 0); });
+    w.addEventListener('resize', function () { w.setTimeout(dtlOffset, 0); });
+    if (w.MutationObserver) {
+      var boot = function () {
+        var list = w.document.getElementById('navList');
+        if (!list) { w.setTimeout(boot, 120); return; }
+        new w.MutationObserver(function () { try { navPaint(); } catch (e) { /* noop */ } }).observe(list, { childList: true, subtree: true });
+        _z1tick();
+      };
+      if (w.document.readyState === 'loading') w.document.addEventListener('DOMContentLoaded', boot);
+      else w.setTimeout(boot, 0);
+    }
   }
 
   /* ---------------- 小工具 ---------------- */

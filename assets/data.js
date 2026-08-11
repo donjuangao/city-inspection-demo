@@ -18,9 +18,10 @@
   /* 设计档 §0.6 角色(R88 A1④ 角色三值:区复核员 / 复核主管 / 上级主管部门 + 非人服务账号)
      推翻 R84⑥「同一职级两班两岗」:原第四个身份值并入「复核主管」——同一角色轮值,
      夜间语境只在文案里写「复核主管(值班)」,不再是第二个身份;班次显示名机制(ROLE_DISPLAY)整条删。
-     R88 A1⑬:热线接线员 = 12345 市政热线的录入服务账号(只录入,无定性权)。 */
+     R89 A2 rollback:推翻 R88 A1⑬ 保留的市民录入服务账号 —— 市民渠道整条不在本系统边界内,
+     服务账号回到三个(规则引擎 / AI 服务 / 班组账号)。 */
   var ROLES = ['区复核员', '复核主管', '上级主管部门'];
-  var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号', '热线接线员'];
+  var SERVICE_ACCOUNTS = ['规则引擎', 'AI 服务', '班组账号'];
   var ROLE_RANK = { '区复核员': 1, '复核主管': 2, '上级主管部门': 2 };
 
   // 设计档 §0.5.1/0.5.2/0.5.3 线内分级档名(逐字)
@@ -305,11 +306,10 @@
       return { id: c.id, name: c.name, rule_ver: c.rule_ver, result: results[i] || 'pass' };
     });
   }
-  /* R86 A3 · 观测来源归类(线索卡头部「来源:传感器×2/热线×1」用)
-     R88 A1⑬:公众自助端下线,市民渠道改「12345 市政热线 → 接线员录入」;来源归类值 '公众' → '热线'。 */
+  /* R86 A3 · 观测来源归类(线索卡头部「来源:传感器×2/固定相机×1」用)
+     R89 A2:市民渠道整条移出系统边界,归类值只剩四类机器/人工观测源 + 其他。 */
   function obsKind(src) {
     var s = String(src || '');
-    if (s.indexOf('热线') >= 0 || s.indexOf('公众') >= 0) return '热线';
     if (s.indexOf('传感器') >= 0 || s.indexOf('液位') >= 0 || s.indexOf('流量') >= 0) return '传感器';
     if (s.indexOf('相机') >= 0) return '固定相机';
     if (s.indexOf('移动传感网') >= 0 || s.indexOf('车载') >= 0) return '车载过检';
@@ -339,7 +339,10 @@
       t: o.t || '19:00', batchId: o.batchId || null,
       fastlane: !!o.fastlane, mechFail: !!o.mechFail, auditHeld: !!o.auditHeld,
       evidenceViewed: false, rejectCode: null, note: o.note || '',
-      publicRefs: o.publicRefs || [], mergedInto: null, ticketId: null, alertId: null,
+      /* R89 A1 · 认领制:assignee = 当前锁到谁手上(null = 还在公共池);
+         claimLog = 认领与接手的留痕(谁、什么时候、接手原因)。 */
+      assignee: o.assignee || null, claimLog: [],
+      mergedInto: null, ticketId: null, alertId: null,
       /* R86 A3:一次检测事件 = 一条观测;首观测由现 evidence/source/conf 折入。
          clue.evidence 仍是全观测证据的累积展平数组(向后兼容:既有渲染读 evidence 的路径不变),
          每条观测的 evidence 是其中的同一批引用。 */
@@ -361,6 +364,11 @@
   }
   w.CLUE_OBS = { kind: obsKind, sync: syncObs };
 
+  /* R89 A1 · 认领制的「另一个人」:demo 里没有真并发,用一个固定字符串坐席表示同岗另一人;
+     角色下拉不加人(切角色仍是三值),只有件上的 assignee 会显示这个名字。 */
+  var OTHER_SEAT = '区复核员·B 坐席';
+  w.OTHER_SEAT = OTHER_SEAT;
+
   // T0 存量:路面批量半审 12 条(其中 CL-0311 为 0.58 低置信,演存疑归档)
   var T0_CLUES = [];
   var roadKinds = ['坑槽', '裂缝(网裂)', '裂缝(纵向)', '车辙', '沉陷', '拥包'];
@@ -376,7 +384,10 @@
       checks: checks('路面', ['pass', 'pass', 'pass', 'pass', i === 0 ? 'warn' : 'pass']),
       evidence: [{ kind: i % 2 ? 'crack' : 'pothole', label: 'AI 生成示意' }],
       lane: '批量半审', batchId: 'BT-2608091', t: '18:4' + (i % 10),
-      note: i === 0 ? '低置信 0.58:批量半审车道内可「存疑归档」(非理想态②)' : ''
+      /* R89 A1:预置「另一复核员已认领」样例件(demo 无真并发,靠预置件展示隔离) */
+      assignee: i === 2 ? OTHER_SEAT : null,
+      note: i === 0 ? '低置信 0.58:批量半审车道内可「存疑归档」(非理想态②)'
+        : (i === 2 ? '已由' + OTHER_SEAT + '认领:他人视图灰化,要接手须填原因并留痕(R89 A1)' : '')
     }));
   }
   /* R88 A2 · 超时兜底派单的专置演示件:18:20 入池的路面急修件,加急人工档 18:50 到期,至今无人给结论。
@@ -401,7 +412,9 @@
       checks: checks('井盖', ['pass', k === 2 ? 'na' : 'pass', 'pass', 'pass']),
       evidence: [{ kind: 'grate', label: 'AI 生成示意' }],
       lane: '批量', batchId: 'BT-2608092', t: '18:3' + k,
-      note: '雨水口箅面堵塞(养护档):属雨前清掏专项任务包的取件范围;分级不因气象预警变动(R88 A1⑳)'
+      assignee: k === 2 ? OTHER_SEAT : null,
+      note: '雨水口箅面堵塞(养护档):属雨前清掏专项任务包的取件范围;分级不因气象预警变动(R88 A1⑳)' +
+        (k === 2 ? ';已由' + OTHER_SEAT + '认领(R89 A1 隔离样例)' : '')
     }));
   });
 
@@ -451,16 +464,15 @@
 
   /* ============ 7 · 动作日志(登记在册的独立记录;时间线组件唯一数据源)============ */
   var ACTION_LOG = [
-    { rid: 'LG-0001', t: '17:41', actor: '区复核员', action: 'confirm', params: { clueId: 'CL-0198' }, snapshot: 'RS-1', sum: '确认线索 CL-0198 → 告警 AL-0771 成立;副作用开急修工单' },
-    { rid: 'LG-0002', t: '17:42', actor: '规则引擎', action: 'auto_audit_hold', params: { clueId: 'CL-0198' }, snapshot: 'RS-2', sum: '高危确认件自动拘进主管抽审队列(AU-1201)' },
-    { rid: 'LG-0003', t: '18:10', actor: '规则引擎', action: 'auto_plan_ticket', params: { ticketId: 'WO-8871' }, snapshot: 'RS-3', sum: '计划批量派(来源③):周批养护工单 WO-8871 → 东区养护班(年度承包商)' },
+    { rid: 'LG-0001', t: '17:41', actor: '区复核员', action: 'confirm', params: { clueId: 'CL-0198' }, snapshot: 'RS-1', sum: '确认线索 CL-0198 → 告警 AL-0771 成立;副作用开急修工单', links: [{ type: '告警↦线索', fromId: 'AL-0771', toId: 'CL-0198' }, { type: '告警↦设施', fromId: 'AL-0771', toId: 'MH-0289' }, { type: '线索↦处置人', fromId: 'CL-0198', toId: '区复核员' }] },
+    { rid: 'LG-0002', t: '17:42', actor: '规则引擎', action: 'auto_audit_hold', params: { clueId: 'CL-0198' }, snapshot: 'RS-2', sum: '高危确认件自动拘进主管抽审队列(AU-1201)', links: [{ type: '抽审↦线索', fromId: 'AU-1201', toId: 'CL-0198' }] },
+    { rid: 'LG-0003', t: '18:10', actor: '规则引擎', action: 'auto_plan_ticket', params: { ticketId: 'WO-8871' }, snapshot: 'RS-3', sum: '计划批量派(来源③):周批养护工单 WO-8871 → 东区养护班(年度承包商)', links: [{ type: '工单↦设施', fromId: 'WO-8871', toId: 'RD-2101' }, { type: '工单↦班组', fromId: 'WO-8871', toId: 'CR-05' }] },
     { rid: 'LG-0004', t: '18:45', actor: 'AI 服务', action: 'auto_create_clue', params: { batchId: 'BT-2608091' }, snapshot: 'RS-4', sum: '城市移动传感网批次入池:路面线索 12 条 → 批量半审车道' }
   ];
 
-  /* ============ 8 · 热线上报 / 对账队列 / 值班表 / 参数变更(§4 模型的运行期增补位)============
-     R88 A1⑬:市民渠道 = 12345 市政热线,接线员录入;容器键名 publicReports 保持不变(向后兼容),
-     语义与文案一律「热线上报」。 */
-  var PUBLIC_REPORTS = [];
+  /* ============ 8 · 对账队列 / 值班表 / 参数变更(§4 模型的运行期增补位)============
+     R89 A2 rollback:市民渠道整条删除(对象 / 动作 / 容器 / 清单四件全清)—— 本系统只承载
+     机器观测与内部人工巡查两类来源。 */
   var RECON = [];   // 对账异常队列(§2.3b④ / 场景图 P7)
   /* R88 A1④:角色三值后,值班表两行 —— 夜间的调度仲裁与抽审授权同在「复核主管(值班)」这一位上 */
   var DUTY = [
@@ -539,10 +551,10 @@
 
     /* ---- 路面线 ---- */
     { id: 'RD-R01', line: '路面', name: '高置信 + 多源确证 + 主干道 → 加急人工', lane: '加急人工',
-      when: 'AI 置信达标,且热线上报或复检构成第二来源,且落在主干道 → 分钟级人工确认后派',
+      when: 'AI 置信达标,且固定相机复扫或车载复检构成第二来源,且落在主干道 → 分钟级人工确认后派',
       params: [
         P('conf', 'AI 置信阈值', 0.85, '', '视觉识别的把握度下限,达标才进分钟级人工确认。'),
-        P('sources', '最少来源数', 2, '个', '同一处异常至少要有几路来源印证(车载、固定相机、热线上报各算一路)。'),
+        P('sources', '最少来源数', 2, '个', '同一处异常至少要有几路来源印证(车载过检、固定相机复扫、现场巡查各算一路)。'),
         P('roadClass', '道路等级', '主干道', '', '哪一级道路适用这条加急口径;支路与背街按常规队列走。')],
       version: 'v1.0', editableBy: SUP },
     { id: 'RD-R02', line: '路面', name: '单源中置信 → 常规人工', lane: '常规人工',
@@ -749,7 +761,6 @@
     investigations: INVESTIGATIONS,
     crews: CREWS,
     actionLog: ACTION_LOG,
-    publicReports: PUBLIC_REPORTS,
     gov: GOV,
     recon: RECON,
     duty: DUTY,
@@ -883,14 +894,14 @@
     },
     {
       id: 'T10', t: '21:10', figs: 'E3/D8',
-      title: '热线上报同点位 → 受理编号 → 去重合并',
-      narration: '21:10 12345 市政热线接到同点位来电(Zakher 井盖),接线员录入:生成受理编号回执 → 与传感器线索去重合并,证据叠加;重复来电计数可见。',
-      unlocks: [{ type: 'publicReport', obj: 'PR-0301' }],
+      title: '同点位第二观测源 → 并入既有线索作第二次观测',
+      narration: '21:10 固定相机复扫 MH-0733 同点位再次报警:同设施同类目、原线索仍在活跃期 → 并入既有线索 CL-0733 作第二次观测(CL-R01),不新开线索,证据叠加、来源分布多一路。',
+      unlocks: [],
       auto: [
-        { action: 'public_report', params: { actor: '热线接线员', reportId: 'PR-0301', cat: '井盖', block: 'Zakher', facility: 'MH-0733' } },
-        { action: 'auto_dedupe', params: { actor: '规则引擎', reportId: 'PR-0301', clueId: 'CL-0733' } }
+        { action: 'auto_recheck_obs', params: { actor: '规则引擎', clueId: 'CL-0733', facility: 'MH-0733', source: '固定相机复扫(夜间巡拍)', conf: 0.84 } },
+        { action: 'auto_dedupe', params: { actor: '规则引擎', clueId: 'CL-0733', facility: 'MH-0733', source: '固定相机复扫(夜间巡拍)', kind: '固定相机', conf: 0.84, note: '同设施同类目在保活时长内复现(CL-R01):并入既有线索作一次观测,不新开' } }
       ],
-      manual: 'm4「热线上报并入清单」里可见 PR-0301 的受理编号与合并标;线索 CL-0733 上多出一次「热线」观测。'
+      manual: '线索 CL-0733 观测次数由 1 → 2,来源分布多出「固定相机×1」;证据卡多一张,时间线上多两条动作日志。'
     },
     {
       id: 'T11', t: '21:20', figs: 'D9/P7',
@@ -994,16 +1005,6 @@
         basis: '按灌溉事件的水量平衡:本次实配水量 vs 灌溉计划应配水量偏差 ≥ y%(假设值),连续 M 次',
         evidence: [{ kind: 'flow-curve', label: 'AI 生成示意' }],
         caseLog: [], closedT: null
-      }
-    },
-    publicReports: {
-      /* R88 A1⑬:市民渠道 = 12345 市政热线;source/takenBy 说清这条记录是谁在什么渠道录进来的。
-         urges 字段名保留(向后兼容),语义 = 同一问题的重复来电次数。 */
-      'PR-0301': {
-        id: 'PR-0301', t: '21:10', cat: '井盖', block: 'Zakher', facility: 'MH-0733',
-        source: '12345 热线', takenBy: '热线接线员',
-        contact: '05****3271(列级脱敏)', status: '已受理', receipt: 'RC-PR-0301',
-        mergedInto: null, urges: 0, evidence: [{ kind: 'manhole-missing', label: 'AI 生成示意' }]
       }
     },
     recon: {

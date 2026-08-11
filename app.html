@@ -55,7 +55,7 @@ window.MODULES = [
   { id:'m3', no:'3', name:'设施台账',    owner:'W1-D 工兵',
     spec:['设施列表 + 详情','点位历史与证据链回查','劣化曲线(路面线)','观测覆盖窗行','Onwani 双语字段位(空值不渲染)'] },
   { id:'m4', no:'4', name:'兜底与质量',  owner:'W1-B 工兵',
-    spec:['抽审队列(拘审标来源)','热线上报并入清单'] },
+    spec:['抽审队列(拘审标来源)','重复观测并入清单'] },
   { id:'m5', no:'5', name:'统计总览',    owner:'W1-D 工兵',
     spec:['健康总览卡(数字=前面动作的下游,联动 store)','覆盖热区示意 SVG'] },
   { id:'m6', no:'6', name:'系统管理',    owner:'W1-D 工兵',
@@ -121,7 +121,7 @@ window.VIEWS = {};
       sel.innerHTML = w.DATA.dict.roles.map(function (r) { return '<option value="' + r + '">' + (disp[r] || r) + '</option>'; }).join('');
     }
     if (w.DATA.dict.roles.indexOf(st.role) < 0) {
-      // 从班组端/热线受理页回来时 role 可能是服务账号语境——工作台无此身份,回落坐席默认(班组账号无 Web 工作台权限)
+      // 从班组端回来时 role 可能是服务账号语境——工作台无此身份,回落坐席默认(班组账号无 Web 工作台权限)
       w.S.setRole('区复核员');
       st = w.S.get();
     }

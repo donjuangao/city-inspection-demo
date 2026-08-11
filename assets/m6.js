@@ -69,8 +69,11 @@
       '<p><b>规则引擎:</b>判据规则版本化管理;参数调整先影子试算、审批后生效,每次变更入动作日志。参数名悬停可看该参数管的是什么。</p>' +
       '<p><b>影子试算:</b>回答的是「如果这个参数改成 X,今天已经发生的这些件会有什么不同」——对当日经过该规则的件回放一遍,列出去向会变的逐件。提交只写覆盖值与留痕,运行判定仍走基线值,正式生效需审批。</p>' +
       '<p><b>通道与类目开关:</b>派单是处置调度,不是定性 —— 机器直派件的定性签字仍在人,并行复核窗内可撤回。上级主管部门关闭类目机器直派 = 安全侧动作即时生效,重开需按数据判据批准。</p>' +
-      '<p><b>本体建模:</b>平台的一切行为以「对象 - 链接 - 动作」三类记录结构化存储;注册表与日志实时取自当前世界状态,不是文档抄本。链接当前以外键字段承载,计数实算。</p>' +
-      '<p><b>日志审计视图:</b>按账号 / 动作类型 / 对象类型 / 时间段筛选,支持关键字、分组、列排序与 CSV 导出;点任意一行跳到该行对象。人做的和服务账号做的在同一张表上,同一套留痕。</p>'
+      '<p><b>本体建模:</b>平台的一切行为以「对象 - 链接 - 动作」三类记录结构化存储;注册表与日志实时取自当前世界状态,不是文档抄本。' +
+      '链接是一等记录:每个动作在定义里声明它产出哪些链接,执行时按声明把两端 id 实例化落进那条日志;' +
+      '链接类型表就是这些声明的聚合,所以它与日志同源 —— 日志里出现表上没有的类型在结构上不可能,自检行每次仍逐条核一遍。</p>' +
+      '<p><b>日志审计视图:</b>按账号 / 动作类型 / 对象类型 / 链接类型 / 时间段筛选,支持关键字、分组、列排序与 CSV 导出;' +
+      '「链接」列逐条渲染这一步连起了哪两个对象,两端可点直达;点任意一行跳到该行对象。人做的和服务账号做的在同一张表上,同一套留痕。</p>'
   };
 
   /* ================= 1 · 角色权限(设计档 §0.6;R85④ 原「区巡检管理者」「区管理员」并入「复核主管」) ================= */
@@ -84,8 +87,7 @@
   var SVC_DESC = {
     '规则引擎': '机械校验闸 / 自动车道(记账·升格·机械驳回·设备工单)/ 预警广播 / 机器直派自动派单 / 超时兜底派单的执行身份;机械自动化也不豁免审计,每步入动作日志。',
     'AI 服务': '仅「创建线索 / 提出建议」两动作的执行身份(复验判定与调度建议都归「提出建议」);无界面登录权,无定性动作。',
-    '班组账号': '仅班组移动端;接单/工单详情/拍照回传/完工提交;处置动作经集成网关写回客户工单系统;无 Web 工作台任何模块权限。',
-    '热线接线员': '12345 市政热线的录入身份:受理来电、生成回执编号、录入点位与类目;只录入,无定性权、无派单权,录入件一律先进人工甄别。'
+    '班组账号': '仅班组移动端;接单/工单详情/拍照回传/完工提交;处置动作经集成网关写回客户工单系统;无 Web 工作台任何模块权限。'
   };
 
   function roleTable() {
@@ -771,7 +773,6 @@
     { name: '工单', key: 'tickets', fields: '工单号 · 类型 · 来源 · 承接班组 · 五格状态 · 客户系统镜像号' },
     { name: '调查案', key: 'investigations', fields: '案号 · 计量区 · 状态 · 观察窗 · 判据 · 核查工单' },
     { name: '班组', key: 'crews', fields: '班组号 · 名称 · 可接业务线 · 资质 · 装备 · 班次 · 负载' },
-    { name: '热线上报', key: 'publicReports', fields: '受理号 · 来电渠道 · 类目 · 定位 · 回执 · 状态 · 合并标' },
     { name: '对账件', key: 'recon', fields: '对账号 · 关联工单 · 镜像号 · 我方状态 · 客户系统状态 · 裁定' }
   ];
 
@@ -789,25 +790,27 @@
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
-  /* 链接类型:demo 无图数据库,链接以外键字段承载 —— 这里把隐式外键显式枚举并实时计数 */
-  var LINK_TYPES = [
-    { name: '线索 → 设施', ends: '线索 · 设施', via: 'clue.facility', count: function (st) { return st.clues.filter(function (x) { return !!x.facility; }).length; } },
-    { name: '告警 → 线索', ends: '告警 · 线索', via: 'alert.clueId', count: function (st) { return st.alerts.filter(function (x) { return !!x.clueId; }).length; } },
-    { name: '工单 → 告警 / 线索', ends: '工单 · 线索', via: 'ticket.clueId', count: function (st) { return st.tickets.filter(function (x) { return !!x.clueId; }).length; } },
-    { name: '调查案 → 计量区', ends: '调查案 · 计量区(DMA)', via: 'investigation.dma', count: function (st) { return st.investigations.filter(function (x) { return !!x.dma; }).length; } },
-    { name: '热线上报 → 线索(去重合并)', ends: '热线上报 · 线索', via: 'publicReport.mergedInto', count: function (st) { return (st.publicReports || []).filter(function (x) { return !!x.mergedInto; }).length; } },
-    { name: '对账件 → 工单', ends: '对账件 · 工单', via: 'recon.ticketId', count: function (st) { return (st.recon || []).filter(function (x) { return !!x.ticketId; }).length; } }
-  ];
+  /* R89 A3 · 链接类型表 = S.linkTypes() 驱动(唯一真源 = 动作定义里的 links 声明聚合)——
+     不再另写一张手抄表,所以「日志里出现了表上没有的链接类型」在结构上就不可能;
+     日志审计视图顶部的穷尽自检行(UI.logAudit 内 S.linkAudit)逐条再核一遍,恒 0 = 机制在。 */
+  function linkTypes() { return (w.S.linkTypes && w.S.linkTypes()) || []; }
 
   function linkTypeTable() {
-    var st = w.S.get();
-    var rows = LINK_TYPES.map(function (l) {
-      return '<tr><td><b>' + UI.esc(l.name) + '</b></td><td class="tiny">' + UI.esc(l.ends) + '</td>' +
-        '<td class="tiny mono">' + UI.esc(l.via) + '</td><td class="mono">' + l.count(st) + '</td></tr>';
+    var ts = linkTypes();
+    var defs = {};
+    w.S.actionDefs().forEach(function (d) { defs[d.action] = d.label || d.action; });
+    var rows = ts.map(function (l) {
+      var acts = l.actions.map(function (a) {
+        return '<span class="mono" title="' + UI.esc(defs[a] || a) + '">' + UI.esc(a) + '</span>';
+      }).join(' · ');
+      return '<tr><td><b>' + UI.esc(l.type) + '</b></td>' +
+        '<td class="tiny">' + UI.esc(l.from + ' · ' + l.to) + '</td>' +
+        '<td class="tiny">' + acts + '</td>' +
+        '<td class="mono">' + l.count + '</td></tr>';
     }).join('');
-    return '<div class="tiny" style="margin-bottom:5px">demo 无图数据库,链接以外键字段承载;承载字段与链接数实算自当前世界状态。</div>' +
-      '<div style="overflow-x:auto"><table class="tb"><thead><tr>' +
-      '<th style="width:220px">链接</th><th style="width:180px">端点类型</th><th style="width:180px">承载字段</th><th style="width:90px">当前链接数</th>' +
+    return '<div class="tiny" style="margin-bottom:5px">悬停动作码看显示名;逐条链接见「本体日志 · 审计视图」的链接列。</div>' +
+      '<div style="overflow-x:auto;max-height:340px"><table class="tb"><thead><tr>' +
+      '<th style="width:180px">链接类型</th><th style="width:150px">端点</th><th>由哪些动作产生</th><th style="width:90px">当前实例数</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
@@ -850,13 +853,14 @@
 
   function ontologyBlock() {
     var st = w.S.get();
-    var linkN = LINK_TYPES.reduce(function (a, l) { return a + l.count(st); }, 0);
+    var ts = linkTypes();
+    var linkN = ts.reduce(function (a, l) { return a + l.count; }, 0);
     return '<div class="card card-tight" id="m6-ontology">' +
       '<div class="card-hd"><h3 style="margin:0;font-size:14px">本体建模</h3>' +
       '<span class="tiny">对象 · 链接 · 动作 三类注册表 + 全量动作日志(点标题展开)</span></div>' +
       '</div>' +
       ontoFold('obj', '对象类型', OBJ_TYPES.length + ' 类 · 实例数实算', objTypeTable(), false) +
-      ontoFold('link', '链接类型', LINK_TYPES.length + ' 类 · 当前 ' + linkN + ' 条链接', linkTypeTable(), false) +
+      ontoFold('link', '链接类型', ts.length + ' 类 · 当前 ' + linkN + ' 条链接实例', linkTypeTable(), false) +
       ontoFold('act', '动作类型', w.S.actionDefs().length + ' 类 · 角色白名单', actionTypeTable(), false) +
       ontoFold('log', '本体日志 · 审计视图', '全量动作记录 ' + st.actionLog.length + ' 条', ontologyLogBlock(), true);
   }

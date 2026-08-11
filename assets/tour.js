@@ -179,12 +179,14 @@
       say: '21:00,Zakher 又来一件紧急级井盖,可承接池里没有空闲班组。过载三步依次落地:先发只读预警喊现场,再把超额件显名降级进批量加急分诊、件件可抽审,最后由当班的复核主管决定要不要抢占在途的养护班组。挂起会让 SLA 停表,班组释放。'
     },
     {
-      sid: 'S14', ref: 'T10', axis: '支线·越级与压力', stage: '发现', route: '#/m4',
-      focus: ['text:PR-0301', 'text:热线上报'],
-      lane: null, laneNote: '热线上报 · 人工甄别并入(不直接进加急队列)', graph: 'mh', node: 'mh_find',
+      /* R89 A2:原渠道并入镜整条推翻(rollback 见修改单 A2),改同点位第二观测源(固定相机复扫)并入 —— 演的是线索原子性,
+         不是渠道。焦点落在观测行(观测 1 次 → 2 次),不是 m4 的清单。 */
+      sid: 'S14', ref: 'T10', axis: '支线·越级与压力', stage: '发现', route: '#/m1/clue/CL-0733',
+      focus: ['text:观测 2 次', 'text:来源:', '.objcard'],
+      lane: null, laneNote: '第二观测源(固定相机复扫)· 并入既有线索', graph: 'mh', node: 'mh_find',
       branches: [{ label: '↳ 深入:加急件超时兜底派单', sid: 'H1' }],
-      title: '热线上报并入观测 · 受理编号与去重合并',
-      say: '21:10,12345 市政热线接到同一点位的来电,接线员录入受理。系统先出受理编号回执,再与传感器那条线索去重合并——同设施同类目在活跃期内并作一次观测,不新开线索,证据叠加,重复来电计数可见。市民渠道没有自助客户端,接线员是录入身份、没有定性权;热线件也不直接进加急队列,先进人工甄别。'
+      title: '同点位重复观测并入 · 一处设施只记一条线索',
+      say: '21:10,固定相机夜间复扫又扫到 Zakher 那口井盖 MH-0733,再次报警。系统没有新开一条线索:同一设施、同一异常类目、原线索还在活跃期内,按归并规则 CL-R01 并入既有的 CL-0733,记成第二次观测。看这条线索的抬头——观测从 1 次变 2 次,来源分布多出「固定相机×1」,证据叠加成一条链。这就是线索的原子性:一处设施上的同一件事只有一条线索,重复发现累计观测、不累计工单。'
     },
     {
       sid: 'S15', ref: 'T11', axis: '支线·越级与压力', stage: '复验闭环', route: '#/m2/recon', focus: 'text:RC-0011',
@@ -272,14 +274,15 @@
 
     /* ============ 支线 R · 路面主管提级与完工抽查(分岔点 S10,回 S11)============
        R88 A1⑬:原「公众催办计数达阈值 → 自动提级」整条推翻(rd_urge_boost 已从数据层删除)。
-       重复来电只是排序的输入,提级改为复核主管主动做的显名动作(clue_escalate,原因必填)。 */
+       R89 A2:该渠道整条已砍(修改单 A2),提级理由改按巡检自身证据写 —— 同点位复扫的观测次数只是排序的输入,
+       提级是复核主管主动做的显名动作(clue_escalate,原因必填)。 */
     {
       sid: 'R1', br: 'R', back: 'S11', ref: 'T7', axis: '路面线', stage: '分级路由',
       route: '#/m1/line/rd', focus: ['text:CL-0311', 'text:提级', 'text:急修'],
       lane: '加急人工', laneNote: '主管主动提级 · 原因必填', graph: 'rd', node: 'rd_urgent',
-      acts: [{ action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } }],
+      acts: [{ action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } }],
       title: '主管主动提级 · 养护 → 急修',
-      say: '批量池里那条 CL-0311,同一路口的重复来电已经攒了几次。注意系统在这里没有自动提级:重复来电只是排序的输入,不构成定性理由。提级是复核主管自己落的一个显名动作,原因必填、进日志可回查;提完级这一件的车道从批量转单条必审,SLA 按急修档重算。'
+      say: '批量池里那条 CL-0311,同一路口的车载过检与固定相机复扫已经连着命中几次。注意系统在这里没有自动提级:观测次数只是排序的输入,不构成定性理由。提级是复核主管自己落的一个显名动作,原因必填、进日志可回查;提完级这一件的车道从批量转单条必审,SLA 按急修档重算。'
     },
     {
       sid: 'R2', br: 'R', back: 'S11', ref: 'T7', axis: '路面线', stage: '处置',
@@ -287,7 +290,7 @@
       lane: '自动处理', laneNote: '并入周批 · 处置流程同款', graph: 'rd', node: 'rd_do',
       phone: { src: 'crew.html?crew=CR-03', title: '现场端 · 道路养护班' },
       acts: [
-        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } },
+        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_photo', params: { ticketId: 'WO-9007', phase: '修复前', actor: '班组账号' } },
@@ -302,7 +305,7 @@
       route: '#/m4', focus: ['text:完工抽查', 'text:抽审'],
       lane: null, laneNote: '抽查兜底(复核主管)', graph: 'rd', node: 'rd_spot',
       acts: [
-        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口重复来电反映沉陷加深,主干道行车安全优先', actor: '复核主管' } },
+        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_photo', params: { ticketId: 'WO-9007', phase: '修复前', actor: '班组账号' } },
@@ -327,6 +330,27 @@
       title: '立案 · 核查任务包下现场',
       say: '人在这里落第一锤:立案。立案之后立刻要回答的是「漏在哪一段」——夜间听漏加分段关阀试验,分四段推,按段收敛嫌疑区间。右侧卡片就是这个任务包本身:哪几段、用什么方法、谁去、推到第几段。管网这条线的定位主手段是现场核查,不是模型;模型给的是嫌疑排序。'
     },
+    /* R89 A4⑧ · 现场端回传镜:P2 那张关阀试验数据卡的数不是画的,是这一镜里班组一段一段填回来的。
+       acts 逐段调 survey_report(写回 investigation.survey.segs),右侧浮窗开的就是水务抢修班那一屏。
+       WO-9006 = 立案(open_case)当场开的那张核查工单,编号在这条重放链上是确定的;先接单到场再回传,
+       与班组端的门槛一致(回传区在「已到场」之后才出现)。 */
+    {
+      sid: 'P1B', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
+      route: '#/m1/line/pl', focus: ['text:核查工单', 'text:调查案#'],
+      lane: '常规人工', laneNote: '班组回传关阀试验读数(逐段)', graph: 'pl', node: 'pl_survey',
+      phone: { src: 'crew.html?crew=CR-04', title: '现场端 · 水务抢修班' },
+      acts: [
+        { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'crew_accept', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 1, preFlow: 12.4, postFlow: 4.6, note: '关阀后流量迅速回落', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 2, preFlow: 11.9, postFlow: 4.3, actor: '班组账号' } }
+      ],
+      card: { title: '核查任务包 · IV-0071', html: function () { return surveyCardHtml('IV-0071'); } },
+      title: '班组回传关阀读数 · 数据卡的数从这来',
+      say: '任务包下到手机上,班组接单、到场,然后逐段做:关一段、读一次表、回传一次。右侧浮窗里那张「回传试验数据」表单就是他们填的——选第几段、关阀前流量、关阀后流量、现场备注,提交即写回核查任务包对应段。第 1、2 段关下去流量都掉了七成,两段标完成。下一镜那张关阀试验对比卡上点亮的柱子,数就是这里填进去的:没做过的段不预先画数,做一段亮一段。拍照回传照旧并行,两者不互相替代。'
+    },
     {
       sid: 'P2', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
       route: '#/m1/line/pl', focus: ['text:流量回归', 'text:核查工单'],
@@ -334,11 +358,16 @@
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'crew_accept', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 1, preFlow: 12.4, postFlow: 4.6, note: '关阀后流量迅速回落', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 2, preFlow: 11.9, postFlow: 4.3, actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 3, preFlow: 12.1, postFlow: 11.6, note: '关阀后流量几乎不动,疑本段后有渗漏', actor: '班组账号' } },
         { action: 'pl_leak_confirm', params: { caseId: 'IV-0071', segment: 'PL-3007 第 3 段(PV-3021 下游 180 米)', actor: '区复核员' } }
       ],
       card: { title: '关阀试验 · 夜间最小流量对比', html: function () { return valveCardHtml('IV-0071'); } },
       title: '现场确认渗漏 · 嫌疑转确认',
-      say: '关阀试验的数就摆在右边:逐段关阀,别的段一关流量就掉下去,只有第 3 段关了几乎不动——水还在往那一段后面走,这就是渗漏的证据。第 4 段还空着「待关阀」:定位到第 3 段就收敛了,剩下那段不用白跑。卡上的数是两条腿合出来的——流量计自动上报 + 班组每关一段回传一次,来源写在卡底下。听漏点位也对上,调查案由「嫌疑」转「确认」;AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。'
+      say: '关阀试验的数就摆在右边:逐段关阀,别的段一关流量就掉下去,只有第 3 段关了几乎不动——水还在往那一段后面走,这就是渗漏的证据。第 4 段还空着「待关阀」:定位到第 3 段就收敛了,剩下那段不用白跑。卡上的数是两条腿合出来的——流量计自动采集 + 上一镜班组每关一段回传一次读数,来源写在卡底下。听漏点位也对上,调查案由「嫌疑」转「确认」;AI 之前给的判型建议到此只起了排序作用,定性是现场加人做的。'
     },
     {
       sid: 'P3', br: 'P', back: 'S12', ref: 'T8', axis: '管网线', stage: '处置',
@@ -348,6 +377,11 @@
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'crew_accept', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 1, preFlow: 12.4, postFlow: 4.6, note: '关阀后流量迅速回落', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 2, preFlow: 11.9, postFlow: 4.3, actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 3, preFlow: 12.1, postFlow: 11.6, note: '关阀后流量几乎不动,疑本段后有渗漏', actor: '班组账号' } },
         { action: 'pl_leak_confirm', params: { caseId: 'IV-0071', segment: 'PL-3007 第 3 段(PV-3021 下游 180 米)', actor: '区复核员' } },
         { action: 'pl_to_repair', params: { caseId: 'IV-0071', crew: 'CR-04', actor: '复核主管' } }
       ],
@@ -361,6 +395,11 @@
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'crew_accept', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 1, preFlow: 12.4, postFlow: 4.6, note: '关阀后流量迅速回落', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 2, preFlow: 11.9, postFlow: 4.3, actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 3, preFlow: 12.1, postFlow: 11.6, note: '关阀后流量几乎不动,疑本段后有渗漏', actor: '班组账号' } },
         { action: 'pl_leak_confirm', params: { caseId: 'IV-0071', segment: 'PL-3007 第 3 段(PV-3021 下游 180 米)', actor: '区复核员' } },
         { action: 'pl_to_repair', params: { caseId: 'IV-0071', crew: 'CR-04', actor: '复核主管' } },
         { action: 'pl_verify_ok', params: { caseId: 'IV-0071', actor: '区复核员' } }
@@ -375,6 +414,11 @@
       acts: [
         { action: 'open_case', params: { caseId: 'IV-0071', actor: '区复核员' } },
         { action: 'pl_survey_start', params: { caseId: 'IV-0071', actor: '区复核员' } },
+        { action: 'crew_accept', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'crew_arrive', params: { ticketId: 'WO-9006', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 1, preFlow: 12.4, postFlow: 4.6, note: '关阀后流量迅速回落', actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 2, preFlow: 11.9, postFlow: 4.3, actor: '班组账号' } },
+        { action: 'survey_report', params: { caseId: 'IV-0071', seg: 3, preFlow: 12.1, postFlow: 11.6, note: '关阀后流量几乎不动,疑本段后有渗漏', actor: '班组账号' } },
         { action: 'pl_leak_confirm', params: { caseId: 'IV-0071', segment: 'PL-3007 第 3 段(PV-3021 下游 180 米)', actor: '区复核员' } },
         { action: 'pl_to_repair', params: { caseId: 'IV-0071', crew: 'CR-04', actor: '复核主管' } },
         { action: 'pl_verify_ok', params: { caseId: 'IV-0071', actor: '区复核员' } },
@@ -519,19 +563,37 @@
       '.tour-btn.is-main:hover{background:var(--blue-dark,#10804a)}',
       '.tour-btn.is-br{border-color:#5b6b7c;color:#cfd6dc}',
       '.tour-btn.is-br:hover{border-color:#9aa5ae;color:#fff}',
-      '.tour-dots{display:flex;align-items:center;gap:3px;padding:0 14px 8px;flex-wrap:wrap}',
-      '.tour-dot{width:22px;height:18px;border-radius:4px;border:1px solid transparent;background:#2a332e;color:#9aa49d;',
-      'font-size:10.5px;line-height:1;font-family:inherit;cursor:pointer;padding:0}',
-      '.tour-dot:hover{color:#fff}',
-      '.tour-dot.is-on{color:#fff;font-weight:700;box-shadow:0 0 0 2px rgba(255,255,255,.22)}',
-      '.tour-dot.is-past{opacity:.8}',
-      '.tour-dot.is-br{width:17px;height:14px;border-radius:3px;font-size:9.5px;opacity:.55;margin-top:3px}',
-      '.tour-dot.is-br.is-on{opacity:1}',
-      '.tour-brgap{width:5px;flex:none}',
-      '.tour-gap{width:9px;flex:none}',
+      /* R89 A4⑩ · 分镜点列已废:导览条底部只留一条细进度条,跳镜改走右侧「章节」抽屉 */
+      '.tour-prog{height:3px;background:#242c27}',
+      '.tour-prog i{display:block;height:100%;border-radius:0 2px 2px 0;transition:width .18s ease}',
       '.tour-off{color:var(--gold,#c9c57e)}',
-      '.tour-dock.is-min .tour-dots{display:none}',
       '.tour-dock.is-min .tour-say{display:none}',
+      /* 章节抽屉(右侧滑入 ~360px,不半屏;遮罩 51 / 抽屉 52 —— 压在浮层遮罩 50 之上、toasts 60 之下) */
+      '.tour-drawer{position:fixed;top:0;right:0;bottom:0;width:360px;max-width:86vw;z-index:52;',
+      'background:var(--shell,#0e1210);color:var(--shell-ink,#e9eeea);border-left:1px solid var(--shell-line,#252d28);',
+      'box-shadow:-14px 0 40px rgba(11,26,18,.28);transform:translateX(104%);transition:transform .18s ease;',
+      'display:flex;flex-direction:column;font-size:12.5px}',
+      '.tour-drawer.is-open{transform:none}',
+      '.tour-drawer-mask{position:fixed;inset:0;z-index:51;background:rgba(11,18,16,.38)}',
+      '.tour-dr-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;',
+      'border-bottom:1px solid var(--shell-line,#252d28);flex:none}',
+      '.tour-dr-hd b{color:#fff;font-size:13px}',
+      '.tour-dr-hd .sub{display:block;color:var(--shell-mute,#98a29b);font-size:11.5px;margin-top:2px;font-weight:400}',
+      '.tour-dr-bd{flex:1;overflow-y:auto;padding:4px 10px 20px}',
+      '.tour-ch{margin-top:11px}',
+      '.tour-ch-hd{display:flex;align-items:center;gap:7px;font-weight:700;color:#fff;font-size:12px;',
+      'padding:5px 6px;border-bottom:1px solid var(--shell-line,#252d28);margin-bottom:3px}',
+      '.tour-ch-hd .n{margin-left:auto;font-weight:400;color:var(--shell-mute,#98a29b)}',
+      '.tour-ch-dot{width:9px;height:9px;border-radius:3px;flex:none}',
+      '.tour-sc{display:block;width:100%;text-align:left;background:transparent;border:0;border-left:2px solid transparent;',
+      'color:#cfd6d1;font-family:inherit;font-size:12.5px;line-height:1.45;padding:6px 8px;border-radius:5px;cursor:pointer}',
+      '.tour-sc:hover{background:var(--shell-3,#1d2420);color:#fff}',
+      '.tour-sc.is-sub{padding-left:22px;font-size:12px;color:#a9b3ac}',
+      '.tour-sc.is-seen{opacity:.5}',
+      '.tour-sc.is-cur{background:var(--shell-3,#1d2420);color:#fff;font-weight:700;opacity:1}',
+      '.tour-sc .n{color:#8d968f;margin-right:6px;font-weight:400}',
+      '.tour-sc.is-cur .n{color:#cfd6d1}',
+      '.tour-brhd{padding:5px 8px 1px 22px;color:var(--shell-mute,#98a29b);font-size:11.5px}',
       '.tour-spot{outline:2.5px solid var(--blue,#17a05e) !important;outline-offset:3px;border-radius:var(--radius-sm,8px);',
       'animation:tourPulse 1.1s ease-out 2}',
       '@keyframes tourPulse{0%{box-shadow:0 0 0 0 rgba(23,160,94,.42)}70%{box-shadow:0 0 0 12px rgba(23,160,94,0)}100%{box-shadow:0 0 0 0 rgba(23,160,94,0)}}',
@@ -697,6 +759,9 @@
     }
     if (!html) { cardClose(); return; }
     if (!cardEl) cardBuild();
+    /* R89:手机浮窗开着时数据卡让开一个浮窗宽度 —— 管网支线现在两者同镜出现(回传镜),不让它们叠在一起 */
+    var phoneOn = UI.phoneSim && UI.phoneSim.isOpen && UI.phoneSim.isOpen();
+    cardEl.style.right = (phoneOn ? 336 : 20) + 'px';
     cardEl.innerHTML =
       '<div class="tour-card-hd"><b>' + esc(sc.card.title) + '</b>' +
       '<button type="button" class="tour-card-x" data-tcard="close" title="收起本镜数据卡">×</button></div>' +
@@ -768,8 +833,17 @@
     /* R88 A8⑮ 联动:P1 任务包推到第几段,P2 数据卡就只点亮到第几段 ——
        关阀数据是班组作业回传出来的,没关过的段没有数,不预先画好。 */
     var lit = Math.max(k.survey.done || 0, leak || 0);
+    var segs = k.survey.segs || [];
     var seed = seedOf(k.id + k.dma), data = [], i;
     for (i = 1; i <= n; i++) {
+      /* R89 A4⑧:班组回传过读数的段直接用回传的数(survey_report 写回 segs),
+         没回传过的段仍按占位数生成 —— 卡上的数与现场表单是同一份,不是两套。 */
+      var sg = segs[i - 1];
+      if (sg && sg.done && sg.preFlow !== null && sg.preFlow !== undefined) {
+        var pb = Math.round(sg.preFlow * 10) / 10, pa = Math.round(sg.postFlow * 10) / 10;
+        data.push({ seg: i, before: pb, after: pa, drop: pb ? (pb - pa) / pb : 0, lit: true, real: true });
+        continue;
+      }
       var b = Math.round((10.5 + ((seed >> (i * 3)) % 40) / 10) * 10) / 10;
       var drop = (leak && i === leak) ? 0.04 : (0.62 + ((seed >> (i * 2)) % 14) / 100);
       data.push({ seg: i, before: b, after: Math.round(b * (1 - drop) * 10) / 10, drop: drop, lit: i <= lit });
@@ -846,6 +920,7 @@
     i = Math.max(0, Math.min(i, N - 1));
     var sc = STORY[i];
     cur = i;
+    seen[i] = true;   /* 章节抽屉的「已走镜」淡色靠它 */
     riding = true;
     sayOpen = false;
     if (!(opts && opts.keepState)) applyState(sc);
@@ -1301,54 +1376,122 @@
     d.body.appendChild(maskEl);
   }
   d.addEventListener('keydown', function (e) {
-    if ((e.key === 'Escape' || e.keyCode === 27) && maskEl) closeModal();
+    if (!(e.key === 'Escape' || e.keyCode === 27)) return;
+    if (maskEl) { closeModal(); return; }
+    if (typeof drawerIsOpen === 'function' && drawerIsOpen()) drawerClose();
   });
 
   /* ---------------- 导览条 ---------------- */
   var dock = null;
 
+  /* R89 A4⑩:位置只报「第 n/N」——章名由左侧色标承载,镜名跟在旁白前面,阶段挪进抽屉行的 title */
   function posText(i) {
     var sc = STORY[i];
     if (sc.br) {
       var list = brList(sc.br), k = list.indexOf(i) + 1;
-      return '支线「' + brLabel(sc.br) + '」第 ' + k + '/' + list.length + ' 步' + (sc.stage ? ' · ' + sc.stage : '');
+      return '支线「' + brLabel(sc.br) + '」第 ' + k + '/' + list.length + ' 步';
     }
-    return '第 ' + mainNo(i) + '/' + MAIN_N + ' 镜' + (sc.stage ? ' · ' + sc.stage : '');
+    return '第 ' + mainNo(i) + '/' + MAIN_N + ' 镜';
   }
 
-  /* 点列 = 主线顺序;分岔点后面紧跟它的支线镜(缩进半色) */
-  function dotsHtml() {
-    var out = [], prevAxis = null;
+  /* ================================================================
+     R89 A4⑩ · 章节抽屉(替掉原来平摊的分镜点列)
+     章 = 分镜的轴线(AXIS),章序 = 它在这场戏里第一次出现的次序 —— 与「▶ 下一镜」实际走的次序一致;
+     支线镜挂在它的分岔点下面缩进一级(章归属跟分岔点走,不按支线自己的轴线另分一章)。
+     ================================================================ */
+  var CH_LABEL = { '支线·异常': '异常支线', '支线·越级与压力': '越级与压力' };
+  function chLabel(ax) { return CH_LABEL[ax] || ax; }
+
+  function chapters() {
+    var out = [], byAxis = {};
     MAIN.forEach(function (i) {
-      var sc = STORY[i];
-      var color = AXIS[sc.axis] || '#5b6b7c';
-      if (prevAxis !== null && sc.axis !== prevAxis) out.push('<span class="tour-gap"></span>');
-      prevAxis = sc.axis;
-      var on = i === cur;
-      var past = MAIN.indexOf(i) < MAIN.indexOf(curMain());
-      var style = on ? 'background:' + color + ';border-color:' + color
-        : (past ? 'background:' + color + ';opacity:.5;border-color:transparent' : '');
-      out.push('<button type="button" class="tour-dot' + (on ? ' is-on' : (past ? ' is-past' : '')) + '"' +
-        ' style="' + style + '" data-tour="jump" data-i="' + i + '"' +
-        ' title="' + esc('第 ' + mainNo(i) + ' 镜 · ' + sc.axis + (sc.stage ? ' · ' + sc.stage : '') + ' · ' + sc.title) + '">' +
-        mainNo(i) + '</button>');
+      var sc = STORY[i], ch = byAxis[sc.axis];
+      if (!ch) { ch = { axis: sc.axis, items: [] }; byAxis[sc.axis] = ch; out.push(ch); }
+      ch.items.push({ i: i, sub: false });
       (sc.branches || []).forEach(function (b) {
-        var br = STORY[idxOf(b.sid)].br;
-        var list = brList(br);
-        out.push('<span class="tour-brgap"></span>');
+        var br = STORY[idxOf(b.sid)].br, list = brList(br);
         list.forEach(function (j, k) {
-          var bs = STORY[j], bon = j === cur;
-          var bc = AXIS[bs.axis] || '#5b6b7c';
-          out.push('<button type="button" class="tour-dot is-br' + (bon ? ' is-on' : '') + '"' +
-            ' style="' + (bon ? 'background:' + bc + ';border-color:' + bc : 'border-color:' + bc) + '"' +
-            ' data-tour="jump" data-i="' + j + '"' +
-            ' title="' + esc('支线「' + brLabel(br) + '」第 ' + (k + 1) + '/' + list.length + ' 步 · ' + bs.title) + '">↳' + (k + 1) + '</button>');
+          ch.items.push({ i: j, sub: true, br: br, k: k + 1, n: list.length, head: k === 0 });
         });
-        out.push('<span class="tour-brgap"></span>');
       });
+    });
+    return out;
+  }
+
+  /* 已走过的镜:主线按位置推(当前主线镜之前的都算走过),支线镜按实际到过记 */
+  var seen = {};
+  function isSeen(i) {
+    if (seen[i]) return true;
+    return !STORY[i].br && MAIN.indexOf(i) < MAIN.indexOf(curMain());
+  }
+
+  function drawerHtml() {
+    var out = [];
+    chapters().forEach(function (ch) {
+      var color = AXIS[ch.axis] || '#5b6b7c';
+      var mainCnt = ch.items.filter(function (x) { return !x.sub; }).length;
+      out.push('<div class="tour-ch"><div class="tour-ch-hd">' +
+        '<span class="tour-ch-dot" style="background:' + color + '"></span>' + esc(chLabel(ch.axis)) +
+        '<span class="n">' + mainCnt + ' 镜' + (ch.items.length > mainCnt ? ' + 支线 ' + (ch.items.length - mainCnt) : '') + '</span></div>');
+      ch.items.forEach(function (x) {
+        var sc = STORY[x.i], on = x.i === cur;
+        if (x.sub && x.head) out.push('<div class="tour-brhd">↳ 支线「' + esc(brLabel(x.br)) + '」' + x.n + ' 镜</div>');
+        var no = x.sub ? (x.k + '/' + x.n) : ('第 ' + mainNo(x.i));
+        out.push('<button type="button" class="tour-sc' + (x.sub ? ' is-sub' : '') +
+          (on ? ' is-cur' : (isSeen(x.i) ? ' is-seen' : '')) + '"' +
+          (on ? ' style="border-left-color:' + color + '"' : '') +
+          ' data-tour="jump" data-i="' + x.i + '"' +
+          ' title="' + esc(sc.title + (sc.stage ? ' · ' + sc.stage : '') + ' · 视角 ' + sc.role) + '">' +
+          '<span class="n">' + esc(no) + '</span>' + esc(sc.title) + '</button>');
+      });
+      out.push('</div>');
     });
     return out.join('');
   }
+
+  var drawerEl = null, drawerMask = null;
+  function drawerClose() {
+    if (drawerEl) drawerEl.classList.remove('is-open');
+    if (drawerMask) { drawerMask.parentNode && drawerMask.parentNode.removeChild(drawerMask); drawerMask = null; }
+  }
+  function drawerRender() {
+    if (!drawerEl) return;
+    drawerEl.innerHTML =
+      '<div class="tour-dr-hd"><span><b>章节</b>' +
+      '<span class="sub">主线 ' + MAIN_N + ' 镜 · 支线 ' + (N - MAIN_N) + ' 镜 · 点任意一行直接跳过去</span></span>' +
+      '<button type="button" class="tour-btn" data-tour="drawerclose" title="关闭(Esc)">✕</button></div>' +
+      '<div class="tour-dr-bd">' + drawerHtml() + '</div>';
+  }
+  function drawerOpen() {
+    if (!drawerEl) {
+      drawerEl = d.createElement('div');
+      drawerEl.className = 'tour-drawer';
+      drawerEl.setAttribute('aria-label', '分镜章节');
+      drawerEl.addEventListener('click', function (e) {
+        var t = e.target;
+        while (t && t !== drawerEl && !(t.getAttribute && t.getAttribute('data-tour'))) t = t.parentNode;
+        if (!t || t === drawerEl || !t.getAttribute) return;
+        var act = t.getAttribute('data-tour');
+        if (act === 'drawerclose') drawerClose();
+        else if (act === 'jump') { goTo(parseInt(t.getAttribute('data-i'), 10) || 0); drawerClose(); }
+      });
+      d.body.appendChild(drawerEl);
+    }
+    drawerRender();
+    if (!drawerMask) {
+      drawerMask = d.createElement('div');
+      drawerMask.className = 'tour-drawer-mask';
+      drawerMask.addEventListener('click', drawerClose);
+      d.body.appendChild(drawerMask);
+    }
+    /* 下一帧再加 is-open,让 transform 过渡跑起来(首次插入同帧改类不触发过渡) */
+    var el = drawerEl;
+    w.setTimeout(function () { el.classList.add('is-open'); }, 10);
+    var cn = drawerEl.querySelector('.tour-sc.is-cur');
+    if (cn) w.setTimeout(function () { try { cn.scrollIntoView({ block: 'center' }); } catch (e) { } }, 30);
+  }
+  function drawerIsOpen() { return !!(drawerEl && drawerEl.classList.contains('is-open')); }
+
   /* 当前所在的主线镜(在支线上时 = 其分岔点) */
   function curMain() { return STORY[cur].br ? brParent(STORY[cur].br) : cur; }
 
@@ -1391,13 +1534,17 @@
       roleBadge(sc) +
       '<span class="tour-say' + (sayOpen ? ' is-open' : '') + '" data-tour="say" title="点开/收起全文">' + say + '</span>' +
       brBtns + nav +
+      '<button type="button" class="tour-btn" data-tour="chapters" title="按章跳镜(右侧抽屉)">☰ 章节</button>' +
       '<button type="button" class="tour-btn" data-tour="stage">流程位置</button>' +
       '<button type="button" class="tour-btn" data-tour="backend">后端发生了什么</button>' +
       '<button type="button" class="tour-btn" data-tour="phone" title="唤起 / 收起现场端手机浮窗">📱 现场端</button>' +
       '<button type="button" class="tour-btn" data-help="tour" title="导览条怎么用">?</button>' +
       '<button type="button" class="tour-btn" data-tour="min" title="折叠/展开导览条">' + (minimized ? '▲' : '▼') + '</button>' +
       '</div>' +
-      '<div class="tour-dots">' + dotsHtml() + '</div>';
+      /* 细进度条:走到主线第几镜(支线镜按它的分岔点算) */
+      '<div class="tour-prog" title="' + esc('主线进度 ' + mainNo(curMain()) + '/' + MAIN_N) + '">' +
+      '<i style="width:' + (mainNo(curMain()) / MAIN_N * 100).toFixed(1) + '%;background:' + color + '"></i></div>';
+    if (drawerIsOpen()) drawerRender();
     d.body.style.paddingBottom = (dock.offsetHeight + 8) + 'px';
   }
 
@@ -1427,6 +1574,7 @@
           UI.phoneSim(p.src, { title: p.title });
         }
       }
+      else if (act === 'chapters') { if (drawerIsOpen()) drawerClose(); else drawerOpen(); }
       else if (act === 'say') { sayOpen = !sayOpen; renderDock(); }
       else if (act === 'min') { minimized = !minimized; renderDock(); }
     });
@@ -1438,11 +1586,12 @@
     title: '分镜导览条怎么用',
     sub: '导览条是解说层,不是业务界面的一部分;它只做三件事:推进状态、跳到该看的位置、把当前所在的流程节点说清楚。',
     body: [
-      '<b>主线</b>:「▶ 下一镜」按主线 ' + MAIN_N + ' 镜依次推进,页面自动跳到该镜要看的位置并高亮焦点。点色块可直接跳镜。',
-      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(人裁闭环 / 驳回落锤与误报回流 / 主管提级与抽查 / 立案之后 / 抢占三步 / 超时兜底),走到尽头自动回主线,也可以随时点「↩ 回主线」。色块里缩进的半色小格就是支线镜。',
+      '<b>章节抽屉</b>:点导览条上的「☰ 章节」,右侧滑出一张按章分组的全镜目录(序幕 / 井盖线 / 异常支线 / 路面线 / 管网线 / 越级与压力 / 终幕),支线镜缩进挂在它的分岔点下面;当前镜高亮、走过的镜淡色,点任意一行直接跳过去。Esc 或点抽屉外面关。',
+      '<b>主线</b>:「▶ 下一镜」按主线 ' + MAIN_N + ' 镜依次推进,页面自动跳到该镜要看的位置并高亮焦点。导览条上只报「第 n/N」与一条细进度条,要跳镜点「☰ 章节」。',
+      '<b>支线</b>:主线上带「↳ 深入…」按钮的镜是分岔点,进去是这条线的下钻(人裁闭环 / 驳回落锤与误报回流 / 主管提级与抽查 / 立案之后 / 抢占三步 / 超时兜底),走到尽头自动回主线,也可以随时点「↩ 回主线」。抽屉里缩进那一级就是支线镜。',
       '<b>状态是重放出来的</b>:状态机不可逆,所以往回跳或进支线时会重新播种再静默连推到位——同一镜任何时候点到,看到的都是同一份状态。',
       '<b>两枚浮层</b>:「流程位置」= 当前镜落在本线流程图的哪个节点(已走路径加深,分支节点可点着跳镜;分支边上的判据编号 hover 出判据、点开出规则卡,底部还挂一张本线规则表);「后端发生了什么」= 这一镜落了哪些动作记录。',
-      '<b>数据卡</b>:少数镜(管网核查任务包、关阀试验对比)会在右侧弹一张实时数据卡,内容取自当前世界状态,点右上 × 收起。',
+      '<b>数据卡</b>:少数镜(管网核查任务包、关阀试验对比)会在右侧弹一张实时数据卡,内容取自当前世界状态 —— 关阀试验那张卡上的读数就是管网支线里班组在手机上一段一段填回来的,点右上 × 收起。',
       '<b>手机浮窗</b>:涉现场端的镜会自动弹出班组那一屏,与工作台共用同一份状态;也可以随时点导览条上的「📱 现场端」自己唤起或收起,浮窗可拖动、可另开新窗。班组段拆成三镜(接单 / 到场+前照 / 后照+完工),推一镜浮窗跟着走一格。',
       '<b>当前视角</b>:每一镜声明了它该由谁来看 —— 进镜自动把顶栏身份切成该镜的视角(主管落锤的镜切「复核主管」,其余「区复核员」),导览条上的「当前视角」就是此刻的真实身份。下车后自己切过的身份导览不改回,与本镜视角不一致时徽章会标出来。'
     ],

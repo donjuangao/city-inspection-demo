@@ -77,6 +77,15 @@
       if (a.srcRid === undefined) a.srcRid = null;
     });
     if (d.gov && d.gov.weatherAlert === undefined) d.gov.weatherAlert = null;
+    /* R89 A1:认领位(assignee = 锁到谁手上,null = 公共池;claimLog = 认领 / 接手留痕) */
+    (d.clues || []).forEach(function (c) {
+      if (c.assignee === undefined) c.assignee = null;
+      if (!c.claimLog) c.claimLog = [];
+    });
+    /* R89 A4⑧:核查任务包的分段试验数据位(老快照只有 segments/done 计数时补出段数组) */
+    (d.investigations || []).forEach(function (k) {
+      if (k.survey && !k.survey.segs) k.survey.segs = surveySegs(k.survey.segments || 4);
+    });
     (d.crews || []).forEach(function (c) {
       if (!c.xy) {
         var seedCrew = byId((w.DATA && w.DATA.crews) || [], c.id);
@@ -85,6 +94,15 @@
       if (c.enroute === undefined) c.enroute = null;
     });
     return d;
+  }
+
+  /* R89 A4⑧ · 分段关阀试验的段位:每段一行,班组回传关阀前 / 后流量读数后 done=true */
+  function surveySegs(n) {
+    var out = [];
+    for (var i = 1; i <= (n || 4); i++) {
+      out.push({ no: i, name: '第 ' + i + ' 段', done: false, preFlow: null, postFlow: null, note: '', t: null, by: null });
+    }
+    return out;
   }
 
   /* R87 · 工单事项一句话:「井盖缺失 · Al Jimi MH-0417」= 关联线索的异常类目(无线索则按工单类型)+ 街区 + 设施号。
@@ -240,6 +258,53 @@
      ============================================================ */
   var A = {};
 
+  /* ============ R89 A1 · 认领制(件在公共池,谁处置谁先认领)============
+     assignee 单值:null = 公共池,任何人可认领;非空 = 锁到那个人手上,他人视图灰化。
+     处置动作(定性类)执行时隐式认领 —— 未认领的自动补一条 claim 日志再执行,
+     已被他人认领的直接拦下并提示走「接手」。三件都留痕,不做静默夺件。 */
+  var CLAIM_ACTIONS = ['confirm', 'reject', 'overrule_mech', 'fastlane_recall', 'archive_doubt', 'transfer', 'clue_escalate'];
+  function claimBlock(action, p, actor) {
+    if (CLAIM_ACTIONS.indexOf(action) < 0) return null;
+    var c = p && p.clueId ? clueOf(p.clueId) : null;
+    if (!c || !c.assignee || c.assignee === actor) return null;
+    return '本件已由「' + c.assignee + '」认领:要处置请先「接手」(须填原因,记日志)';
+  }
+
+  A.claim = {
+    label: '认领', actors: ['区复核员', '复核主管'], hint: '把公共池里的件锁到自己名下;他人视图该件灰化标「已由 XX 认领」',
+    v: function (s, p, actor) {
+      var c = clueOf(p.clueId); if (!c) return '线索不存在';
+      if (c.status !== 'open') return '线索非「待核查」态,无需认领';
+      if (c.assignee === actor) return '本件已在你名下';
+      if (c.assignee) return '本件已由「' + c.assignee + '」认领:请走「接手」(须填原因)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var c = clueOf(p.clueId);
+      c.assignee = actor;
+      (c.claimLog = c.claimLog || []).push({ t: s.now, by: actor, way: '认领', from: null, reason: p.reason || '' });
+      return '认领 ' + c.id + ':件锁到「' + actor + '」名下;他人视图该件灰化,可「接手」但须填原因并留痕';
+    }
+  };
+
+  A.claim_takeover = {
+    label: '接手', actors: ['区复核员', '复核主管'], hint: '从他人手上接过件:原因必填,记日志;原认领人可回查是谁在什么时候接走的',
+    v: function (s, p, actor) {
+      var c = clueOf(p.clueId); if (!c) return '线索不存在';
+      if (c.status !== 'open') return '线索非「待核查」态,无需接手';
+      if (!c.assignee) return '本件还在公共池里,直接「认领」即可';
+      if (c.assignee === actor) return '本件已在你名下';
+      if (!p.reason) return '接手原因必填(进动作日志,原认领人可回查)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var c = clueOf(p.clueId), from = c.assignee;
+      c.assignee = actor;
+      (c.claimLog = c.claimLog || []).push({ t: s.now, by: actor, way: '接手', from: from, reason: p.reason });
+      return '接手 ' + c.id + ':' + from + ' → ' + actor + ';原因「' + p.reason + '」;认领转移留痕,不静默夺件';
+    }
+  };
+
   /* ---- 复核员动作族 ---- */
   A.view_evidence = {
     label: '查看证据卡', actors: ['*'], hint: '高危件确认前的强制前置',
@@ -352,15 +417,19 @@
       if (!p.expanded) return '批内缩略证据未展开过';
       return null;
     },
-    run: function (s, p) {
-      var n = 0;
+    run: function (s, p, actor) {
+      var n = 0, held = [];
       (p.clueIds || []).forEach(function (id) {
         var c = clueOf(id); if (!c || c.status !== 'open') return;
+        /* R89 A1:批内他人已认领的件跳过(不夺件、不静默处置),显名列出让人去「接手」 */
+        if (c.assignee && c.assignee !== actor) { held.push(c.id + '(' + c.assignee + ')'); return; }
+        if (!c.assignee) { c.assignee = actor; (c.claimLog = c.claimLog || []).push({ t: s.now, by: actor, way: '批量隐式认领', from: null, reason: '' }); }
         c.status = 'confirmed'; c.lane = c.lane || '批量半审'; c.planned = true; n++;
       });
       var pick = Math.max(1, Math.round(n * 0.15));
       hold('批量确认 15% 抽样', (p.clueIds || [])[0] || '', '批量件抽审率 15%:本批 ' + n + ' 条抽 ' + pick + ' 条');
-      return '批量确认 ' + n + ' 条 → 并入养护计划;抽审 15%(本批抽 ' + pick + ' 条)';
+      return '批量确认 ' + n + ' 条 → 并入养护计划;抽审 15%(本批抽 ' + pick + ' 条)' +
+        (held.length ? ';跳过他人已认领 ' + held.length + ' 条(' + held.join(' / ') + '),需先「接手」' : '');
     }
   };
 
@@ -445,6 +514,7 @@
       var c = clone(t); c.id = nextId('WO-', s.tickets); c.crew = null; c.state = '已派工';
       c.note = '拆自 ' + t.id + ':' + p.reason; c.mirror = 'MUN-WO-' + (77300 + s.tickets.length);
       s.tickets.push(c);
+      p.newTicketId = c.id;   // R89 A3:新对象 id 回写进本次动作参数,链接层与日志都能指到它
       return '拆单 ' + t.id + ' → 新增 ' + c.id + ';理由「' + p.reason + '」';
     }
   };
@@ -514,22 +584,7 @@
     }
   };
 
-  /* W3 整合补(指挥官):热线上报人工甄别驳回——设计档 §0.9 E3 无效分支;W1-E 报缺 */
-  A.public_reject = {
-    label: '甄别驳回', actors: ['区复核员', '复核主管'], hint: '人工甄别判无效:驳回,来电人可见理由',
-    v: function (s, p) {
-      var r = byId(s.publicReports, p.reportId); if (!r) return '上报不存在';
-      if (r.status === '已并入') return '已并入件不走驳回(随线索侧流程)';
-      if (r.status === '已驳回') return '该条已驳回';
-      if (!p.reason) return '需填驳回理由(上报人可见)';
-      return null;
-    },
-    run: function (s, p) {
-      var r = byId(s.publicReports, p.reportId);
-      r.status = '已驳回'; r.rejectReason = p.reason;
-      return '热线上报 ' + r.id + ' 甄别驳回:理由「' + p.reason + '」;来电人可见,联系方式仍列级脱敏';
-    }
-  };
+  /* R89 A2 rollback:市民渠道三动作(受理 / 重复登记 / 甄别驳回)整条删除 —— 见 data.js §8 */
 
   A.freeze_evidence = {
     label: '证据冻结', actors: ['复核主管'], hint: '涉事故/索赔件:全证据链快照锁定 + 哈希锚定,可导出法务包',
@@ -708,12 +763,14 @@
         checks: [], evidence: [{ kind: 'field', label: 'AI 生成示意' }], status: 'open',
         lane: '单条必审', slaDeadline: addMin(s.now, w.DATA.dict.sla.sameDay), t: s.now,
         fastlane: false, mechFail: false, evidenceViewed: false, rejectCode: null,
-        note: '班组现场发现:不走视觉腿,直接进人审甄别', publicRefs: [], mergedInto: null, ticketId: null, alertId: null,
+        note: '班组现场发现:不走视觉腿,直接进人审甄别',
+        assignee: null, claimLog: [], mergedInto: null, ticketId: null, alertId: null,
         observations: []
       };
       c.observations = [{ t: s.now, source: c.source, conf: null, evidence: c.evidence.slice(), note: c.note, kind: '人工巡查' }];
       w.CLUE_OBS.sync(c);
       s.clues.push(c);
+      p.newClueId = c.id;     // R89 A3:同上,新线索 id 回写
       return '现场上报:新线索 ' + c.id + '(' + p.facility + '),来源标「现场发现」→ 复核员甄别';
     }
   };
@@ -739,31 +796,6 @@
       crewOf(p.toCrew).load++;
       return '交接 ' + t.id + ':' + (old || '(无)') + ' → ' + crewOf(p.toCrew).name + ';SLA 连续计,不重新起算';
     }
-  };
-
-  /* ---- 热线上报(R88 A1⑬:市民渠道 = 12345 市政热线,接线员录入;actors 保持 '*',
-     留仓的 public.html 传什么 actor 都仍能提交,不因角色收缩而失效)---- */
-  A.public_report = {
-    label: '热线上报受理', actors: ['*'], hint: '接线员录入 → 受理编号回执;联系方式列级脱敏',
-    v: function (s, p) { if (!p.cat) return '未选类目'; if (!p.block && !p.facility) return '未定位'; return null; },
-    run: function (s, p) {
-      var id = p.reportId || ('PR-0' + (400 + s.publicReports.length));
-      var tpl = w.UNLOCKS.publicReports[id];
-      var r = tpl ? clone(tpl) : {
-        id: id, t: s.now, cat: p.cat, block: p.block || '', facility: p.facility || null,
-        source: '12345 热线', takenBy: p.actor || '热线接线员',
-        contact: '05****' + (1000 + s.publicReports.length), status: '已受理', receipt: 'RC-' + id,
-        mergedInto: null, urges: 0, evidence: [{ kind: 'field', label: 'AI 生成示意' }]
-      };
-      r.t = s.now;
-      if (!byId(s.publicReports, r.id)) s.publicReports.push(r);
-      return '热线上报受理 ' + r.id + '(12345 热线 · 接线员录入):回执编号 ' + r.receipt + ';联系方式列级脱敏;进兜底并入队列人工甄别(不直接进紧急)';
-    }
-  };
-  A.public_urge = {
-    label: '重复来电登记', actors: ['*'], hint: '同一问题的重复来电只累计数,不另开记录(字段名 urges 保持不变)',
-    v: function (s, p) { return byId(s.publicReports, p.reportId) ? null : '上报记录不存在'; },
-    run: function (s, p) { var r = byId(s.publicReports, p.reportId); r.urges++; return '热线重复来电 ' + r.id + ':同一问题重复来电计数 ' + r.urges + '(只累计,不另开记录,也不构成自动提级)'; }
   };
 
   /* ============ 规则引擎 / AI 服务自动步(机械不豁免审计,每步一条日志)============ */
@@ -954,20 +986,32 @@
       return '过载三步 ' + c.id + ':①只读预警先喊现场 ②显名降级进批量加急分诊(件件可抽审)③待复核主管(值班)临时借调/抢占仲裁';
     });
 
-  A.auto_dedupe = autoDef('多源同点去重合并', '热线上报与传感器线索同点位合并,证据叠加;防抖冷却',
+  /* R89 A2 · T10 重做:第二观测源 = 固定相机复扫同点位再报警(市民渠道整条已删)。
+     报警本身只是一条观测事件,不产线索、不定性 —— 是否新开线索交归并规则(CL-R01)判。 */
+  A.auto_recheck_obs = autoDef('同点位复扫报警(第二观测源)',
+    '固定相机 / 车载复扫在同一设施上再次命中:只产观测事件,不产新线索、不定性,交归并规则判去向',
     function (s, p) {
-      var r = byId(s.publicReports, p.reportId), c = clueOf(p.clueId);
-      if (!r || !c) return '去重合并:对象不存在';
-      r.mergedInto = c.id; r.status = '已并入';
-      c.publicRefs.push(r.id);
-      /* R86 A3:并入 = 给这条线索追加一次「热线上报」观测(不新开线索) */
+      var c = clueOf(p.clueId);
+      return '同点位复扫报警:' + (p.source || '固定相机复扫') + ' @ ' + (p.facility || (c ? c.facility : '')) +
+        ' 再次命中(置信 ' + (p.conf === undefined || p.conf === null ? '—' : p.conf) + ')→ 交归并规则 CL-R01 判定并入既有线索还是另开';
+    },
+    function (s, p) { return clueOf(p.clueId) ? null : '线索不存在:' + (p.clueId || ''); });
+
+  A.auto_dedupe = autoDef('多源同点去重合并', '同设施同类目在保活时长内复现 → 并入既有线索作一次观测,不新开线索;证据叠加、防抖冷却',
+    function (s, p) {
+      var c = clueOf(p.clueId);
+      if (!c) return '去重合并:线索不存在';
+      /* R86 A3 / CL-R01:并入 = 给这条线索追加一次观测(不新开线索) */
+      var kind = p.kind || w.CLUE_OBS.kind(p.source);
       addObservation(c, {
-        t: r.t || s.now, source: '热线上报 ' + r.id + '(12345 热线)', conf: null, kind: '热线',
-        note: '一处设施上的同类异常并进原线索(CL-R01);回执 ' + (r.receipt || '') + ' 状态同步可查',
-        evidence: (r.evidence || []).map(function (e) { return { kind: e.kind, label: e.label, from: r.id }; })
+        t: s.now, source: p.source || '同点位复扫', conf: (p.conf === undefined ? null : p.conf), kind: kind,
+        note: p.note || '一处设施上的同类异常并进原线索(CL-R01),不新开一条',
+        evidence: (c.evidence || []).slice(0, 1).map(function (e) { return { kind: e.kind, label: e.label, from: kind }; })
       });
-      return '多源同点合并:热线上报 ' + r.id + ' 并入线索 ' + c.id + ' 作第 ' + c.obsCount + ' 次观测;证据叠加,回执状态同步可查;双单竞态收敛';
-    });
+      return '多源同点合并:' + (p.source || '同点位复扫') + ' 并入线索 ' + c.id + ' 作第 ' + c.obsCount +
+        ' 次观测(来源分布 +1「' + kind + '」);证据叠加,不新开线索;双源竞态收敛';
+    },
+    function (s, p) { return clueOf(p.clueId) ? null : '线索不存在:' + (p.clueId || ''); });
 
   A.auto_recon = autoDef('对账不一致', '每日比对镜像与客户系统;处置状态以客户系统为准,巡检定性以我方为准',
     function (s, p) {
@@ -1056,6 +1100,7 @@
       };
       s.tickets.push(tk);
       c.ticketId = tk.id;
+      if (cw) p.crew = cw.id;   // R89 A3:兜底选出的承接班组回写,链接层指得到「工单↦班组」
       c.overdueFallback = { ticketId: tk.id, t: s.now, deadline: c.slaDeadline || null, crew: cw ? cw.id : null };
       if (cw) { cw.load++; if (cw.status === '空闲') cw.status = '待接单'; crewMove(cw, c.facility, 'enroute'); }
       hold('超时兜底派单件全量抽审', c.id, '超时兜底自动派件全量拘抽审(自动派不豁免审计);定性仍悬,需复核员补审',
@@ -1228,9 +1273,41 @@
     run: function (s, p) {
       var k = caseOf(p.caseId);
       k.phase = '核查中';
-      k.survey = { t: s.now, methods: ['夜间听漏', '分段关阀试验'], segments: 4, done: 0 };
+      k.survey = { t: s.now, methods: ['夜间听漏', '分段关阀试验'], segments: 4, done: 0, segs: surveySegs(4) };
       (k.caseLog = k.caseLog || []).push({ t: s.now, txt: '开核查任务包:夜间听漏 + 分段关阀试验(4 段)' });
       return '开核查任务包 ' + k.id + '(' + k.dma + '):夜间听漏 + 分段关阀试验分 4 段推进,按段收敛嫌疑区间';
+    }
+  };
+
+  /* R89 A4⑧ · 现场关阀试验数据回传:班组端在管网核查工单上按段回传关阀前 / 后流量读数。
+     写回 investigation.survey 对应段(done=true + 两个读数),与拍照回传并行,不互相替代。 */
+  A.survey_report = {
+    label: '回传试验数据', actors: ['班组账号'],
+    hint: '分段关阀试验:选段 + 关阀前/后流量读数;写回核查任务包对应段,读数差进 P2 数据卡',
+    v: function (s, p) {
+      var k = caseOf(p.caseId); if (!k) return '调查案不存在';
+      if (!k.survey) return '本案未开核查任务包,无可回传的试验段';
+      var no = parseInt(p.seg, 10);
+      if (!no || no < 1 || no > (k.survey.segs || []).length) return '未选择有效试验段(1-' + (k.survey.segs || []).length + ')';
+      var sg = k.survey.segs[no - 1];
+      if (sg.done) return '第 ' + no + ' 段已回传(关阀前 ' + sg.preFlow + ' / 关阀后 ' + sg.postFlow + ')';
+      if (p.preFlow === undefined || p.preFlow === null || p.preFlow === '') return '关阀前流量读数必填';
+      if (p.postFlow === undefined || p.postFlow === null || p.postFlow === '') return '关阀后流量读数必填';
+      if (isNaN(parseFloat(p.preFlow)) || isNaN(parseFloat(p.postFlow))) return '流量读数须为数字(m³/h)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var k = caseOf(p.caseId), no = parseInt(p.seg, 10), sg = k.survey.segs[no - 1];
+      var pre = parseFloat(p.preFlow), post = parseFloat(p.postFlow);
+      sg.done = true; sg.preFlow = pre; sg.postFlow = post; sg.note = p.note || ''; sg.t = s.now; sg.by = actor;
+      k.survey.done = k.survey.segs.filter(function (x) { return x.done; }).length;
+      var drop = Math.round((pre - post) * 100) / 100;
+      (k.caseLog = k.caseLog || []).push({
+        t: s.now, txt: '第 ' + no + ' 段关阀试验数据回传:关阀前 ' + pre + ' m³/h → 关阀后 ' + post + ' m³/h(落差 ' + drop + ')'
+      });
+      return '回传试验数据 ' + k.id + ' 第 ' + no + ' 段:关阀前 ' + pre + ' m³/h → 关阀后 ' + post + ' m³/h(落差 ' + drop +
+        ');本段标完成(' + k.survey.done + '/' + k.survey.segs.length + '),读数进核查数据卡,嫌疑区间按段收敛' +
+        (p.note ? ';现场备注「' + p.note + '」' : '');
     }
   };
 
@@ -1270,6 +1347,7 @@
         suspended: false, photos: [], note: '渗漏确认后的维修处置(带压作业);复验=流量回归基线,不是照片'
       };
       s.tickets.push(tk); k.repairTicketId = tk.id; k.phase = '维修中';
+      p.crew = tk.crew;       // R89 A3:承接班组回写(默认 CR-04 时链接层也指得到)
       var cw = crewOf(tk.crew); if (cw) { cw.load++; if (cw.status === '空闲') cw.status = '待接单'; }
       (k.caseLog = k.caseLog || []).push({ t: s.now, txt: '转维修工单 ' + tk.id });
       return '转维修工单 ' + k.id + ' → ' + tk.id + '(' + (cw ? cw.name : tk.crew) + ');调查案不关,等复验流量回归';
@@ -1354,8 +1432,8 @@
     }
   };
 
-  /* ---- R88 A1⑬ rollback:删「催办计数达阈值 → 自动提级」那条(rd_urge_boost 整条推翻)。
-     重复来电只是排序的输入,不构成提级理由;提级改为复核主管主动做的显名动作,原因必填。---- */
+  /* ---- 提级 = 复核主管主动做的显名动作,原因必填(R88 A1⑬ 已推翻「按计数自动提级」那条;
+     R89 A2 后市民渠道整条不在系统内,提级的输入只剩现场与观测证据)。---- */
   A.clue_escalate = {
     label: '提级', actors: ['复核主管'],
     hint: '主管主动把养护 / 观察件提为急修:原因必填,显名留痕;提级是人做的动作,不是系统按计数自动定性',
@@ -1563,6 +1641,7 @@
       };
       rk.summary = summaryOf(rk, s);
       s.tickets.push(rk);
+      p.recheckTicketId = rk.id;   // R89 A3:复检工单 id 回写
       sns.forEach(function (x) { x.recheck = { ticketId: rk.id, t: s.now, by: actor }; });
       out.push('开传感器复检工单 ' + rk.id + '(灰档)');
       banner('info', '误报撤销:' + al.id + '(' + al.facility + ')告警状态置「误报撤销」,记录保留;' + out.join(';') + '。', 'm2', routeOf('alert', al.id));
@@ -1897,6 +1976,209 @@
     });
   } catch (e) { /* 无 window 事件环境 */ }
 
+  /* ============================================================
+     R89 A3 · 链接层(本体日志的第三列:这一步动作把哪两个对象连起来了)
+     ① 每个动作声明它产出/改变的链接:{type:'工单↦线索', from:<端点取值式>, to:<端点取值式>};
+     ② doCommit 落日志时按声明实例化 entry.links = [{type, fromId, toId}](两端都取到才落);
+     ③ 链接类型表 = 从声明聚合导出(S.linkTypes()),不是另写一张表 —— 所以日志里出现的
+        type 不可能不在类型表里(同源);S.linkAudit() 仍逐条核一遍,恒 0 即机制在。
+     端点取值式(字符串,读的是本次动作的参数与它刚改过的对象):
+       '@actor'      当前执行人 / 服务账号        '#字面量'   固定文本端点
+       'p:key'       params[key](数组则扇出多条)  'p1:key' 数组首项  'prest:key' 数组其余项
+       'clue:字段'   clueOf(p.clueId) 的字段       'ticket:字段' tkOf(p.ticketId) 的字段
+       'alert:字段' / 'case:字段' / 'crew:字段' / 'audit:字段' / 'recon:字段'  同理
+       '$audit'      本次动作新拘进抽审队列的记录 id(可多条)
+     ============================================================ */
+  function L(type, from, to) { return { type: type, from: from, to: to }; }
+
+  var ACTION_LINKS = {
+    /* ---- 认领与复核员定性 ---- */
+    claim: [L('线索↦处置人', 'p:clueId', '@actor')],
+    claim_takeover: [L('线索↦处置人', 'p:clueId', '@actor')],
+    view_evidence: [],
+    confirm: [L('告警↦线索', 'clue:alertId', 'p:clueId'), L('告警↦设施', 'clue:alertId', 'clue:facility'),
+      L('线索↦处置人', 'p:clueId', '@actor'), L('工单↦线索', 'clue:ticketId', 'p:clueId'), L('抽审↦线索', '$audit', 'p:clueId')],
+    reject: [L('线索↦处置人', 'p:clueId', '@actor'), L('抽审↦线索', '$audit', 'p:clueId')],
+    overrule_mech: [L('线索↦处置人', 'p:clueId', '@actor'), L('抽审↦线索', '$audit', 'p:clueId')],
+    fastlane_recall: [L('工单↦线索', 'clue:ticketId', 'p:clueId'), L('线索↦处置人', 'p:clueId', '@actor'),
+      L('抽审↦线索', '$audit', 'p:clueId')],
+    batch_confirm: [L('线索↦处置人', 'p:clueIds', '@actor'), L('抽审↦线索', '$audit', 'p1:clueIds')],
+    archive_doubt: [L('线索↦处置人', 'p:clueId', '@actor')],
+    transfer: [L('线索↦产权单位', 'p:clueId', 'p:owner'), L('设施↦产权单位', 'clue:facility', 'p:owner'),
+      L('线索↦处置人', 'p:clueId', '@actor')],
+    clue_escalate: [L('线索↦处置人', 'p:clueId', '@actor')],
+    fp_feedback: [L('线索↦规则', 'p:clueId', 'p:ruleId')],
+
+    /* ---- 调查案(管网线)---- */
+    open_case: [L('工单↦调查案', 'case:ticketId', 'p:caseId'), L('调查案↦设施', 'p:caseId', 'case:facility')],
+    close_case: [L('调查案↦结案人', 'p:caseId', '@actor')],
+    pl_survey_start: [L('工单↦调查案', 'case:ticketId', 'p:caseId')],
+    survey_report: [L('调查案↦班组', 'p:caseId', '@actor')],
+    pl_leak_confirm: [L('调查案↦管段', 'p:caseId', 'p:segment')],
+    pl_to_repair: [L('工单↦调查案', 'case:repairTicketId', 'p:caseId'), L('工单↦班组', 'case:repairTicketId', 'p:crew')],
+    pl_verify_ok: [],
+    pl_close: [L('调查案↦结案人', 'p:caseId', '@actor')],
+
+    /* ---- 调度与工单 ---- */
+    dispatch_manual: [L('工单↦班组', 'p:ticketId', 'p:crew')],
+    merge: [L('工单↦工单', 'prest:ticketIds', 'p1:ticketIds')],
+    split: [L('工单↦工单', 'p:newTicketId', 'p:ticketId')],
+    suspend: [],
+    override_emergency: [L('抽审↦线索', '$audit', 'p:clueId')],
+    revoke: [L('告警↦裁定人', 'p:alertId', '@actor')],
+    recon_rule: [L('对账↦工单', 'p:reconId', 'recon:ticketId')],
+    freeze_evidence: [L('冻结对象↦冻结人', 'p:targetId', '@actor')],
+    toggle_fastlane: [L('类目开关↦治理方', 'p:cat', '@actor')],
+    appeal_fastlane: [L('类目申诉↦发起方', 'p:cat', '@actor')],
+    verify_pass: [L('工单↦复验人', 'p:ticketId', '@actor')],
+    verify_reject: [L('工单↦复验人', 'p:ticketId', '@actor')],
+    mh_confirm_close: [L('工单↦复验人', 'p:ticketId', '@actor')],
+    rd_spot_check: [L('抽审↦工单', '$audit', 'p:ticketId')],
+    preempt_yield: [L('工单↦线索', 'p:ticketId', 'p:forClueId')],
+    preempt_borrow: [L('班组↦业务线', 'p:crew', 'p:line')],
+    preempt_arbitrate: [L('工单↦线索', 'clue:ticketId', 'p:clueId'), L('工单↦班组', 'clue:ticketId', 'p:crew'),
+      L('抽审↦线索', '$audit', 'p:clueId')],
+    crew_resume: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
+    resume_requeue: [],
+    misfire_appeal: [L('告警↦申诉人', 'p:alertId', '@actor')],
+    misfire_ruling: [L('告警↦裁定人', 'p:alertId', '@actor'), L('工单↦设施', 'p:recheckTicketId', 'alert:facility')],
+    spot_pass: [L('抽审↦裁定人', 'p:auditId', '@actor')],
+    spot_return: [L('抽审↦裁定人', 'p:auditId', '@actor'), L('抽审↦线索', 'p:auditId', 'audit:clueId')],
+    rule_param_change: [L('规则↦变更人', 'p:ruleId', '@actor')],
+    banner_dismiss: [],
+
+    /* ---- 班组端 ---- */
+    crew_accept: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
+    crew_arrive: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
+    crew_photo: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
+    crew_done: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
+    crew_reject: [],
+    crew_blocked: [],
+    crew_safety: [],
+    crew_report_new: [L('线索↦设施', 'p:newClueId', 'p:facility')],
+    crew_partial_done: [],
+    crew_handover: [L('工单↦班组', 'p:ticketId', 'p:toCrew')],
+
+    /* ---- 规则引擎 / AI 服务自动步 ---- */
+    auto_sensor_alarm: [L('线索↦传感器', 'p:clueId', 'p:sensorId'), L('线索↦设施', 'p:clueId', 'p:facility')],
+    auto_selfcheck: [],
+    auto_work_window: [],
+    auto_mech_check: [],
+    auto_dispatch: [L('工单↦线索', 'clue:ticketId', 'p:clueId'), L('工单↦班组', 'clue:ticketId', 'p:crew'),
+      L('抽审↦线索', '$audit', 'p:clueId')],
+    auto_broadcast: [],
+    auto_review_window: [],
+    auto_create_clue: [L('线索↦设施', 'p:clueId', 'clue:facility')],
+    auto_route: [],
+    auto_mech_reject: [],
+    auto_upgrade: [L('抽审↦线索', '$audit', 'p1:clueIds')],
+    auto_plan_ticket: [L('工单↦班组', 'p:ticketId', 'p:crew'), L('工单↦设施', 'p:ticketId', 'ticket:facility')],
+    auto_rule_alarm: [],
+    auto_ai_typing: [],
+    auto_open_case: [L('调查案↦设施', 'p:caseId', 'p:facility')],
+    auto_device_ticket: [L('工单↦传感器', 'p:ticketId', 'p:sensorId')],
+    auto_verify: [],
+    auto_overload: [L('抽审↦线索', '$audit', 'p:clueId')],
+    auto_recheck_obs: [L('线索↦设施', 'p:clueId', 'p:facility')],
+    auto_dedupe: [L('线索↦观测源', 'p:clueId', 'p:source')],
+    auto_recon: [L('对账↦工单', 'p:reconId', 'p:ticketId')],
+    auto_flow_recover: [],
+    auto_suggest_close: [],
+    auto_weather_tasks: [L('工单↦设施', 'p:ticketId', 'ticket:facility')],
+    dispatch_suggest: [L('待裁定↦线索', 'p:rulingId', 'p:clueId'), L('待裁定↦班组', 'p:rulingId', 'p:crew')],
+    auto_audit_hold: [L('抽审↦线索', '$audit', 'p:clueId')],
+    auto_overdue_dispatch: [L('工单↦线索', 'clue:ticketId', 'p:clueId'), L('工单↦班组', 'clue:ticketId', 'p:crew'),
+      L('抽审↦工单', '$audit', 'clue:ticketId')]
+  };
+  /* 声明挂回动作定义本体:动作表每行都带 links(没有链接的显式声明空数组,不留「忘了写」的灰区)。
+     ⚠ 只挂声明表里有的键 —— 漏写的动作会在 S.linkAudit().undeclaredActions 里露出来,
+        写错的键会在 staleLinkKeys 里露出来;两个都空才算这张表跟动作表对齐。 */
+  Object.keys(A).forEach(function (k) { if (ACTION_LINKS[k]) A[k].links = ACTION_LINKS[k]; });
+  var STALE_LINK_KEYS = Object.keys(ACTION_LINKS).filter(function (k) { return !A[k]; });
+
+  function objOf(kind, s, p) {
+    if (kind === 'clue') return p.clueId ? clueOf(p.clueId) : null;
+    if (kind === 'ticket') return p.ticketId ? tkOf(p.ticketId) : null;
+    if (kind === 'alert') return p.alertId ? byId(s.alerts, p.alertId) : null;
+    if (kind === 'case') return p.caseId ? caseOf(p.caseId) : null;
+    if (kind === 'crew') return p.crew ? crewOf(p.crew) : null;
+    if (kind === 'audit') return p.auditId ? byId((s.gov && s.gov.auditQueue) || [], p.auditId) : null;
+    if (kind === 'recon') return p.reconId ? byId(s.recon || [], p.reconId) : null;
+    return null;
+  }
+  function endOf(spec, s, p, actor, ctx) {
+    if (!spec) return null;
+    if (spec === '@actor') return actor;
+    if (spec.charAt(0) === '#') return spec.slice(1);
+    if (spec === '$audit') return (ctx && ctx.newAudits) || [];
+    var i = spec.indexOf(':');
+    if (i < 0) return null;
+    var head = spec.slice(0, i), key = spec.slice(i + 1);
+    if (head === 'p') return p[key];
+    if (head === 'p1') { var a1 = p[key]; return (a1 && a1.length) ? a1[0] : null; }
+    if (head === 'prest') { var a2 = p[key]; return (a2 && a2.length > 1) ? a2.slice(1) : []; }
+    var o = objOf(head, s, p);
+    return o ? o[key] : null;
+  }
+  function asList(v) {
+    if (v === null || v === undefined || v === '') return [];
+    return (Object.prototype.toString.call(v) === '[object Array]') ? v.filter(function (x) { return !!x; }) : [v];
+  }
+  function buildLinks(action, s, p, actor, ctx) {
+    var decl = (A[action] && A[action].links) || [], out = [], seen = {};
+    decl.forEach(function (dl) {
+      var fs = asList(endOf(dl.from, s, p, actor, ctx));
+      var ts = asList(endOf(dl.to, s, p, actor, ctx));
+      fs.forEach(function (f) {
+        ts.forEach(function (t) {
+          if (!f || !t || f === t) return;
+          var k = dl.type + '|' + f + '|' + t;
+          if (seen[k]) return;
+          seen[k] = 1;
+          out.push({ type: dl.type, fromId: String(f), toId: String(t) });
+        });
+      });
+    });
+    return out;
+  }
+  /* 链接类型表 = 动作声明的聚合(唯一真源);count = 当前日志里该类型的实例数 */
+  function linkTypes() {
+    var m = {}, order = [];
+    Object.keys(A).forEach(function (k) {
+      (A[k].links || []).forEach(function (dl) {
+        if (!m[dl.type]) {
+          var ends = dl.type.split('↦');
+          m[dl.type] = { type: dl.type, from: ends[0] || '', to: ends[1] || '', actions: [], count: 0 };
+          order.push(dl.type);
+        }
+        if (m[dl.type].actions.indexOf(k) < 0) m[dl.type].actions.push(k);
+      });
+    });
+    (state.actionLog || []).forEach(function (lg) {
+      (lg.links || []).forEach(function (ln) { if (m[ln.type]) m[ln.type].count++; });
+    });
+    return order.map(function (t) { return m[t]; });
+  }
+  /* 穷尽自检:日志里出现的链接类型必须都在类型表里(同源 → 恒 0);
+     顺带核一遍「有没有动作没写 links 声明」——两项都 0 才算机制在。 */
+  function linkAudit() {
+    var known = {}, undecl = [];
+    linkTypes().forEach(function (x) { known[x.type] = 1; });
+    Object.keys(A).forEach(function (k) { if (!A[k].links) undecl.push(k); });
+    var bad = [], total = 0;
+    (state.actionLog || []).forEach(function (lg) {
+      (lg.links || []).forEach(function (ln) {
+        total++;
+        if (!known[ln.type]) bad.push({ rid: lg.rid, action: lg.action, type: ln.type, fromId: ln.fromId, toId: ln.toId });
+      });
+    });
+    return {
+      types: Object.keys(known).length, actions: Object.keys(A).length,
+      instances: total, unclassified: bad.length, items: bad,
+      undeclaredActions: undecl, staleLinkKeys: STALE_LINK_KEYS.slice()
+    };
+  }
+
   /* ============ commit / check(动作引擎) ============ */
   function actorOf(p) { return (p && p.actor) || state.role; }
 
@@ -1912,6 +2194,9 @@
     if (!authorized(def, actor)) {
       return { ok: false, reason: '当前身份「' + actor + '」无此动作授权(授权角色:' + def.actors.join(' / ') + ')' };
     }
+    /* R89 A1:件已被他人认领 → 处置动作在校验层就拦下(灰态按钮显示「先接手」的原因) */
+    var lock = claimBlock(action, p, actor);
+    if (lock) return { ok: false, reason: lock };
     var why = def.v ? def.v(state, p, actor) : null;
     if (why) return { ok: false, reason: why };
     return { ok: true, reason: null };
@@ -1924,6 +2209,12 @@
       return { ok: false, reason: chk.reason };
     }
     var def = A[action], p = params || {}, actor = actorOf(p);
+    /* R89 A1 · 隐式认领:处置动作落在还没人认领的件上 → 先补一条 claim 日志再执行,
+       动作按钮不必先点一次认领,但账上是两条(认领 + 处置),不含糊谁在什么时候把件拿走了。 */
+    if (CLAIM_ACTIONS.indexOf(action) >= 0 && p.clueId) {
+      var cc = clueOf(p.clueId);
+      if (cc && !cc.assignee) doCommit('claim', { actor: actor, clueId: p.clueId, implicit: true }, true);
+    }
     var aq = (state.gov && state.gov.auditQueue) || [];
     var aqFrom = aq.length;
     var sum = def.run(state, p, actor) || def.label;
@@ -1933,7 +2224,9 @@
       t: state.now, actor: actor, action: action, params: p,
       snapshot: 'RS-' + state.seq, sum: sum, auto: !!def.auto, label: def.label,
       /* quiet=true 的动作(如关闭横幅)仍入日志不豁免审计,但时间线组件可折叠为次要行 */
-      quiet: !!def.quiet
+      quiet: !!def.quiet,
+      /* R89 A3:本次动作产出/改变的链接实例(类型全集 = 动作 links 声明的聚合,同源) */
+      links: buildLinks(action, state, p, actor, { newAudits: aq.slice(aqFrom).map(function (x) { return x.id; }) })
     };
     state.actionLog.push(log);
     /* R88 A5⑭:本次动作新拘的抽审记录回填触发它的动作日志 rid;没有被抽对象的回落到动作日志本身 */
@@ -1959,7 +2252,6 @@
       var id = u.obj;
       if (u.type === 'clue') { ensureClue(id); }
       else if (u.type === 'investigation') { if (!caseOf(id) && w.UNLOCKS.investigations[id]) state.investigations.push(clone(w.UNLOCKS.investigations[id])); }
-      else if (u.type === 'publicReport') { if (!byId(state.publicReports, id) && w.UNLOCKS.publicReports[id]) state.publicReports.push(clone(w.UNLOCKS.publicReports[id])); }
       else if (u.type === 'recon') { if (!byId(state.recon, id) && w.UNLOCKS.recon[id]) state.recon.push(clone(w.UNLOCKS.recon[id])); }
       else if (u.type === 'ticket') { if (!tkOf(id) && w.UNLOCKS.tickets[id]) state.tickets.push(clone(w.UNLOCKS.tickets[id])); }
     });
@@ -2148,7 +2440,65 @@
     /* 挂起件的恢复条件(渲染层直接读 ticket.resumeCond;此处供预览用) */
     resumeCond: function (reason) { return resumeCondOf(reason, state.now); },
     /* 对象 → hash 路由(横幅 href / 地图点位跳转共用) */
-    route: routeOf
+    route: routeOf,
+
+    /* ---- R89 只读导出(只加不改) ---- */
+    /* A1 认领:件在谁手上 / 我能不能直接处置(渲染层灰化与「接手」按钮的判据来源) */
+    claimOf: function (clueId) {
+      var c = clueOf(clueId);
+      if (!c) return null;
+      var me = state.role;
+      return {
+        assignee: c.assignee || null, mine: !!c.assignee && c.assignee === me,
+        pooled: !c.assignee, lockedByOther: !!c.assignee && c.assignee !== me,
+        log: (c.claimLog || []).slice()
+      };
+    },
+    /* A1 红点角标:当前角色在各模块的待办数 —— 复核员 = 池中未认领 + 我认领未结;
+       复核主管 = 待裁定 + 待抽审 + 申诉裁定 + 参数审批。返回 {m1,m2,m4,m6,total} */
+    todoCount: function (role) {
+      role = role || state.role;
+      var clues = state.clues || [];
+      var open = clues.filter(function (c) { return c.status === 'open'; });
+      var out = { m1: 0, m2: 0, m3: 0, m4: 0, m5: 0, m6: 0, total: 0, detail: {} };
+      var mine = open.filter(function (c) { return c.assignee === role; }).length;
+      var pool = open.filter(function (c) { return !c.assignee; }).length;
+      if (role === '区复核员') {
+        out.m1 = pool + mine;
+        out.m2 = (state.tickets || []).filter(function (t) { return t.state === '已完工' && t.verify === '存疑待人裁'; }).length;
+        out.detail = { 池中未认领: pool, 我认领未结: mine, 待复验人裁: out.m2 };
+      } else if (role === '复核主管') {
+        var ruling = (state.pendingRulings || []).filter(function (x) { return x.status === '待裁定'; }).length;
+        var appeal = (state.alerts || []).filter(function (a) { return a.status === '申诉复核中'; }).length;
+        var audit = ((state.gov && state.gov.auditQueue) || []).filter(function (a) { return a.status === '待抽审'; }).length;
+        var param = (state.ruleShadow || []).filter(function (x) { return x.status === '影子试算(未生效)'; }).length;
+        out.m1 = mine;
+        out.m2 = ruling + appeal;
+        out.m4 = audit;
+        out.m6 = param;
+        out.detail = { 待裁定: ruling, 申诉裁定: appeal, 待抽审: audit, 参数审批: param, 我认领未结: mine };
+      } else if (role === '上级主管部门') {
+        out.m6 = (state.ruleShadow || []).filter(function (x) { return x.status === '影子试算(未生效)'; }).length;
+        out.detail = { 参数审批: out.m6 };
+      } else if (role === '班组账号') {
+        out.m2 = (state.tickets || []).filter(function (t) { return t.state === '已派工'; }).length;
+        out.detail = { 待接单: out.m2 };
+      }
+      out.total = out.m1 + out.m2 + out.m3 + out.m4 + out.m5 + out.m6;
+      return out;
+    },
+    /* A3 链接层:类型表(动作声明聚合 · 唯一真源)/ 穷尽自检(恒 0 = 机制在)/ 某对象的链接实例 */
+    linkTypes: linkTypes,
+    linkAudit: linkAudit,
+    linksOf: function (objId) {
+      var out = [];
+      (state.actionLog || []).forEach(function (lg) {
+        (lg.links || []).forEach(function (ln) {
+          if (!objId || ln.fromId === objId || ln.toId === objId) out.push({ rid: lg.rid, t: lg.t, action: lg.action, type: ln.type, fromId: ln.fromId, toId: ln.toId });
+        });
+      });
+      return out;
+    }
   };
 
   save();

@@ -3,12 +3,11 @@
    共享文件(tokens/store/data/ui/app.html)只读;按钮用 data-action 属性走 UI.bindActions→S.commit
 
    规格来源:
-   - 施工图 §7 m4 清单:抽审队列(拘审标来源)/ 热线上报并入清单(R88 A1⑬:市民渠道 = 12345 市政热线,接线员录入)
+   - 施工图 §7 m4 清单:抽审队列(拘审标来源)—— R89 A2 rollback 后,本页只剩抽审这一件兜底
    - 设计档 §2.5 机制⑧抽审参数(记账道5%/自动升格道10%/机械驳回5%/批量确认件15%/复验通过件10%,抽审时限48h,全假设值)
-   - 设计档 §2.4 P1:热线上报防滥用三件(同点位去重合并/单设备限频/重复无效上报降权);先入并入队列人工甄别升格,不直接进紧急处置
-   - 施工图 §6 T10:热线上报同点位 → 去重合并进既有线索,证据叠加,重复来电计数可见
+   - 同点位重复观测的去重合并(R89 T10 重做)发生在线索层(m1 「观测并入」),不在本页
 
-   本模块为只读展示(队列/清单本身不含需要用户当场输入参数的动作),故不建表单桥接;
+   本模块为只读展示(队列本身不含需要用户当场输入参数的动作),故不建表单桥接;
    跨模块深链(→ m1 线索详情、→ m2 工单镜像)只是 hash 导航,不产生状态变更。 */
 (function () {
   'use strict';
@@ -110,12 +109,13 @@
       codes.map(function (x) {
         return '<option value="' + UI.esc(x) + '"' + (code === x ? ' selected' : '') + '>' + UI.esc(x) + '</option>';
       }).join('') + '</select>';
+    /* R89 A4⑤ 语义分色:通过 = 实心绿(btn-ok);打回 = 红描边(btn-rej) */
     return '<div class="act-row" style="gap:6px;align-items:center">' +
       '<button type="button" class="btn btn-sm btn-ok' + (pass.ok ? '' : ' is-off') + '"' + (pass.ok ? '' : ' disabled') +
       ' data-act="spot_pass" data-p="' + UI.attr({ auditId: a.id }) + '"' +
       ' title="' + UI.esc(pass.ok ? (S.ACTIONS.spot_pass.hint || '') : '未满足:' + pass.reason) + '">通过</button>' +
       sel +
-      '<button type="button" class="btn btn-sm btn-danger' + (ret.ok ? '' : ' is-off') + '"' + (ret.ok ? '' : ' disabled') +
+      '<button type="button" class="btn btn-sm btn-rej' + (ret.ok ? '' : ' is-off') + '"' + (ret.ok ? '' : ' disabled') +
       ' data-act="spot_return" data-p="' + UI.attr({ auditId: a.id, code: code }) + '"' +
       ' title="' + UI.esc(ret.ok ? (S.ACTIONS.spot_return.hint || '') : '未满足:' + ret.reason) + '">打回</button>' +
       '</div>' +
@@ -151,53 +151,14 @@
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
-  /* ---------------- ② 热线上报并入清单(施工图 §6 T10;设计档 §2.4 P1)---------------- */
-  function reportCard(r) {
-    var loc = r.facility ? UI.addr(r.facility) : (r.block ? (UI.esc(r.block) + ' · Al Ain') : '<span class="faint">—</span>');
-    var ev = (r.evidence || []).map(function (e) {
-      return UI.evidenceCard(e, e.from ? '并入自 ' + UI.esc(e.from) : '热线来电录入示意');
-    }).join('');
-    return '<div' + UI.cardAttrs('report', { cls: 'card card-tight' }) + '>' +
-      '<div class="card-hd"><b class="oc-t1">' + UI.esc(r.id) + ' · ' + UI.esc(r.cat) + '</b>' +
-      '<span class="row" style="gap:6px;align-items:center">' +
-      (r.status === '已并入' ? UI.badge('已并入', 'blue') : UI.badge(r.status || '已受理', 'green')) +
-      UI.cardTag('report', '热线上报') + '</span></div>' +
-      '<div class="small muted">' + loc + ' · 联系:' + UI.esc(r.contact || '—') + ' · 回执 ' + UI.esc(r.receipt || '—') + '</div>' +
-      (r.mergedInto
-        ? '<div class="small" style="margin-top:4px">合并标:<a href="#/m1/clue/' + UI.esc(r.mergedInto) + '">→ 线索 ' + UI.esc(r.mergedInto) + '</a></div>'
-        : '<div class="tiny" style="margin-top:4px">在人工甄别并入队列中</div>') +
-      '<div class="tiny" style="margin-top:2px">重复来电计数:' + (r.urges || 0) + '</div>' +
-      (r.status === '已驳回'
-        ? '<div class="tiny" style="margin-top:4px">驳回理由(来电人可见):' + UI.esc(r.rejectReason || '') + '</div>'
-        : '') +
-      ((r.status !== '已并入' && r.status !== '已驳回')
-        ? '<div style="margin-top:6px">' + ['拍摄不清无法定位', '非市政资产事项'].map(function (rs) {
-            var chk = S.check('public_reject', { reportId: r.id, reason: rs });
-            return '<button type="button" class="btn' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
-              ' data-act="public_reject" data-p="' + UI.attr({ reportId: r.id, reason: rs }) + '">甄别驳回:' + UI.esc(rs) + '</button>';
-          }).join(' ') +
-          '<span class="tiny" style="margin-left:6px">(驳回理由来电人可见)</span></div>'
-        : '') +
-      (ev ? '<div class="sep"></div>' + UI.evInset('<div class="ev-grid">' + ev + '</div>') : '') +
-      '</div>';
-  }
-  function publicSection(pr) {
-    if (!pr.length) {
-      return '<h3 style="margin-top:16px">热线上报并入清单</h3>' +
-        '<div class="tiny" style="margin-top:8px">暂无热线上报(12345 市政热线接线员录入后进本清单甄别)。</div>';
-    }
-    return '<h3 style="margin-top:16px">热线上报并入清单(共 ' + pr.length + ' 条)</h3>' +
-      '<div class="grid2" style="margin-top:8px">' + pr.map(reportCard).join('') + '</div>';
-  }
-
   /* ============ 帮助浮层内容(R86 A4)============ */
   (window.HELP = window.HELP || {}).m4 = {
     title: '兜底与质量 · 本模块职责',
     body:
-      '<p><b>这一页干什么:</b>两件兜底 —— ① 抽审队列:把「自动做掉的」与「人做过的」按比例捞回来复查;② 热线上报(12345 市政热线 · 接线员录入):人工甄别后并入线索,或按理由驳回(理由来电人可见)。</p>' +
+      '<p><b>这一页干什么:</b>一件兜底 —— 抽审队列:把「自动做掉的」与「人做过的」按比例捞回来复查,通过或打回都记名留痕。</p>' +
       '<p><b>为什么要抽审:</b>机械自动化不豁免审计。免人工车道每条都留一条动作日志,按抽审率捞回复查;推翻结果回流规则包降版建议,同类错误率超阈值即自动关闭该类目的自动车道。</p>' +
-      '<p><b>热线上报防滥用三件:</b>同点位去重合并 / 单来电号限频 / 重复无效上报降权。上报先入甄别队列,不直接进紧急处置队列;去重合并后作为既有线索的一次「观测」叠加证据,重复来电计数可见 —— 计数只作排序输入,提级由复核主管显名做。</p>' +
-      '<p><b>与客户系统的关系:</b>热线工单与回执由本平台承载,处置仍走区市政工单系统;抽审结论只影响巡检侧定性与规则版本,不改客户处置记录。</p>' +
+      '<p><b>被抽了怎么办:</b>抽审只看「当时那一步处置对不对」——点抽审号展开被抽动作上下文(执行人 / 时刻 / 关键参数 / 判定版本),通过则原处置维持,打回须选原因码、原件回队重看并通知原处置人。</p>' +
+      '<p><b>与客户系统的关系:</b>抽审结论只影响巡检侧定性与规则版本,不改客户处置记录;处置仍走区市政工单系统。</p>' +
       '<p><b>数字口径:</b>各车道抽审率与抽审时限均为假设值,冷启动期按双倍执行,试点数据到位后标定。</p>'
   };
 
@@ -235,10 +196,11 @@
   /* ---------------- 出口 ---------------- */
   VIEWS.m4 = function () {
     var au = S.get().gov.auditQueue || [];
-    var pr = S.get().publicReports || [];
+    var pend = au.filter(function (a) { return a.status === '待抽审'; }).length;
     var head = '<div class="card card-tight"><div class="card-hd"><h3>4 · 兜底与质量</h3>' +
-      '<span class="row" style="gap:8px;align-items:center"><span class="tiny">抽审队列 · 热线上报并入清单</span>' +
+      '<span class="row" style="gap:8px;align-items:center"><span class="tiny">抽审队列</span>' +
+      (pend ? UI.badge('待抽审 ' + pend, 'red') : UI.badge('待抽审 0', 'grey')) +
       UI.helpBtn('m4') + '</span></div></div>';
-    return head + auditSection(au) + publicSection(pr);
+    return head + auditSection(au);
   };
 })();
