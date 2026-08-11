@@ -47,8 +47,34 @@
   .ex p{margin:0;font-size:12.5px;line-height:1.7;color:#cfd8d2}
   @media (max-width:980px){ .explain{grid-template-columns:1fr} }
 
-  .tip{max-width:860px;margin:26px 0 0;background:rgba(201,197,126,.08);border-color:rgba(201,197,126,.28);color:#ded9ab}
+  .tip{max-width:860px;margin:0;background:rgba(201,197,126,.08);border-color:rgba(201,197,126,.28);color:#ded9ab}
   .tip b{color:#fff}
+
+  /* ---------- 入口区(顶置主 CTA · 工作台最显眼)---------- */
+  .entry{margin-top:28px;padding:22px 24px;border-radius:var(--radius);background:var(--shell-2);border:1px solid var(--shell-line)}
+  .entry-lead{margin:0 0 16px;font-size:13.5px;line-height:1.8;color:#b6c0b9;max-width:780px}
+  .entry-lead b{color:#fff}
+  .entry-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .entry .btn{background:var(--shell-3);border-color:var(--shell-line);color:var(--shell-ink)}
+  .entry .btn:hover{background:var(--shell-3);border-color:#3a453f;color:#fff}
+  .entry .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;
+    font-size:15px;font-weight:700;padding:11px 24px;box-shadow:0 8px 20px rgba(23,160,94,.35)}
+  .entry .btn-primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+  .entry .btn-danger{background:transparent;border-color:rgba(201,59,43,.5);color:#e08a7d}
+  .entry .btn-danger:hover{background:var(--red);border-color:var(--red);color:#fff}
+  @media (max-width:600px){ .entry{padding:18px} }
+
+  /* ---------- 次要区:角色/判据(折叠)+ 操作提示,退到入口区之下、六幕之上 ---------- */
+  .pre-acts{margin:0 -32px;padding:22px 32px 28px;background:var(--shell);border-bottom:1px solid var(--shell-line);
+    display:flex;flex-direction:column;gap:18px}
+  @media (max-width:600px){ .pre-acts{margin:0 -16px;padding:18px 16px 22px} }
+  .roles-fold{border:0}
+  .roles-fold summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.05em;
+    text-transform:uppercase;list-style:none;padding:2px 0}
+  .roles-fold summary::-webkit-details-marker{display:none}
+  .roles-fold summary:before{content:'▸ ';margin-right:1px}
+  .roles-fold[open] summary:before{content:'▾ '}
+  .roles-fold .fold-body{margin-top:16px}
 
   /* ---------- 幕(act)---------- */
   .act{display:grid;grid-template-columns:minmax(300px,1fr) auto;gap:40px;align-items:start;padding:64px 0 0}
@@ -136,43 +162,63 @@
       人只在拍板点签字;紧急件由系统秒级自动派单、人 15 分钟并行复核。下面用一个强对流预警之夜,把整个平台走一遍。
     </p>
 
-    <div class="roles">
-      <div class="role">
-        <div class="r1">★ 区复核员</div>
-        <div class="r2">Web 工作台 · 坐席</div>
-        <div class="r3">确认或驳回的人:线索变告警,由他拍。</div>
-      </div>
-      <div class="role">
-        <div class="r1">复核主管</div>
-        <div class="r2">Web 工作台 · 坐席(夜间同岗值班)</div>
-        <div class="r3">抽审、紧急 override、提级、调度改派/合并/拆单与抢占仲裁;升级链最后一级兜底。</div>
-      </div>
-      <div class="role">
-        <div class="r1">市政班组</div>
-        <div class="r2">手机 · 现场</div>
-        <div class="r3">接单、处置、拍照回传;动作写回客户工单系统。</div>
-      </div>
-      <div class="role">
-        <div class="r1">超级管理员</div>
-        <div class="r2">桌面 · 治理</div>
-        <div class="r3">看总览、抽审、握机器直派开关。</div>
+    <div class="entry" id="entry">
+      <p class="entry-lead">下面六幕只是一段导读切片,用来快速看懂流程怎么走;<b>完整系统从这里进</b>——真正的故事,从工作台开始。</p>
+      <div class="entry-row">
+        <a class="btn btn-primary" href="app.html" target="_blank" rel="noopener">进入工作台 →</a>
+        <a class="btn" href="crew.html" target="_blank" rel="noopener">班组处置端 →</a>
+        <a class="btn" href="Tour-A-Narrated.dc.html" target="_blank" rel="noopener">叙事导览 →</a>
+        <a class="btn" href="Tour-C-Overview.dc.html" target="_blank" rel="noopener">系统全览(一页地图)→</a>
+        <a class="btn" href="manual.html" target="_blank" rel="noopener">演示手册 →</a>
+        <a class="btn" href="spec.html" target="_blank" rel="noopener">产品协议 →</a>
+        <button type="button" class="btn btn-danger" id="btnResetDemo">重置演示</button>
       </div>
     </div>
+  </header>
 
-    <div class="explain">
-      <div class="ex">
-        <div class="t">看懂 · 线索 vs 告警</div>
-        <p>AI 只产「线索」,人签字确认后才叫「告警」——定性权永远在人。</p>
+  <section class="pre-acts">
+    <details class="roles-fold">
+      <summary>角色与判据速览(复核员 / 复核主管 / 市政班组 / 超级管理员 · 三条核心判据)</summary>
+      <div class="fold-body">
+        <div class="roles">
+          <div class="role">
+            <div class="r1">★ 区复核员</div>
+            <div class="r2">Web 工作台 · 坐席</div>
+            <div class="r3">确认或驳回的人:线索变告警,由他拍。</div>
+          </div>
+          <div class="role">
+            <div class="r1">复核主管</div>
+            <div class="r2">Web 工作台 · 坐席(夜间同岗值班)</div>
+            <div class="r3">抽审、紧急 override、提级、调度改派/合并/拆单与抢占仲裁;升级链最后一级兜底。</div>
+          </div>
+          <div class="role">
+            <div class="r1">市政班组</div>
+            <div class="r2">手机 · 现场</div>
+            <div class="r3">接单、处置、拍照回传;动作写回客户工单系统。</div>
+          </div>
+          <div class="role">
+            <div class="r1">超级管理员</div>
+            <div class="r2">桌面 · 治理</div>
+            <div class="r3">看总览、抽审、握机器直派开关。</div>
+          </div>
+        </div>
+
+        <div class="explain">
+          <div class="ex">
+            <div class="t">看懂 · 线索 vs 告警</div>
+            <p>AI 只产「线索」,人签字确认后才叫「告警」——定性权永远在人。</p>
+          </div>
+          <div class="ex">
+            <div class="t">看懂 · 两道关口</div>
+            <p>AI 识别是第一道关口,规则校验(硬编码判据逐项打钩)是第二道;两道都过的紧急件才有资格走机器直派。</p>
+          </div>
+          <div class="ex">
+            <div class="t">看懂 · 机器直派「先派后审」</div>
+            <p>人身安全等不起人审——硬证据紧急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
+          </div>
+        </div>
       </div>
-      <div class="ex">
-        <div class="t">看懂 · 两道关口</div>
-        <p>AI 识别是第一道关口,规则校验(硬编码判据逐项打钩)是第二道;两道都过的紧急件才有资格走机器直派。</p>
-      </div>
-      <div class="ex">
-        <div class="t">看懂 · 机器直派「先派后审」</div>
-        <p>人身安全等不起人审——硬证据紧急件先自动派班组,人 15 分钟并行复核,撤回可召回;定性权没动,动的是闸门位置。</p>
-      </div>
-    </div>
+    </details>
 
     <div class="tip banner banner-info">
       <span class="banner-ico">i</span>
@@ -182,7 +228,7 @@
         继续点按可以把剧情一路推进到 21:30。
       </div>
     </div>
-  </header>
+  </section>
 
   <!-- ============ 幕① ============ -->
   <section class="act" id="act1">
@@ -347,24 +393,13 @@
     <ul class="scope-list" id="scopeList"></ul>
   </section>
 
-  <!-- ============ outro ============ -->
+  <!-- ============ outro(精简:入口区已在顶部,这里只留一条回程锚点)============ -->
   <div class="outro">
-    <h2>亲自上手</h2>
-    <p class="lead">
-      两套端到端原型(Web 工作台 + 班组手机端)都可全屏打开自由操作;打开就是同一份假时钟场景状态,与你在本页里点过的每一步共享同一份 sessionStorage。
-    </p>
+    <h2>六幕看完了?</h2>
+    <p class="lead">工作台、班组处置端、评审视图与产品协议都在最上面的入口区——不必手动滚回去。</p>
     <div class="links">
-      <a class="btn btn-primary" href="app.html" target="_blank" rel="noopener">工作台 →</a>
-      <a class="btn" href="crew.html" target="_blank" rel="noopener">班组处置端 →</a>
-      <button type="button" class="btn btn-danger" id="btnResetDemo">重置演示</button>
+      <a class="btn btn-primary" href="#entry">回到顶部入口区 ↑</a>
     </div>
-    <p class="lead" style="margin-top:22px">评审视图(同一实机的三种打开方式):</p>
-    <div class="links" style="margin-top:10px">
-      <a class="btn" href="Tour-A-Narrated.dc.html" target="_blank" rel="noopener">叙事导览 →</a>
-      <a class="btn" href="Tour-C-Overview.dc.html" target="_blank" rel="noopener">系统全览(一页地图)→</a>
-      <a class="btn" href="manual.html" target="_blank" rel="noopener">演示手册(每幕看什么)→</a>
-    </div>
-    <p class="lead" style="margin-top:22px">产品协议(页面地图与逐档参数)→ <a class="btn" href="spec.html" target="_blank" rel="noopener">产品协议 →</a></p>
   </div>
 
   <footer class="foot">全站虚构演示数据 · 零真实照片 · 仅供评审</footer>

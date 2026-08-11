@@ -610,13 +610,38 @@
       '.tour-sc .n{color:#8d968f;margin-right:6px;font-weight:400}',
       '.tour-sc.is-cur .n{color:#cfd6d1}',
       '.tour-brhd{padding:5px 8px 1px 22px;color:var(--shell-mute,#98a29b);font-size:11.5px}',
-      '.tour-spot{outline:2.5px solid var(--blue,#17a05e) !important;outline-offset:3px;border-radius:var(--radius-sm,8px);',
+      /* .tour-ob-spot 复用同一条描边规则(R95 指南浮层给被指控件加高亮,与 spotlight() 的 .tour-spot 同款但独立生命周期,互不清除) */
+      '.tour-spot,.tour-ob-spot{outline:2.5px solid var(--blue,#17a05e) !important;outline-offset:3px;border-radius:var(--radius-sm,8px);',
       'animation:tourPulse 1.1s ease-out 2}',
       '@keyframes tourPulse{0%{box-shadow:0 0 0 0 rgba(23,160,94,.42)}70%{box-shadow:0 0 0 12px rgba(23,160,94,0)}100%{box-shadow:0 0 0 0 rgba(23,160,94,0)}}',
       '.toasts{bottom:104px}',
       '.tour-modal-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}',
       '.tour-modal .modal{max-width:760px}',
       '.tour-modal.is-wide .modal{max-width:1140px}',
+      /* 首屏导览指南(R95 二稿:coach-mark——半透明遮罩 + 指向真实控件的气泡,不是居中对话框) */
+      '.tour-ob-mask{position:fixed;inset:0;z-index:53;background:rgba(11,18,16,.55)}',
+      '.tour-ob-poke{position:relative;z-index:54}',
+      '.tour-ob-bar{position:fixed;z-index:55;top:78px;left:50%;transform:translateX(-50%);background:#fff;',
+      'border-radius:12px;box-shadow:0 14px 40px rgba(11,26,18,.32);padding:12px 16px;max-width:420px;width:calc(100% - 32px);text-align:center}',
+      '.tour-ob-bar h3{margin:0 0 4px;font-size:14.5px;color:var(--ink-hi,#0b1a12)}',
+      '.tour-ob-bar .tiny{color:var(--faint,#8e968f)}',
+      '.tour-ob-x{position:absolute;top:8px;right:8px;border:0;background:transparent;color:var(--mute,#5c6660);',
+      'font-size:15px;line-height:1;cursor:pointer;padding:4px;font-family:inherit}',
+      '.tour-ob-x:hover{color:#0b1a12}',
+      '.tour-ob-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}',
+      '.tour-ob-step{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}',
+      '.tour-ob-bub{position:fixed;z-index:55;width:200px;background:#fff;color:var(--ink-hi,#0b1a12);',
+      'border-radius:10px;box-shadow:0 14px 34px rgba(11,26,18,.30);padding:10px 12px;font-size:12.5px;line-height:1.55}',
+      '.tour-ob-bub b{display:block;color:var(--blue,#1a5fb4);margin-bottom:3px;font-size:12.5px}',
+      '.tour-ob-arrow{position:absolute;width:0;height:0;border:7px solid transparent}',
+      '.tour-ob-arrow.arr-down{bottom:-13px;border-top-color:#fff;border-bottom-width:0}',
+      '.tour-ob-arrow.arr-up{top:-13px;border-bottom-color:#fff;border-top-width:0}',
+      '.tour-ob-arrow.arr-left{top:50%;margin-top:-7px;left:-13px;border-right-color:#fff;border-left-width:0}',
+      '.tour-ob-stem{position:fixed;z-index:55;width:2px;background:var(--blue,#1a5fb4)}',
+      '.tour-ob-dot{position:fixed;z-index:55;width:8px;height:8px;border-radius:50%;background:var(--blue,#1a5fb4);',
+      'margin-left:-3px;margin-top:-3px}',
+      '@media (max-width:720px){.tour-ob-bar{top:auto;bottom:14px;max-width:calc(100% - 24px)}',
+      '.tour-ob-bub{width:min(78vw,260px)}}',
       '.tour-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}',
       '.fg-tabs{display:flex;gap:6px;margin:2px 0 10px;flex-wrap:wrap}',
       '.fg-tab{border:1px solid var(--line,#e4e7e2);background:#fff;color:var(--mute,#5c6660);border-radius:20px;',
@@ -1389,16 +1414,209 @@
       '谁(人或服务账号)、何时、对哪个对象、做了什么、带什么参数,自动步与人工步同一张表、同一套留痕。</div>';
   }
 
+  /* ---------------- 首屏导览指南(R95 二稿:coach-mark ————半透明遮罩 + 指向真实控件的气泡,手动关) ----------------
+     每条指南气泡用 getBoundingClientRect 现算目标控件位置(打开时算一次,窗口变化重算);
+     目标控件同时套 .tour-ob-spot(与 spotlight() 的 .tour-spot 同一条描边规则,独立生命周期不互相清除)。 */
+  var OB_ITEMS = [
+    { key: 'next', title: '「▶ 下一镜」', text: '按剧情往下推进,自动跳到对应页面位置并聚焦,同时把顶栏「角色」自动切到该镜所需身份。', sel: ['[data-tour="next"]'] },
+    { key: 'chapters', title: '「☰ 章节」', text: '右侧滑出按章分组的全镜目录,点任意一行直接跳过去。', sel: ['[data-tour="chapters"]'] },
+    { key: 'verify', title: '「流程位置」/「后端发生了什么」', text: '看当前落在流程哪一步(含规则判据)、看本镜产生了哪些动作日志。', sel: ['[data-tour="stage"]', '[data-tour="backend"]'] },
+    { key: 'ride', title: '随时下车', text: '点左侧模块导航或顶栏「角色」切换,自由查看;导览条会变成「已下车」,点它一键回到当前镜。', sel: ['.nav'], mobileSel: ['.nav-toggle'] }
+  ];
+  var OB_KEY = 'origen-tour-onboard-seen-v1';
+  var obMask = null, obBar = null, obNodes = [], obPoked = [], obStep = 0, obResizeT = null;
+  /* vw/vh 用 w.innerWidth/Height——必须跟 getBoundingClientRect 同一套坐标系,气泡才能对准 */
+  function obVW() { return w.innerWidth; }
+  function obVH() { return w.innerHeight; }
+  /* 「左侧导航是否已收进汉堡」不猜宽度阈值,直接读 .nav-toggle 是否真的渲染出来(≤720px 由 tokens.css 那条媒体查询决定,这里只认渲染结果) */
+  function obNavCollapsed() {
+    var t = d.querySelector('.nav-toggle');
+    return !!(t && t.offsetParent !== null);
+  }
+
+  function obTargets(item) {
+    var sels = (obNavCollapsed() && item.mobileSel) ? item.mobileSel : item.sel;
+    var out = [];
+    for (var i = 0; i < sels.length; i++) {
+      var el = d.querySelector(sels[i]);
+      if (!el) continue;
+      var r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.push(el);
+    }
+    return out;
+  }
+  function obUnion(els) {
+    var r0 = els[0].getBoundingClientRect();
+    var L = r0.left, T = r0.top, R = r0.right, B = r0.bottom;
+    for (var i = 1; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect();
+      L = Math.min(L, r.left); T = Math.min(T, r.top); R = Math.max(R, r.right); B = Math.max(B, r.bottom);
+    }
+    return { left: L, top: T, right: R, bottom: B, width: R - L, height: B - T };
+  }
+  function obHighlight(els) {
+    for (var i = 0; i < els.length; i++) { els[i].classList.add('tour-ob-spot', 'tour-ob-poke'); obPoked.push(els[i]); }
+  }
+  function obClearHighlight() {
+    for (var i = 0; i < obPoked.length; i++) obPoked[i].classList.remove('tour-ob-spot', 'tour-ob-poke');
+    obPoked = [];
+  }
+  function obClearFloating() {
+    for (var i = 0; i < obNodes.length; i++) if (obNodes[i].parentNode) obNodes[i].parentNode.removeChild(obNodes[i]);
+    obNodes = [];
+  }
+  function obBubble(item, style, arrowDir, arrowLeft, foot) {
+    var el = d.createElement('div');
+    el.className = 'tour-ob-bub';
+    for (var k in style) el.style[k] = style[k];
+    el.innerHTML = '<b>' + esc(item.title) + '</b>' + esc(item.text) + (foot || '') +
+      (arrowDir ? '<i class="tour-ob-arrow arr-' + arrowDir + '"' + (arrowLeft != null ? ' style="left:' + arrowLeft + 'px"' : '') + '></i>' : '');
+    d.body.appendChild(el);
+    obNodes.push(el);
+    return el;
+  }
+  function obStem(x, y1, y2) {
+    var el = d.createElement('div');
+    el.className = 'tour-ob-stem';
+    el.style.left = (x - 1) + 'px'; el.style.top = y1 + 'px'; el.style.height = Math.max(0, y2 - y1) + 'px';
+    d.body.appendChild(el); obNodes.push(el);
+    var dot = d.createElement('div');
+    dot.className = 'tour-ob-dot';
+    dot.style.left = x + 'px'; dot.style.top = (y2 - 2) + 'px';
+    d.body.appendChild(dot); obNodes.push(dot);
+  }
+
+  /* 宽屏(≥1200px,够摆得下四枚气泡不挤):一屏同时展示。
+     底部三枚(下一镜 / 章节 / 两枚查证)分两档高度避免横向紧贴的按钮互相压气泡;左侧一枚指模块导航。 */
+  function obRenderWide() {
+    var vh = obVH(), vw = obVW(), W = 200;
+    var next = obTargets(OB_ITEMS[0]), chapters = obTargets(OB_ITEMS[1]), verify = obTargets(OB_ITEMS[2]), ride = obTargets(OB_ITEMS[3]);
+    obHighlight(next); obHighlight(chapters); obHighlight(verify); obHighlight(ride);
+    if (next.length) {
+      var r = obUnion(next), ax = r.left + r.width / 2;
+      var left = Math.min(ax + 30, vw - 12) - W;
+      obBubble(OB_ITEMS[0], { left: left + 'px', bottom: (vh - r.top + 14) + 'px' }, 'down', ax - left);
+    }
+    if (verify.length) {
+      var r2 = obUnion(verify), ax2 = r2.left + r2.width / 2;
+      var left2 = Math.max(ax2 - 30, 12);
+      obBubble(OB_ITEMS[2], { left: left2 + 'px', bottom: (vh - r2.top + 14) + 'px' }, 'down', ax2 - left2);
+    }
+    if (chapters.length) {
+      var r3 = obUnion(chapters), ax3 = r3.left + r3.width / 2;
+      var left3 = ax3 - W / 2;
+      var bubBottomPx = vh - r3.top + 14 + 96;
+      obBubble(OB_ITEMS[1], { left: left3 + 'px', bottom: bubBottomPx + 'px' });
+      obStem(ax3, vh - bubBottomPx, r3.top - 6);
+    }
+    if (ride.length) {
+      var r4 = obUnion(ride);
+      var barBottom = (obBar ? obBar.getBoundingClientRect().bottom : 0);
+      var minTop = Math.max(8, barBottom + 10); // 避开顶部控制条
+      var anchorY = Math.min(r4.top + 150, Math.max(r4.bottom - 40, r4.top + 40));
+      obBubble(OB_ITEMS[3], { left: (r4.right + 14) + 'px', top: Math.max(minTop, anchorY - 30) + 'px' }, 'left', 34);
+    }
+  }
+
+  /* 窄屏 / 挤不下时:逐条式,一次只指一枚控件,气泡内自带「上一条/下一条」 */
+  function obRenderStep(i, guard) {
+    obClearFloating(); obClearHighlight();
+    if (guard > OB_ITEMS.length) return; // 全部控件都不在(理论不会发生),不死循环
+    obStep = ((i % OB_ITEMS.length) + OB_ITEMS.length) % OB_ITEMS.length;
+    var item = OB_ITEMS[obStep];
+    var els = obTargets(item);
+    if (!els.length) { obRenderStep(obStep + 1, (guard || 0) + 1); return; }
+    obHighlight(els);
+    var r = obUnion(els);
+    var vh = obVH(), vw = obVW();
+    var foot = '<div class="tour-ob-step tiny">第 ' + (obStep + 1) + '/' + OB_ITEMS.length + ' 条 · ' +
+      '<a href="javascript:void 0" data-tour="obprev" style="color:var(--blue,#1a5fb4)">‹ 上一条</a> · ' +
+      '<a href="javascript:void 0" data-tour="obnext" style="color:var(--blue,#1a5fb4)">下一条 ›</a></div>';
+    if (item.key === 'ride') {
+      var barBottom = (obBar ? obBar.getBoundingClientRect().bottom : 0);
+      var minTop = Math.max(8, barBottom + 10); // 避开顶部控制条(标题/✕/两按钮)
+      var anchorY = Math.min(r.top + 130, Math.max(r.bottom - 60, r.top + 40));
+      var top = Math.max(minTop, anchorY - 30);
+      var atRight = r.right < vw - 230;
+      obBubble(item, atRight ? { left: (r.right + 12) + 'px', top: top + 'px' }
+        : { left: Math.max(8, r.left - 212) + 'px', top: top + 'px' },
+        null, null, foot);
+    } else {
+      var ax = Math.min(Math.max(r.left + r.width / 2, 110), vw - 110);
+      var left = ax - 100;
+      obBubble(item, { left: left + 'px', bottom: (vh - r.top + 14) + 'px' }, 'down', ax - left, foot);
+    }
+  }
+
+  function obLayout() {
+    obClearFloating(); obClearHighlight();
+    if (obVW() >= 1200) obRenderWide(); else obRenderStep(0);
+  }
+  function obResize() {
+    if (!obMask) return;
+    if (obResizeT) w.clearTimeout(obResizeT);
+    obResizeT = w.setTimeout(obLayout, 160);
+  }
+  function closeOnboard() {
+    if (!obMask) return;
+    obClearFloating(); obClearHighlight();
+    if (obMask.parentNode) obMask.parentNode.removeChild(obMask);
+    if (obBar && obBar.parentNode) obBar.parentNode.removeChild(obBar);
+    obMask = null; obBar = null;
+    w.removeEventListener('resize', obResize);
+    d.removeEventListener('click', obClick);
+  }
+  function obClick(e) {
+    var t = e.target;
+    while (t && t.getAttribute && !t.getAttribute('data-tour')) t = t.parentNode;
+    var act = t && t.getAttribute && t.getAttribute('data-tour');
+    if (act === 'obclose') closeOnboard();
+    else if (act === 'obprev') obRenderStep(obStep - 1);
+    else if (act === 'obnext') obRenderStep(obStep + 1);
+  }
+  function openOnboard() {
+    obMask = d.createElement('div');
+    obMask.className = 'tour-ob-mask';
+    obMask.addEventListener('click', function (e) { if (e.target === obMask) closeOnboard(); });
+    d.body.appendChild(obMask);
+    obBar = d.createElement('div');
+    obBar.className = 'tour-ob-bar';
+    obBar.innerHTML = '<button type="button" class="tour-ob-x" data-tour="obclose" title="关闭(Esc)">✕</button>' +
+      '<h3>工作台导览指南</h3>' +
+      '<div class="tiny">完整三线剧情从第 1 镜开始,建议从头看起;下面几处用小气泡在真实控件旁指给你看。</div>' +
+      '<div class="tour-ob-actions">' +
+      '<button type="button" class="btn" data-tour="obclose">我自己逛</button>' +
+      '<button type="button" class="btn btn-primary" data-tour="obclose">开始导览</button>' +
+      '</div>';
+    d.body.appendChild(obBar);
+    d.addEventListener('click', obClick);
+    w.addEventListener('resize', obResize);
+    obLayout();
+  }
+  function maybeOnboard() {
+    var seen = false;
+    try { seen = !!w.sessionStorage.getItem(OB_KEY); } catch (e) { /* 无 sessionStorage 就每次显示,不阻断使用 */ }
+    if (seen) return;
+    try { w.sessionStorage.setItem(OB_KEY, '1'); } catch (e) { /* 写不进也不阻断 */ }
+    openOnboard();
+  }
+  /* 「重置数据」清状态后按 PM 口径也应重新弹一次指南(store.js 的 clearStore 只清状态那一个 key,不碰这里) */
+  d.addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== d && t.id !== 'btnReset') t = t.parentNode;
+    if (t && t.id === 'btnReset') { try { w.sessionStorage.removeItem(OB_KEY); } catch (e2) { /* noop */ } }
+  }, true);
+
   /* ---------------- 浮层壳 ---------------- */
   var maskEl = null;
   function closeModal() {
     if (maskEl && maskEl.parentNode) maskEl.parentNode.removeChild(maskEl);
     maskEl = null;
   }
-  function openModal(html, wide) {
+  function openModal(html, wide, extraClass) {
     closeModal();
     maskEl = d.createElement('div');
-    maskEl.className = 'mask tour-modal' + (wide ? ' is-wide' : '');
+    maskEl.className = 'mask tour-modal' + (wide ? ' is-wide' : '') + (extraClass ? ' ' + extraClass : '');
     maskEl.innerHTML = '<div class="modal">' + html + '</div>';
     maskEl.addEventListener('click', function (e) {
       if (e.target === maskEl) { closeModal(); return; }
@@ -1421,6 +1639,7 @@
   d.addEventListener('keydown', function (e) {
     if (!(e.key === 'Escape' || e.keyCode === 27)) return;
     if (maskEl) { closeModal(); return; }
+    if (obMask) { closeOnboard(); return; }
     if (typeof drawerIsOpen === 'function' && drawerIsOpen()) drawerClose();
   });
 
@@ -1666,8 +1885,8 @@
     if (riding) { riding = false; renderDock(); }
   });
 
-  if (d.body) buildDock();
-  else w.addEventListener('DOMContentLoaded', buildDock);
+  if (d.body) { buildDock(); maybeOnboard(); }
+  else w.addEventListener('DOMContentLoaded', function () { buildDock(); maybeOnboard(); });
 
   /* 首屏:把首镜的焦点也点亮一次(不动状态) */
   w.setTimeout(function () { if (riding) spotlight(); }, 160);
