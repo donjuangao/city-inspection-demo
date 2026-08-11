@@ -1755,6 +1755,31 @@
     }
   }
 
+  /* ---------------- 移动端导航开关(汉堡,T3):仅 .nav 存在的页面注入,≤720px 由 tokens.css 控制显隐 ---------------- */
+  function navToggleBoot() {
+    var nav = w.document.querySelector('.nav');
+    if (!nav || w.document.getElementById('navToggle')) return;
+    var mask = w.document.createElement('div');
+    mask.className = 'nav-mask';
+    mask.id = 'navMask';
+    var btn = w.document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nav-toggle';
+    btn.id = 'navToggle';
+    btn.setAttribute('aria-label', '打开/收起导航');
+    btn.textContent = '☰';
+    w.document.body.appendChild(mask);
+    w.document.body.appendChild(btn);
+    function close() { w.document.body.classList.remove('nav-open'); }
+    btn.addEventListener('click', function () { w.document.body.classList.toggle('nav-open'); });
+    mask.addEventListener('click', close);
+    w.addEventListener('hashchange', close);
+  }
+  if (w.document) {
+    if (w.document.readyState === 'loading') w.document.addEventListener('DOMContentLoaded', navToggleBoot);
+    else navToggleBoot();
+  }
+
   /* ---------------- 小工具 ---------------- */
   U.kv = function (pairs) {
     return '<dl class="kv">' + pairs.filter(function (p) { return p[1] !== '' && p[1] !== null && p[1] !== undefined; })

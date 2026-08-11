@@ -358,10 +358,9 @@
       <a class="btn" href="crew.html" target="_blank" rel="noopener">班组处置端 →</a>
       <button type="button" class="btn btn-danger" id="btnResetDemo">重置演示</button>
     </div>
-    <p class="lead" style="margin-top:22px">评审视图(同一实机的四种打开方式):</p>
+    <p class="lead" style="margin-top:22px">评审视图(同一实机的三种打开方式):</p>
     <div class="links" style="margin-top:10px">
       <a class="btn" href="Tour-A-Narrated.dc.html" target="_blank" rel="noopener">叙事导览 →</a>
-      <a class="btn" href="Tour-B-Console.dc.html" target="_blank" rel="noopener">演示控制台(逐步口播稿)→</a>
       <a class="btn" href="Tour-C-Overview.dc.html" target="_blank" rel="noopener">系统全览(一页地图)→</a>
       <a class="btn" href="manual.html" target="_blank" rel="noopener">演示手册(每幕看什么)→</a>
     </div>
@@ -402,9 +401,8 @@
       entries.forEach(function (e) { if (e.isIntersecting) { load(e.target); io.unobserve(e.target); } });
     }, { rootMargin: '600px 0px' });
     frames.forEach(function (f) { io.observe(f); });
-    setTimeout(function () { frames.forEach(load); }, 3000); /* 保险:3s 后仍未触发的全部加载 */
   } else {
-    frames.forEach(load);
+    frames.forEach(load); /* IO 不可用时降级:直接全部加载 */
   }
 
   /* ---------- 重置演示:清 sessionStorage 后提示刷新(不强制跳转,避免打断评审者正在看的页) ---------- */

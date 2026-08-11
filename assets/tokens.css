@@ -270,9 +270,21 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--blue);bo
 .step-dot.is-on{background:var(--blue);border-color:var(--blue);color:#fff}
 .step-line{flex:1;height:1px;background:var(--line)}
 
+/* ---------- 移动端导航开关(汉堡,仅 .nav 存在的页面 · ≤720px 生效)---------- */
+.nav-toggle{display:none}
+.nav-mask{display:none}
+
 @media (max-width:720px){
   .nav{position:fixed;left:-100%;transition:left .2s}
   .grid2,.grid3,.grid4{grid-template-columns:1fr}
+  .nav-toggle{
+    display:flex;position:fixed;top:10px;left:10px;z-index:40;
+    width:34px;height:34px;align-items:center;justify-content:center;
+    background:var(--shell);color:#fff;border:1px solid var(--shell-line);
+    border-radius:var(--radius-sm);font-size:16px;cursor:pointer;box-shadow:var(--shadow)
+  }
+  body.nav-open .nav{left:0;z-index:35}
+  body.nav-open .nav-mask{display:block;position:fixed;inset:0;background:rgba(11,18,16,.55);z-index:30}
 }
 @media print{
   .nav,.top,.toasts{display:none}
