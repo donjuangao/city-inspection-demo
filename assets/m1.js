@@ -21,7 +21,8 @@
   /* 页面局部 UI 态(不进 store;store 只经 S.commit 变更)
      acc = 各线置顶区当前展开的那一条(手风琴同时只开一条)· rowOpen = 全部线索表内联展开的行
      filt = 全部线索表的状态/档位筛选 */
-  var M = { modal: null, form: {}, picks: {}, expanded: false, acc: {}, rowOpen: {}, filt: {} };
+  /* claimAck = R91⑬ 批量确认里「同时认领 N 件」的显式勾选态(视图态,不写 store) */
+  var M = { modal: null, form: {}, picks: {}, expanded: false, claimAck: false, acc: {}, rowOpen: {}, filt: {} };
 
   /* ============ 小工具 ============ */
   function lineOfKey(k) { for (var i = 0; i < LINES.length; i++) if (LINES[i].key === k) return LINES[i]; return LINES[0]; }
@@ -375,13 +376,13 @@
       /* R87 A4/⑯:以下从组件里挪进来的说明,原来贴在卡片上当小抄 —— 规则本体住 6 · 系统管理,工作台只在档位徽章上挂 hover */
       '<p><b>置信度的语义按线不同:</b>井盖与路面线是图像置信度;管网线是规则持续时长 × 多源一致度,不是图像置信度,所以两条线的数字不可互相比较。</p>' +
       '<p><b>机器直派件的代价:</b>该通道件全量拘进主管抽审(误派率月报口径);撤回件班组白跑不计考核,班组可申诉。</p>' +
-      '<p><b>加急人工档的兜底:</b>超时走三级升级(区复核员 → 复核主管 → 上级主管部门),并发只读预警不定性也不派工;本档的确认与驳回都拘进主管抽审。' +
+      '<p><b>加急人工档的兜底:</b>超时走三级升级(区复核员 → 复核主管 → 超级管理员),并发只读预警不定性也不派工;本档的确认与驳回都拘进主管抽审。' +
       '三级升级走完仍无人给结论,<b>系统自动派单兜底</b>(宁可多看一眼,不漏掉):单先发出去,告警仍不成立、定性仍悬,复核员事后补审,该件全量拘抽审。</p>' +
       '<p><b>规则校验闸的实际拦截面:</b>定位错 / 重复线索 / 证据质量不合格 / 管网线规则先行。盖体反光误判(强日照)这类物理上持续存在的假目标,规则校验闸拦不住 —— 误报主体仍由人驳回、按原因码回流模型。推翻规则判定 = 线索复活进人审 + 自动触发抽审,误杀样本回流规则组。</p>' +
       '<p><b>免人工车道的判据与兜底:</b>养护级 × 高置信 × 规则校验全过 = 自动并入周期养护计划;观察级 × 规则校验过 = 自动记台账入劣化曲线。免人工不豁免审计:每条一条动作日志,按抽审率捞回复查,抽审可推翻。</p>' +
       '<p><b>存疑归档:</b>既不算确认也不算驳回,计入模型评估统计;只在批量半审车道内可用。</p>' +
       /* R89 A1:认领制的机制说明从卡片挪进来 —— 界面上只留状态徽章与按钮,不在卡上讲机制 */
-      '<p><b>认领制怎么用:</b>件默认在公共池,谁处置谁先认领 —— 认领后件锁到你名下,他人视图该件灰化标「已由 XX 认领」。未认领也能直接点处置动作:系统隐式认领并记两条日志(认领 + 处置),不必先点一次认领。他人手上的件要动,须走「接手」并填原因,认领转移进日志,原认领人可回查是谁在什么时候接走的 —— 不做静默夺件。</p>' +
+      '<p><b>认领制怎么用(认领硬闸):</b>件默认在公共池,<b>认领之前不能改这件的任何东西</b> —— 未认领件上的处置动作一律灰态,原因写着「本件尚在公共池:请先「认领」再操作」;先点「认领」,件锁到你名下,他人视图该件灰化标「已由 XX 认领」,处置按钮才活。他人手上的件要动,须走「接手」并填原因,认领转移进日志,原认领人可回查是谁在什么时候接走的 —— 不做静默夺件。批量确认里若有公共池件,须先勾「同时认领 N 件」,系统逐件走一次真正的认领动作(各记一条认领日志),不替你含糊过去。</p>' +
       '<p><b>待处置区随角色变:</b>区复核员看待确认 / 待复核件,按剩余时限升序;复核主管看误报裁定(置顶)与自己认领的件,抽审与参数审批只给数与入口,处理在 4 · 兜底与质量与 6 · 系统管理两页做。侧边导航的红点角标 = 当前身份在该模块的待办数。</p>' +
       '<p><b>数据源隐性失效两态:</b>读数卡死(方差为零超时,过得了心跳过不了它)与量程饱和(强降雨积水恒满值,不等于失联),判据分开。先排设备故障,再报业务异常;设备工单承接方是传感网运维方,不进三线班组队列。</p>' +
       '<p><b>雨前清掏为什么是任务不是识别:</b>箅面干净不代表过水能力在,井筒淤积对视觉与液位皆盲。所以它按任务包与客户清掏计划对接,不靠识别。</p>' +
@@ -854,6 +855,9 @@
         '<td style="width:96px">' + UI.actionRow([{ action: 'archive_doubt', params: { clueId: c.id }, label: '存疑归档' }]) + '</td></tr>';
     }).join('');
 
+    /* R91⑬ 认领硬闸的批量口径:批内公共池件要连带认领,须显式勾一次(勾了也是逐件真认领,各一条日志) */
+    var pooledN = list.filter(function (c) { return M.picks[c.id] && c.status === 'open' && !c.assignee; }).length;
+
     var body =
       '<div class="row wrap" style="align-items:center;margin-bottom:8px">' +
       '<label class="chk"><input type="checkbox" data-pick="*"' + (allOn ? ' checked' : '') + '> 全选本批</label>' +
@@ -861,7 +865,10 @@
       '<span class="tiny">已选 <b>' + picked.length + '</b> 条 · 单批上限 ' + UI.assume('20 条', '单批 ≤20 条 = 提交校验,假设值') + ' · 批量件抽审率 ' + UI.assume('15%', '批量确认件抽审率 15% = 假设值') + '</span>' +
       '<span class="top-spacer"></span>' +
       '</div>' +
-      pw(UI.actionPanel([{ action: 'batch_confirm', params: { clueIds: picked, expanded: M.expanded }, label: '批量确认(' + picked.length + ' 条)→ 并入养护计划', cls: 'btn-primary' }])) +
+      (pooledN
+        ? '<label class="chk" style="display:block;margin-bottom:6px"><input type="checkbox" data-ui="claimack"' + (M.claimAck ? ' checked' : '') + '> 同时认领 <b>' + pooledN + '</b> 件(所选件里还在公共池的部分;逐件显式认领,各记一条认领日志)</label>'
+        : '') +
+      pw(UI.actionPanel([{ action: 'batch_confirm', params: { clueIds: picked, expanded: M.expanded, claimAck: !!M.claimAck }, label: '批量确认(' + picked.length + ' 条)→ 并入养护计划', cls: 'btn-primary' }])) +
       '<div class="sep"></div>' +
       '<table class="tb"><thead><tr><th></th>' + (M.expanded ? '<th>缩略证据</th>' : '') +
       '<th style="width:126px">线索号</th><th>设施 · 地址</th><th style="width:66px">级别</th><th style="width:64px">置信度</th>' +
@@ -1323,6 +1330,9 @@
       M.modal = null; M.form = {}; rerender();
     } else if (ui === 'expand') {
       M.expanded = !M.expanded; rerender();
+    } else if (ui === 'claimack') {
+      /* R91⑬:批量确认连带认领的显式确认(勾了才允许提交含公共池件的批) */
+      M.claimAck = !M.claimAck; rerender();
     }
   });
 
@@ -1355,7 +1365,7 @@
     var log = e && e.detail && e.detail.log;
     if (!log) return;
     if (M.modal && MODALS[M.modal.kind] && MODALS[M.modal.kind].action === log.action) { M.modal = null; M.form = {}; }
-    if (log.action === 'batch_confirm' || log.action === 'archive_doubt') { M.picks = {}; }
+    if (log.action === 'batch_confirm' || log.action === 'archive_doubt') { M.picks = {}; M.claimAck = false; }
   });
 
 })(window, document);

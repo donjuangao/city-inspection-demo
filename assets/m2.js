@@ -7,7 +7,7 @@
    - 设计档 §2.3b 工单系统对接契约(状态机五格映射 / 对账裁决规则)
    - 设计档 §0.8.3(在途抢占)/ §0.8.5(调度职能与调度视图;撤回≠改派概念分立)
    - 设计档 §0.6(角色权限:复核主管=复核员权限+抽审/撤销;调度职能落在复核主管一位上,不新增调度员角色)
-     R88 A1④ 角色三值(区复核员/复核主管/上级主管部门):原第四个身份值并入复核主管,夜间只是文案「复核主管(值班)」
+     R88 A1④ 角色三值(区复核员/复核主管/超级管理员):原第四个身份值并入复核主管,夜间只是文案「复核主管(值班)」
    - R87 A5:工单卡信息补全(线路/设施/地点/事项一句话/状态/承办班组/SLA)· 全链跳转(线索/设施/班组)
      · 班组详情子路由 #/m2/crew/CR-xx · 工单镜像筛选条与分组折叠 · 告警状态筛选
      · 调度视图三件(班组位置地图 / 最近调度动作流 / 待裁定卡置顶 + 全局横幅)
@@ -65,6 +65,14 @@
   M2.syncRequeue = function (tid) {
     M2.applyParams('resume_requeue', 'm2-rq-btn-' + tid, { ticketId: tid, reason: val('m2-rq-reason-' + tid) });
   };
+  /* R91 条7 · 现场受阻件的两个出口(装备要求 + 承接班组 / 补给内容) */
+  M2.syncRedispatch = function (tid) {
+    M2.applyParams('redispatch_equipped', 'm2-rdq-btn-' + tid,
+      { ticketId: tid, crew: val('m2-rdq-crew-' + tid), equip: val('m2-rdq-equip-' + tid) });
+  };
+  M2.syncResupply = function (tid) {
+    M2.applyParams('resupply_resume', 'm2-rsp-btn-' + tid, { ticketId: tid, supply: val('m2-rsp-supply-' + tid) });
+  };
   window.M2 = M2;
 
   /* ---------------- 视图态(只在本模块内存里,不写 store;改后重绘并保持滚动位置)---------------- */
@@ -79,7 +87,8 @@
   };
   var FOLD = 5;
   var DONE_STATES = ['已完工', '已验收'];
-  function isDone(t) { return !t.suspended && DONE_STATES.indexOf(t.state) >= 0; }
+  /* R91 条7:因现场受阻转派出去的原单是关账件(新单已在队列里),按已完结折叠,不再占活跃行 */
+  function isDone(t) { return !t.suspended && (DONE_STATES.indexOf(t.state) >= 0 || !!t.redispatchTo); }
   function rerender() {
     var y = window.scrollY || 0;
     try { window.dispatchEvent(new CustomEvent('render', { detail: { ui: 'm2' } })); }
@@ -246,7 +255,9 @@
     var idx = TICKET_STATES.indexOf(t.state);
     var tone = idx < 0 ? 'red' : (idx === TICKET_STATES.length - 1 ? 'green' : 'blue');
     var out = [{ kind: 'state', text: t.state, html: UI.badge(t.state, tone) }];
-    if (t.suspended) out.push({ kind: 'state', text: '挂起', html: UI.badge('挂起', 'amber') });
+    /* R91 条7:现场受阻件与普通挂起件分色 —— 前者等的是调度侧落锤,不是外部条件到期 */
+    if (t.blocked) out.push({ kind: 'state', text: '现场受阻', html: UI.badge('现场受阻', 'red') });
+    else if (t.suspended) out.push({ kind: 'state', text: '挂起', html: UI.badge('挂起', 'amber') });
     if (t.grade === '灰档') out.push({ kind: 'grade', text: '灰档', html: UI.badge('灰档', 'grey') });
     if (t.kpiExempt) out.push({ kind: 'kpi', text: '白跑不计考核', html: UI.badge('白跑不计考核', 'grey') });
     /* R88 A2:超时兜底自动派的单要一眼看出来源 —— 定性仍悬,复核员事后补审。
@@ -296,7 +307,8 @@
       '<p><b>不新增调度员角色:</b>调度职能(常规改派与抢占仲裁)都落在复核主管一位上;撤回 / 改派 / 合并 / 拆单均为显名动作,理由码入动作日志。</p>' +
       '<p><b>超时兜底派单:</b>加急人工件人工确认档到期、三级升级走完仍无人给结论 —— 系统先把单发出去(工单标「超时兜底派单」来源徽章),告警仍未成立、定性仍悬,复核员事后补审,件全量拘抽审。宁可多看一眼,不漏掉。</p>' +
       '<p><b>抢占调度三步:</b>承接池无空闲班组时 —— ① 在办件让位 ② 跨班组借调 ③ 复核主管(值班)裁定;前两步的结果连同建议方案与后果由 <b>AI 服务</b>算好一起交到复核主管手上(卡上标「AI 服务 · 建议」),人只做一键采纳或改派。挂起使 SLA 停表,恢复条件解除后回队重派。</p>' +
-      '<p><b>挂起件两个出口:</b>班组端「条件解除,恢复作业」(班组账号在手机端发起)/ 复核主管(值班)「强制回队重派」(不等条件解除,收回工单重新指派)。</p>'
+      '<p><b>挂起件两个出口:</b>班组端「条件解除,恢复作业」(班组账号在手机端发起)/ 复核主管(值班)「强制回队重派」(不等条件解除,收回工单重新指派)。</p>' +
+      '<p><b>现场受阻件(R91 条7)不同于挂起件:</b>班组到现场发现<b>这活干不了</b>(缺专用处置工具 / 需要辅助设备 / 现场条件不具备 / 安全风险需管制配合)→ 手机端「现场受阻上报」,工单转「受阻挂起」、SLA 停表,件进本页顶部「现场受阻 · 待处理」区。它的两个出口都在调度侧,班组自己不能恢复:<b>重新派单(带装备要求)</b>——写明缺的那套装备,另开一张单派给带得动的班组,原单关联留痕、SLA 续计不清零;<b>补给后原班组恢复</b>——把缺的东西送到现场,原班组接着干,停表时长入档。</p>'
   };
 
   /* ---------------- ① 告警列表 ---------------- */
@@ -469,10 +481,54 @@
       return false;
     });
   }
+  /* R91 条7 · 现场受阻件的两个出口(都在调度侧):重新派单(带装备要求)/ 补给后原班组恢复。
+     表单值经 M2.sync* 桥回 data-p,按钮仍走标准 data-act → S.commit。 */
+  function blockedExits(t) {
+    var crews = S.get().crews.filter(function (c) { return c.lines.indexOf(t.line) >= 0 && c.id !== t.crew; });
+    if (!crews.length) crews = S.get().crews.filter(function (c) { return c.id !== t.crew; });
+    var rdP = { ticketId: t.id, crew: '', equip: '' };
+    var rdChk = S.check('redispatch_equipped', rdP);
+    var rsP = { ticketId: t.id, supply: '' };
+    var rsChk = S.check('resupply_resume', rsP);
+    return '<div class="act-panel">' +
+      '<div class="act-item">' +
+      '<input type="text" id="m2-rdq-equip-' + UI.esc(t.id) + '" placeholder="装备要求(如:非标盖体专用起盖器)" oninput="M2.syncRedispatch(\'' + UI.esc(t.id) + '\')" style="width:220px;display:inline-block;margin-right:6px">' +
+      '<select id="m2-rdq-crew-' + UI.esc(t.id) + '" onchange="M2.syncRedispatch(\'' + UI.esc(t.id) + '\')" style="margin-right:6px">' +
+      '<option value="">承接班组…</option>' +
+      crews.map(function (c) { return '<option value="' + UI.esc(c.id) + '">' + UI.esc(c.name) + '</option>'; }).join('') +
+      '</select>' +
+      '<button type="button" class="btn btn-primary' + (rdChk.ok ? '' : ' is-off') + '" id="m2-rdq-btn-' + UI.esc(t.id) +
+      '" data-act="redispatch_equipped" data-p="' + UI.attr(rdP) + '"' + (rdChk.ok ? '' : ' disabled') + '>重新派单(带装备要求)</button>' +
+      '<span class="act-why" id="m2-rdq-btn-' + UI.esc(t.id) + '-why">' + (rdChk.ok ? '' : '未满足:' + UI.esc(rdChk.reason)) + '</span>' +
+      '</div>' +
+      '<div class="act-item">' +
+      '<input type="text" id="m2-rsp-supply-' + UI.esc(t.id) + '" placeholder="补给内容(送到了什么 / 谁到位了)" oninput="M2.syncResupply(\'' + UI.esc(t.id) + '\')" style="width:220px;display:inline-block;margin-right:6px">' +
+      '<button type="button" class="btn' + (rsChk.ok ? '' : ' is-off') + '" id="m2-rsp-btn-' + UI.esc(t.id) +
+      '" data-act="resupply_resume" data-p="' + UI.attr(rsP) + '"' + (rsChk.ok ? '' : ' disabled') + '>补给后原班组恢复</button>' +
+      '<span class="act-why" id="m2-rsp-btn-' + UI.esc(t.id) + '-why">' + (rsChk.ok ? '' : '未满足:' + UI.esc(rsChk.reason)) + '</span>' +
+      '</div></div>';
+  }
   /* 挂起工单的恢复条件卡:原因 / 条件 / 责任方 / 预计 + 两个出口 */
   function resumeCard(t) {
     var rc = t.resumeCond;
     if (!t.suspended || !rc) return '';
+    if (t.blocked) {
+      return '<div' + UI.cardAttrs('ticket', { cls: 'card', color: '#c0392b' }) + '>' +
+        '<div class="card-hd"><h3>现场受阻挂起 · 待调度处理</h3>' + UI.badge('SLA 停表', 'amber') + '</div>' +
+        UI.kv([
+          ['受阻原因', t.blockReason || '—'],
+          ['现场备注', t.blockNote || '—'],
+          ['上报时刻', t.blockT || '—'],
+          ['上报班组', crewLink(t.crew), true],
+          ['恢复条件', rc.cond],
+          ['责任方', rc.owner],
+          ['预计到位', rc.eta]
+        ]) +
+        '<div class="sep"></div>' +
+        UI.secTitle('两个出口(都在调度侧;班组端只读等通知)', 'ticket') +
+        blockedExits(t) +
+        '</div>';
+    }
     var pRq = { ticketId: t.id, reason: '' };
     var cRq = S.check('resume_requeue', pRq);
     return '<div' + UI.cardAttrs('ticket', { cls: 'card', color: '#9a6b00' }) + '>' +
@@ -866,7 +922,9 @@
   var DISPATCH_ACTIONS = {
     auto_dispatch: 1, auto_plan_ticket: 1, dispatch_manual: 1, crew_accept: 1, crew_handover: 1, crew_reject: 1,
     preempt_yield: 1, preempt_borrow: 1, preempt_arbitrate: 1, dispatch_suggest: 1, auto_overdue_dispatch: 1,
-    suspend: 1, crew_resume: 1, resume_requeue: 1, merge: 1, split: 1, fastlane_recall: 1
+    suspend: 1, crew_resume: 1, resume_requeue: 1, merge: 1, split: 1, fastlane_recall: 1,
+    /* R91 条7 · 现场受阻链三动作(上报在班组端发生,但后果落在调度上,同一条流里看) */
+    crew_blocked_report: 1, redispatch_equipped: 1, resupply_resume: 1
   };
   function dispatchFeed() {
     var logs = S.get().actionLog.filter(function (g) { return DISPATCH_ACTIONS[g.action]; });
@@ -929,7 +987,7 @@
 
   /* ④-6 改派 / 合并 / 拆单表 */
   function dispatchTable() {
-    var tickets = S.get().tickets.filter(function (t) { return t.state !== '已验收' && t.state !== '已合并'; });
+    var tickets = S.get().tickets.filter(function (t) { return t.state !== '已验收' && t.state !== '已合并' && !t.redispatchTo; });
     if (!tickets.length) return '<div class="tiny">暂无可调度工单。</div>';
     var crews = S.get().crews;
     var reasonsDispatch = S.dict().reasonCodes.dispatch;
@@ -1011,6 +1069,27 @@
         '<span class="m2-done-st">' + stateBadge(t) + '</span></div>';
     }).join('') + '</div>';
   }
+  /* R91 条7 · 现场受阻待处理区:班组报「干不了这活」的件在调度视图顶部单列一区,两个出口就地可点 */
+  function blockedPending() {
+    var list = S.get().tickets.filter(function (t) { return t.blocked; });
+    if (!list.length) return '';
+    var cards = list.map(function (t) {
+      var rc = t.resumeCond || {};
+      return '<div' + UI.cardAttrs('ticket', { cls: 'card card-tight', color: '#c0392b' }) + '>' +
+        '<div class="card-hd"><h3>' + ticketLink(t.id) + ' · ' + UI.esc(t.blockReason || '现场受阻') + '</h3>' +
+        UI.badge('受阻挂起', 'red') + '</div>' +
+        '<div class="small muted">' + UI.esc(t.summary || S.ticketSummary(t)) + ' · ' + facLink(t.facility) +
+        ' · 上报班组 ' + crewLink(t.crew) + ' · ' + UI.esc(t.blockT || '') + '</div>' +
+        (t.blockNote ? '<div class="tiny">现场备注:' + UI.esc(t.blockNote) + '</div>' : '') +
+        (rc.cond ? '<div class="tiny">恢复条件:' + UI.esc(rc.cond) + ' · ' + UI.esc(rc.owner || '') + ' · 预计 ' + UI.esc(rc.eta || '') + '</div>' : '') +
+        blockedExits(t) + '</div>';
+    }).join('');
+    return '<div class="card" style="border-color:#c0392b">' +
+      '<div class="card-hd"><h3>现场受阻 · 待处理(' + list.length + ' 单)</h3>' +
+      UI.badge('SLA 停表', 'amber') + '</div>' +
+      '<div class="tiny">班组在现场报「这活干不了」(缺工具 / 缺辅助设备 / 现场条件不具备 / 需管制配合)。出口两个,都在调度侧:换一支带得动装备的班组重派,或把缺的东西送过去让原班组接着干。</div>' +
+      cards + '</div>';
+  }
   function renderDispatch() {
     var st = S.get();
     var crews = st.crews;
@@ -1025,6 +1104,7 @@
       subHead('pre', '抢占与挂起记录', '在途抢占的让位口 + 当前挂起件与恢复条件', '挂起 ' + susN + ' 单') +
       (VS.sub.pre ? (preemptCard() + suspendedList('WO-8871')) : '');
     return rulingStrip() +
+      blockedPending() +
       segHead('ov', '总览', '班组位置地图 + 最近调度动作流(全区态)', crews.length + ' 班组 · 空闲 ' + idle) +
       (VS.seg.ov ? (crewMap() + dispatchFeed()) : '') +
       segHead('ops', '操作台', '班组负载 · 改派与合并拆单 · 抢占与挂起记录(三段各自收放)', openN + ' 单可调度') +

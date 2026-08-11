@@ -263,6 +263,23 @@
       (chk.ok ? '' : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
       '</div>';
   }
+  /* R91 条7 · 现场受阻上报:原因四选一 + 备注(现场干不了这活,回流调度决定重派或补给) */
+  function blockedReportMiniForm(t) {
+    var codes = w.S.dict().reasonCodes.crew_blocked_report;
+    var chk = w.S.check('crew_blocked_report', { ticketId: t.id, blockReason: codes[0], actor: '班组账号' });
+    return '<div class="act-item">' +
+      '<div class="c-mini">' +
+      '<select id="bkr-' + esc(t.id) + '"' + (chk.ok ? '' : ' disabled') + '>' +
+      codes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="c-mini" style="margin-top:6px">' +
+      '<input type="text" id="bkn-' + esc(t.id) + '" placeholder="备注(现场情况,可选)"' + (chk.ok ? '' : ' disabled') + '>' +
+      '<button type="button" class="btn btn-sm btn-danger' + (chk.ok ? '' : ' is-off') + '"' + (chk.ok ? '' : ' disabled') +
+      ' onclick="CREW_ACT.blockedReport(\'' + t.id + '\')">现场受阻上报</button></div>' +
+      (chk.ok ? '<span class="act-why">工单转「受阻挂起」· SLA 停表 · 调度侧决定重新派单(带装备要求)或补给后恢复</span>'
+        : '<span class="act-why">未满足:' + esc(chk.reason) + '</span>') +
+      '</div>';
+  }
   function handoverMiniForm(t, crewId) {
     var others = w.S.get().crews.filter(function (c) { return c.id !== crewId; });
     if (!others.length) return '';
@@ -326,12 +343,12 @@
       if (t.state === '已到场') items.push({ action: 'crew_partial_done', params: { ticketId: t.id, actor: '班组账号' }, label: '部分完工(临时措施先行)' });
       body = '<div class="c-fold-bd"><div class="c-sheet">' +
         (items.length ? UI.actionPanel(items) : '') +
-        blockedMiniForm(t) + handoverMiniForm(t, crewId) + rejectMiniForm(t) +
+        blockedReportMiniForm(t) + blockedMiniForm(t) + handoverMiniForm(t, crewId) + rejectMiniForm(t) +
         '</div></div>';
     }
     return '<div class="c-fold">' +
       '<div class="c-fold-hd" onclick="CREW_UI.toggle(\'' + key + '\')">' +
-      '<span>更多操作 <em>受阻 / 交接 / 拒单 / 部分完工</em></span>' + caret(key) + '</div>' + body + '</div>';
+      '<span>更多操作 <em>现场受阻 / 待条件受阻 / 交接 / 拒单 / 部分完工</em></span>' + caret(key) + '</div>' + body + '</div>';
   }
 
   /* ---------------- 现场资料折叠(证据 + 导航示意)---------------- */
@@ -409,12 +426,16 @@
       '</div>';
 
     if (t.suspended) {
-      /* R87 A2:挂起卡三件 —— 挂起原因 · 恢复条件与预计 · 两个出口(本端「条件解除,恢复作业」/ 值班长强制回队重派) */
+      /* R87 A2:挂起卡三件 —— 挂起原因 · 恢复条件与预计 · 两个出口(本端「条件解除,恢复作业」/ 值班长强制回队重派)
+         R91 条7:现场受阻件(t.blocked)两个出口都在调度侧,本端只读显示等什么 */
       var rc = t.resumeCond || {};
-      html += '<div style="margin-top:10px">' + UI.banner('warn',
-        '已挂起:' + esc(t.suspendReason || '') + '(SLA 停表)' +
+      html += '<div style="margin-top:10px">' + UI.banner(t.blocked ? 'danger' : 'warn',
+        (t.blocked ? '现场受阻挂起:' : '已挂起:') + esc(t.suspendReason || '') + '(SLA 停表)' +
+        (t.blocked && t.blockNote ? '<br>现场备注:' + esc(t.blockNote) : '') +
         (rc.cond ? '<br>恢复条件:' + esc(rc.cond) + ' · 由 ' + esc(rc.owner || '') + ' 解除 · 预计 ' + esc(rc.eta || '') : '') +
-        '<br>两个出口:条件解除后本端点「恢复作业」;等不到就由复核主管(值班)强制回队重派。') + '</div>';
+        (t.blocked
+          ? '<br>两个出口都在调度侧:复核主管「重新派单(带装备要求)」或「补给后原班组恢复」——本端等通知,不自行恢复。'
+          : '<br>两个出口:条件解除后本端点「恢复作业」;等不到就由复核主管(值班)强制回队重派。')) + '</div>';
       html += UI.actionPanel([{ action: 'crew_resume', params: { ticketId: t.id, actor: '班组账号' }, label: '条件解除,恢复作业', cls: 'btn-primary' }]);
     }
     if (t.rejectNote) {
@@ -616,6 +637,14 @@
     blocked: function (ticketId) {
       var sel = d.getElementById('bk-' + ticketId), code = sel ? sel.value : '';
       var r = w.S.commit('crew_blocked', { ticketId: ticketId, code: code, actor: '班组账号' });
+      if (!r.ok) UI.toast('动作未执行:' + r.reason, 'bad'); else if (r.log) UI.toast(r.log.sum, 'ok');
+    },
+    /* R91 条7:现场受阻上报(原因枚举下拉 + 备注)→ crew_blocked_report */
+    blockedReport: function (ticketId) {
+      var sel = d.getElementById('bkr-' + ticketId), note = d.getElementById('bkn-' + ticketId);
+      var r = w.S.commit('crew_blocked_report', {
+        ticketId: ticketId, blockReason: sel ? sel.value : '', note: note ? note.value : '', actor: '班组账号'
+      });
       if (!r.ok) UI.toast('动作未执行:' + r.reason, 'bad'); else if (r.log) UI.toast(r.log.sum, 'ok');
     },
     handover: function (ticketId) {

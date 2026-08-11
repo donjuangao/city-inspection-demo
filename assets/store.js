@@ -258,15 +258,19 @@
      ============================================================ */
   var A = {};
 
-  /* ============ R89 A1 · 认领制(件在公共池,谁处置谁先认领)============
+  /* ============ R91⑬ · 认领硬闸(推翻 R89③「隐式认领」)============
      assignee 单值:null = 公共池,任何人可认领;非空 = 锁到那个人手上,他人视图灰化。
-     处置动作(定性类)执行时隐式认领 —— 未认领的自动补一条 claim 日志再执行,
-     已被他人认领的直接拦下并提示走「接手」。三件都留痕,不做静默夺件。 */
+     硬闸口径(PM 2026-08-11 拍):认领之前不能改这件的任何东西 —— 处置动作(定性/流转类)
+     落在未认领件上一律在 S.check/v 层拦下,提示先「认领」;落在他人认领件上拦下,提示先「接手」。
+     不再有「直接点处置就自动补 claim」的旁路(R89③ 已推翻:否则两个业务员会抢同一件)。
+     只读查看(view_evidence)、claim / claim_takeover 本身、与线索无关的动作不拦。 */
   var CLAIM_ACTIONS = ['confirm', 'reject', 'overrule_mech', 'fastlane_recall', 'archive_doubt', 'transfer', 'clue_escalate'];
   function claimBlock(action, p, actor) {
     if (CLAIM_ACTIONS.indexOf(action) < 0) return null;
     var c = p && p.clueId ? clueOf(p.clueId) : null;
-    if (!c || !c.assignee || c.assignee === actor) return null;
+    if (!c) return null;
+    if (!c.assignee) return '本件尚在公共池:请先「认领」再操作';
+    if (c.assignee === actor) return null;
     return '本件已由「' + c.assignee + '」认领:要处置请先「接手」(须填原因,记日志)';
   }
 
@@ -408,27 +412,46 @@
     }
   };
 
+  /* R91⑬:批内还在公共池的件数(认领硬闸的批量口径) */
+  function batchPooled(s, ids) {
+    return (ids || []).filter(function (id) {
+      var c = clueOf(id);
+      return c && c.status === 'open' && !c.assignee;
+    });
+  }
   A.batch_confirm = {
-    label: '批量确认', actors: ['区复核员', '复核主管'], hint: '单批 ≤20 + 批内缩略证据展开过;批量件抽审率 15%',
-    v: function (s, p) {
+    label: '批量确认', actors: ['区复核员', '复核主管'], hint: '单批 ≤20 + 批内缩略证据展开过;含未认领件须先确认「同时认领 N 件」(逐件显式认领);批量件抽审率 15%',
+    v: function (s, p, actor) {
       var ids = p.clueIds || [];
       if (!ids.length) return '未选中任何线索';
       if (ids.length > 20) return '单批上限 20 条(当前 ' + ids.length + ' 条)';
       if (!p.expanded) return '批内缩略证据未展开过';
+      /* R91⑬ 认领硬闸的批量口径:不再静默替人认领 —— 批内有公共池件时,
+         要么先逐件认领,要么勾「同时认领 N 件」显式确认(勾了仍是逐件 claim,各记一条认领日志)。 */
+      var pooled = batchPooled(s, ids);
+      if (pooled.length && !p.claimAck) {
+        return '批内有 ' + pooled.length + ' 条尚在公共池:请先勾选「同时认领 ' + pooled.length + ' 件」再提交(逐件显式认领,各记一条认领日志)';
+      }
       return null;
     },
     run: function (s, p, actor) {
-      var n = 0, held = [];
+      var n = 0, held = [], claimed = 0;
       (p.clueIds || []).forEach(function (id) {
         var c = clueOf(id); if (!c || c.status !== 'open') return;
         /* R89 A1:批内他人已认领的件跳过(不夺件、不静默处置),显名列出让人去「接手」 */
         if (c.assignee && c.assignee !== actor) { held.push(c.id + '(' + c.assignee + ')'); return; }
-        if (!c.assignee) { c.assignee = actor; (c.claimLog = c.claimLog || []).push({ t: s.now, by: actor, way: '批量隐式认领', from: null, reason: '' }); }
+        /* R91⑬:公共池件走一次真正的 claim 动作(独立日志 + links),不是就地改 assignee */
+        if (!c.assignee) {
+          var cr = doCommit('claim', { actor: actor, clueId: c.id, reason: '批量确认前显式认领(已确认「同时认领」)' }, true);
+          if (cr.ok) claimed++;
+        }
+        if (!c.assignee) return;   // claim 未过闸(状态变了)则本件跳过,不带病处置
         c.status = 'confirmed'; c.lane = c.lane || '批量半审'; c.planned = true; n++;
       });
       var pick = Math.max(1, Math.round(n * 0.15));
       hold('批量确认 15% 抽样', (p.clueIds || [])[0] || '', '批量件抽审率 15%:本批 ' + n + ' 条抽 ' + pick + ' 条');
       return '批量确认 ' + n + ' 条 → 并入养护计划;抽审 15%(本批抽 ' + pick + ' 条)' +
+        (claimed ? ';其中 ' + claimed + ' 条确认前显式认领(各记一条认领日志)' : '') +
         (held.length ? ';跳过他人已认领 ' + held.length + ' 条(' + held.join(' / ') + '),需先「接手」' : '');
     }
   };
@@ -479,6 +502,8 @@
     label: '改派', actors: ['复核主管'], hint: '理由码必填;改派 ≠ 撤回(事件不动,单子换承接方)',
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      /* R91 条7:因现场受阻已转派出去的原单是关账件,要动请动新单 */
+      if (t.redispatchTo) return '本单已因现场受阻转派为 ' + t.redispatchTo + ':请对新单操作';
       if (!p.crew || !crewOf(p.crew)) return '未选择承接班组';
       if (!p.reason) return '理由码必填';
       return null;
@@ -617,7 +642,7 @@
   };
 
   A.toggle_fastlane = {
-    label: '类目机器直派开关', actors: ['上级主管部门'], hint: '关 = 安全侧动作即时生效 + 强制通知横幅 + 区申诉通道;开 = 需数据判据',
+    label: '类目机器直派开关', actors: ['超级管理员'], hint: '关 = 安全侧动作即时生效 + 强制通知横幅 + 区申诉通道;开 = 需数据判据',
     v: function (s, p) {
       if (!p.cat) return '未指定类目';
       if (p.on && !p.dataBasis) return '重开需按数据判据填写批准依据';
@@ -627,18 +652,18 @@
     run: function (s, p) {
       s.gov.fastlane[p.cat] = !!p.on;
       if (!p.on) {
-        banner('warn', '上级主管部门已关闭「' + p.cat + '」类目机器直派:该类目回退人审;本区已强制通知,区可发起申诉(申诉由上级主管部门复议并留痕)。', 'global', '#/m6');
-        return '上级主管部门关闭机器直派类目「' + p.cat + '」:理由「' + p.reason + '」;即时生效 + 强制通知该区 + 区申诉通道开启';
+        banner('warn', '超级管理员已关闭「' + p.cat + '」类目机器直派:该类目回退人审;本区已强制通知,区可发起申诉(申诉由超级管理员复议并留痕)。', 'global', '#/m6');
+        return '超级管理员关闭机器直派类目「' + p.cat + '」:理由「' + p.reason + '」;即时生效 + 强制通知该区 + 区申诉通道开启';
       }
-      banner('info', '上级主管部门已重开「' + p.cat + '」类目机器直派:依据「' + p.dataBasis + '」。', 'global', '#/m6');
-      return '上级主管部门重开机器直派类目「' + p.cat + '」:数据判据「' + p.dataBasis + '」';
+      banner('info', '超级管理员已重开「' + p.cat + '」类目机器直派:依据「' + p.dataBasis + '」。', 'global', '#/m6');
+      return '超级管理员重开机器直派类目「' + p.cat + '」:数据判据「' + p.dataBasis + '」';
     }
   };
 
   A.appeal_fastlane = {
-    label: '区申诉', actors: ['复核主管'], hint: '关车道后的区申诉通道:上级主管部门复议并留痕',
+    label: '区申诉', actors: ['复核主管'], hint: '关车道后的区申诉通道:超级管理员复议并留痕',
     v: function (s, p) { if (!p.cat) return '未指定类目'; if (!p.reason) return '申诉理由必填'; return null; },
-    run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」机器直派关闭;理由「' + p.reason + '」→ 转上级主管部门复议(留痕)'; }
+    run: function (s, p) { return '区申诉:请求复议「' + p.cat + '」机器直派关闭;理由「' + p.reason + '」→ 转超级管理员复议(留痕)'; }
   };
 
   /* ---- 复验人裁(P5;永不默认打回) ---- */
@@ -742,6 +767,49 @@
       t.resumeCond = resumeCondOf(p.code, s.now);
       return '受阻上报 ' + t.id + ':原因码「' + p.code + '」→ 工单转「待条件」(写回客户系统状态机映射);SLA 停表;' +
         '恢复条件「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + ',预计 ' + t.resumeCond.eta + '),条件解除后班组可自行恢复作业';
+    }
+  };
+  /* ============ R91 条7 · 现场受阻上报(现场无合适处置工具类异常流转)============
+     与既有「受阻上报(crew_blocked)」的分工:后者管外部条件类挂起(审批 / 物料 / 交通导改),
+     出口是「条件解除班组自行恢复 / 主管强制回队重派」;本动作管的是**这个班组在现场干不了这活** ——
+     缺工具、缺辅助设备、现场条件不具备、安全风险需管制配合。工单转「受阻挂起」,
+     班组不释放(等调度决定),出口两个都在调度侧:重新派单(带装备要求)/ 补给后原班组恢复。 */
+  var BLOCK_REASONS = ['缺专用处置工具', '需要辅助设备(吊装、抽水)', '现场条件不具备(积水、占压)', '安全风险需管制配合'];
+  var BLOCK_RESUME = {
+    '缺专用处置工具': { need: '按工单类目配齐专用处置工具', owner: '仓储调度岗', wait: 60 },
+    '需要辅助设备(吊装、抽水)': { need: '吊装 / 抽水等辅助设备到场', owner: '设备调度岗', wait: 90 },
+    '现场条件不具备(积水、占压)': { need: '积水抽排 / 占压物清移,作业面交出', owner: '复核主管', wait: 120 },
+    '安全风险需管制配合': { need: '交管或警务管制到位', owner: '交管对接岗', wait: 90 }
+  };
+  A.crew_blocked_report = {
+    label: '现场受阻上报', actors: ['班组账号'],
+    hint: '现场干不了这活:原因四选一 + 备注;工单转「受阻挂起」,SLA 停表,回流调度(重新派单带装备要求 / 补给后原班组恢复)',
+    v: function (s, p) {
+      var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      if (['已接单', '已到场'].indexOf(t.state) < 0) return '仅在办工单(已接单 / 已到场)可报现场受阻';
+      if (t.suspended) return '该单已处于挂起态';
+      if (BLOCK_REASONS.indexOf(p.blockReason) < 0) return '受阻原因必选(四类枚举之一)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var t = tkOf(p.ticketId), d = BLOCK_RESUME[p.blockReason];
+      t.stateBeforeSuspend = t.state;
+      t.state = '受阻挂起'; t.suspended = true; t.blocked = true;
+      t.blockReason = p.blockReason; t.blockNote = p.note || ''; t.blockT = s.now;
+      t.suspendReason = p.blockReason; t.suspendT = s.now; t.crewReleased = false;
+      t.resumeCond = {
+        reason: p.blockReason, cond: '受阻原因解除:' + d.need, owner: d.owner, eta: addMin(s.now, d.wait),
+        exits: ['调度侧「重新派单(带装备要求)」', '调度侧「补给后原班组恢复」']
+      };
+      var cw = t.crew ? crewOf(t.crew) : null;
+      banner('amber', '现场受阻:' + t.id + ' ' + (cw ? cw.name : '班组') + '报「' + p.blockReason + '」' +
+        (p.note ? '(' + p.note + ')' : '') + ' —— 工单转「受阻挂起」,SLA 停表;请调度决定重新派单(带装备要求)或补给后原班组恢复。',
+        'm2', routeOf('ticket', t.id));
+      return '现场受阻上报 ' + t.id + ':' + (cw ? cw.name : actor) + '报「' + p.blockReason + '」' +
+        (p.note ? ';备注「' + p.note + '」' : '') +
+        ' → 工单转「受阻挂起」(写回客户系统状态机映射);SLA 停表,班组暂不释放;' +
+        '恢复条件「' + t.resumeCond.cond + '」(' + t.resumeCond.owner + ',预计 ' + t.resumeCond.eta + ');' +
+        '两个出口都在调度侧:重新派单(带装备要求)/ 补给后原班组恢复';
     }
   };
   A.crew_safety = {
@@ -851,7 +919,7 @@
       var c = clueOf(p.clueId); if (!c) return '线索不存在';
       if (c.level !== '紧急') return '非紧急级,不进机器直派';
       if (!s.gov.fastlane[c.kindText] && !s.gov.fastlane['井盖缺失']) return '该类目机器直派开关已关闭';
-      if (s.gov.fastlane[c.kindText] === false) return '该类目机器直派开关已关闭(上级主管部门治理),回退人审';
+      if (s.gov.fastlane[c.kindText] === false) return '该类目机器直派开关已关闭(超级管理员治理),回退人审';
       if (c.checks.some(function (x) { return x.result === 'fail'; })) return '规则校验存在硬失败,不满足两道关口硬条件';
       if (c.ticketId) return '本件已有工单,防抖冷却窗内不重复派单';
       return null;
@@ -1229,7 +1297,7 @@
 
   /* ---- A2 · 规则参数变更(影子试算语义:记日志、标 shadow,不改运行判定)---- */
   A.rule_param_change = {
-    label: '规则参数变更(影子试算)', actors: ['复核主管', '上级主管部门'],
+    label: '规则参数变更(影子试算)', actors: ['复核主管', '超级管理员'],
     hint: '改参数走影子试算:留痕 + 试算影响面,不改当前运行判定;正式生效需审批',
     v: function (s, p, actor) {
       var r = ruleById(p.ruleId); if (!r) return '规则不存在:' + (p.ruleId || '');
@@ -1709,6 +1777,8 @@
     v: function (s, p) {
       var t = tkOf(p.ticketId); if (!t) return '工单不存在';
       if (!t.suspended) return '该单未处于挂起态';
+      /* R91 条7:现场受阻件不走本出口 —— 缺的是工具/设备/管制,班组自己说了不算,由调度侧落锤 */
+      if (t.blocked) return '现场受阻件的出口在调度侧:等复核主管「重新派单(带装备要求)」或「补给后原班组恢复」';
       if (!t.crew) return '该单已释放班组,须由复核主管(值班)「强制回队重派」';
       return null;
     },
@@ -1752,6 +1822,76 @@
       t.resumeCond = null;
       banner('amber', '强制回队重派:' + t.id + ' 不再等「' + cond + '」,已收回进待改派队列,请指派新承接班组。', 'm2', routeOf('ticket', t.id));
       return '强制回队重派 ' + t.id + ':' + actor + ' 判定不再等「' + cond + '」→ 收回工单进「待改派」;原承接班组释放,SLA 续计不清零';
+    }
+  };
+
+  /* ---- R91 条7 · 现场受阻件的两个出口(都在调度侧,复核主管落锤)---- */
+  A.redispatch_equipped = {
+    label: '重新派单(带装备要求)', actors: ['复核主管'],
+    hint: '受阻件出口一:按受阻原因写明装备要求,另开一张单派给带得动这套装备的班组;原单关联、SLA 续计不清零',
+    v: function (s, p) {
+      var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      if (!t.blocked) return '该单不是现场受阻件(仅「受阻挂起」件可重新派单)';
+      if (!p.equip) return '装备要求必填(受阻原因对应的工具 / 设备 / 配合方)';
+      if (!p.crew || !crewOf(p.crew)) return '未选择承接班组';
+      if (p.crew === t.crew) return '所选仍是报受阻的原班组:装备补齐走「补给后原班组恢复」';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var t = tkOf(p.ticketId), cw = crewOf(p.crew);
+      var old = t.crew ? crewOf(t.crew) : null, reason = t.blockReason || t.suspendReason || '现场受阻';
+      if (old && !t.crewReleased) { old.load = Math.max(0, old.load - 1); if (!old.load) old.status = '空闲'; crewMove(old, null, 'free'); }
+      t.crewReleased = true; t.suspended = false; t.blocked = false; t.state = '已转派(现场受阻)';
+      var nt = {
+        id: nextId('WO-', s.tickets), type: t.type, clueId: t.clueId || null, facility: t.facility, crew: p.crew,
+        state: '已派工', source: w.DATA.dict.ticketSources.human, createdT: s.now, line: t.line,
+        mirror: 'MUN-WO-' + (77300 + s.tickets.length),
+        sla: { accept: t.sla.accept, arrive: t.sla.arrive, done: t.sla.done },
+        suspended: false, photos: [], equipReq: p.equip, fromTicket: t.id,
+        note: '现场受阻重派:原单 ' + t.id + ' 因「' + reason + '」受阻;装备要求「' + p.equip + '」;SLA 承原单续计,不清零'
+      };
+      s.tickets.push(nt);
+      t.redispatchTo = nt.id;
+      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '重新派单(带装备要求)', cond: reason }]);
+      t.resumeCond = null;
+      var c = t.clueId ? clueOf(t.clueId) : null; if (c) c.ticketId = nt.id;
+      cw.load++; cw.status = '待接单'; crewMove(cw, t.facility, 'enroute');
+      p.newTicketId = nt.id;   // 供 links 声明取新单端点
+      banner('info', '受阻重派:' + t.id + ' →(装备要求「' + p.equip + '」)新单 ' + nt.id + ' 派给 ' + cw.name +
+        ';原单关联留痕,SLA 续计不清零。', 'm2', routeOf('ticket', nt.id));
+      return '重新派单 ' + nt.id + ':' + actor + ' 按受阻原因「' + reason + '」写明装备要求「' + p.equip + '」→ 派 ' + cw.name +
+        ';原单 ' + t.id + ' 转「已转派(现场受阻)」并与新单关联;' + (old ? '原班组 ' + old.name + ' 释放;' : '') + 'SLA 续计不清零';
+    }
+  };
+
+  A.resupply_resume = {
+    label: '补给后原班组恢复', actors: ['复核主管'],
+    hint: '受阻件出口二:所缺的工具 / 设备 / 配合已送到现场,原班组接着干;停表时长入档,SLA 接着算',
+    v: function (s, p) {
+      var t = tkOf(p.ticketId); if (!t) return '工单不存在';
+      if (!t.blocked) return '该单不是现场受阻件(仅「受阻挂起」件可补给恢复)';
+      if (!t.crew) return '该单已无承接班组:请走「重新派单(带装备要求)」';
+      if (!p.supply) return '补给内容必填(送到了什么 / 谁到位了)';
+      return null;
+    },
+    run: function (s, p, actor) {
+      var t = tkOf(p.ticketId);
+      var back = t.stateBeforeSuspend || '已到场', reason = t.blockReason || t.suspendReason || '现场受阻';
+      var stop = t.blockT ? (toMin(s.now) - toMin(t.blockT)) : 0; if (stop < 0) stop += 1440;
+      t.suspended = false; t.blocked = false; t.state = back; t.resumedT = s.now;
+      t.resupply = { by: actor, t: s.now, supply: p.supply, forReason: reason };
+      t.resumeHistory = (t.resumeHistory || []).concat([{ t: s.now, by: actor, way: '补给后原班组恢复', cond: reason, stopMin: stop }]);
+      t.resumeCond = null;
+      var cw = t.crew ? crewOf(t.crew) : null;
+      if (cw) {
+        if (t.crewReleased) { cw.load++; t.crewReleased = false; }
+        cw.status = (back === '已到场' ? '到场' : '在途');
+        crewMove(cw, t.facility, back === '已到场' ? 'arrive' : 'enroute');
+      }
+      banner('info', '受阻解除:' + t.id + ' 补给「' + p.supply + '」到位,' + (cw ? cw.name : '原班组') + '恢复作业;停表 ' +
+        stop + ' 分钟计入档案,SLA 接着算。', 'm2', routeOf('ticket', t.id));
+      return '补给后原班组恢复 ' + t.id + ':' + actor + ' 确认「' + p.supply + '」已到位 → 解除「' + reason + '」,回到「' + back +
+        '」;停表 ' + stop + ' 分钟入档,SLA 接着算不重新起算';
     }
   };
 
@@ -2095,6 +2235,10 @@
       L('抽审↦线索', '$audit', 'p:clueId')],
     crew_resume: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
     resume_requeue: [],
+    /* R91 条7 · 现场受阻链:上报(班组)→ 重新派单 / 补给恢复(复核主管) */
+    redispatch_equipped: [L('工单↦工单', 'p:newTicketId', 'p:ticketId'), L('工单↦班组', 'p:newTicketId', 'p:crew'),
+      L('工单↦装备要求', 'p:newTicketId', 'p:equip')],
+    resupply_resume: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
     misfire_appeal: [L('告警↦申诉人', 'p:alertId', '@actor')],
     misfire_ruling: [L('告警↦裁定人', 'p:alertId', '@actor'), L('工单↦设施', 'p:recheckTicketId', 'alert:facility')],
     spot_pass: [L('抽审↦裁定人', 'p:auditId', '@actor')],
@@ -2109,6 +2253,7 @@
     crew_done: [L('工单↦班组', 'p:ticketId', 'ticket:crew')],
     crew_reject: [],
     crew_blocked: [],
+    crew_blocked_report: [L('工单↦受阻原因', 'p:ticketId', 'p:blockReason'), L('工单↦上报班组', 'p:ticketId', 'ticket:crew')],
     crew_safety: [],
     crew_report_new: [L('线索↦设施', 'p:newClueId', 'p:facility')],
     crew_partial_done: [],
@@ -2249,7 +2394,8 @@
     if (!authorized(def, actor)) {
       return { ok: false, reason: '当前身份「' + actor + '」无此动作授权(授权角色:' + def.actors.join(' / ') + ')' };
     }
-    /* R89 A1:件已被他人认领 → 处置动作在校验层就拦下(灰态按钮显示「先接手」的原因) */
+    /* R91⑬ 认领硬闸:件还在公共池 → 拦下提示先「认领」;件在他人名下 → 拦下提示先「接手」。
+       两种都在校验层拦(灰态按钮直接把原因写在按钮旁,不是点下去才报错)。 */
     var lock = claimBlock(action, p, actor);
     if (lock) return { ok: false, reason: lock };
     var why = def.v ? def.v(state, p, actor) : null;
@@ -2264,12 +2410,9 @@
       return { ok: false, reason: chk.reason };
     }
     var def = A[action], p = params || {}, actor = actorOf(p);
-    /* R89 A1 · 隐式认领:处置动作落在还没人认领的件上 → 先补一条 claim 日志再执行,
-       动作按钮不必先点一次认领,但账上是两条(认领 + 处置),不含糊谁在什么时候把件拿走了。 */
-    if (CLAIM_ACTIONS.indexOf(action) >= 0 && p.clueId) {
-      var cc = clueOf(p.clueId);
-      if (cc && !cc.assignee) doCommit('claim', { actor: actor, clueId: p.clueId, implicit: true }, true);
-    }
+    /* R91⑬ 推翻 R89③:此处原有一条「隐式认领」旁路(未认领件自动补 claim 再执行)已删除 ——
+       认领硬闸改在 evaluate() 的 claimBlock 里拦,commit 路径不再替人认领。
+       批量确认要连带认领的,走 batch_confirm 里的显式逐件 claim(需 claimAck 确认参数)。 */
     var aq = (state.gov && state.gov.auditQueue) || [];
     var aqFrom = aq.length;
     var sum = def.run(state, p, actor) || def.label;
@@ -2532,7 +2675,7 @@
         out.m4 = audit;
         out.m6 = param;
         out.detail = { 待裁定: ruling, 申诉裁定: appeal, 待抽审: audit, 参数审批: param, 我认领未结: mine };
-      } else if (role === '上级主管部门') {
+      } else if (role === '超级管理员') {
         out.m6 = (state.ruleShadow || []).filter(function (x) { return x.status === '影子试算(未生效)'; }).length;
         out.detail = { 参数审批: out.m6 };
       } else if (role === '班组账号') {

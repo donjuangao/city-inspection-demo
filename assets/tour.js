@@ -199,7 +199,7 @@
       focus: ['text:气象预警接入', 'text:雨前清掏', '#tk-WO-9012'],
       lane: null, laneNote: '气象预警 · 雨前清掏专项任务包', graph: 'mh', node: 'mh_route',
       title: '气象预警接入 · 雨前清掏专项任务包下发',
-      say: '21:30,气象预警接进来,系统按预警提前量起一张「雨前清掏专项任务包」派下去。它是计划性任务:在池件的分级一件不动,派单准入标准一条不改,SLA 档也不变——该派的照派,该人审的照人审。真正的治理手柄在另一处:上级主管部门可以直接关掉某个类目的机器直派,关是即时生效的安全侧动作,区里不服可以申诉,重开要按数据判据批。'
+      say: '21:30,气象预警接进来,系统按预警提前量起一张「雨前清掏专项任务包」派下去。它是计划性任务:在池件的分级一件不动,派单准入标准一条不改,SLA 档也不变——该派的照派,该人审的照人审。真正的治理手柄在另一处:超级管理员可以直接关掉某个类目的机器直派,关是即时生效的安全侧动作,区里不服可以申诉,重开要按数据判据批。'
     },
     {
       sid: 'S17', ref: null, axis: '终幕', stage: '复验闭环', route: '#/m6', focus: '#m6-ontology-log',
@@ -231,7 +231,11 @@
       sid: 'F0', br: 'F', back: 'S9', ref: 'T6', axis: '支线·异常', stage: '分级路由',
       route: '#/m1/line/mh', focus: ['text:高危驳回已拘主管抽审', 'text:已驳回归档'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
-      acts: [{ action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } }],
+      /* R91⑬ 认领硬闸:处置前必须先认领(重放走 doCommit,序列不合法会被闸拦下) */
+      acts: [
+        { action: 'claim', params: { clueId: 'CL-0562', actor: '复核主管' } },
+        { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } }
+      ],
       title: '主管初审驳回 · 高危件当场拘抽审',
       say: '先看另一条路。Hili 那件纯视觉的 CL-0562 交到主管手里,主管初审就落了锤:驳回,原因码④类目误判——盖体在位,是移位不是缺失。高危件一驳回,系统当场把它拘进主管抽审队列,队列里那一行从「待核查」翻成「已驳回归档」。人有权当场结束一件,但结束这个动作本身仍要被复查。'
     },
@@ -240,7 +244,9 @@
       route: '#/m1/clue/CL-0588', focus: ['text:已驳回', '.objcard'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_reject',
       acts: [
+        { action: 'claim', params: { clueId: 'CL-0562', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
+        { action: 'claim', params: { clueId: 'CL-0588', actor: '区复核员' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } }
       ],
       title: '人工驳回确认 · 原因码必填',
@@ -251,7 +257,9 @@
       route: '#/m1', focus: ['text:误报原因回流', '.banner'],
       lane: '驳回与转办', graph: 'mh', node: 'mh_arch',
       acts: [
+        { action: 'claim', params: { clueId: 'CL-0562', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
+        { action: 'claim', params: { clueId: 'CL-0588', actor: '区复核员' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } },
         { action: 'fp_feedback', params: { clueId: 'CL-0588', code: '①', ruleId: 'MH-R03', actor: '区复核员' } }
       ],
@@ -263,7 +271,9 @@
       route: '#/m6/rules', focus: ['text:MH-R03', 'text:影子试算'],
       lane: null, laneNote: '判据参数调优(影子试算)', graph: 'mh', node: 'mh_arch',
       acts: [
+        { action: 'claim', params: { clueId: 'CL-0562', actor: '复核主管' } },
         { action: 'reject', params: { clueId: 'CL-0562', code: '④', actor: '复核主管' } },
+        { action: 'claim', params: { clueId: 'CL-0588', actor: '区复核员' } },
         { action: 'reject', params: { clueId: 'CL-0588', code: '①', actor: '区复核员' } },
         { action: 'fp_feedback', params: { clueId: 'CL-0588', code: '①', ruleId: 'MH-R03', actor: '区复核员' } },
         { action: 'rule_param_change', params: { ruleId: 'MH-R03', key: 'agree', val: 0.88, reason: '盖体反光误判误杀样本回流(原因码①)', actor: '复核主管' } }
@@ -280,7 +290,11 @@
       sid: 'R1', br: 'R', back: 'S11', ref: 'T7', axis: '路面线', stage: '分级路由',
       route: '#/m1/line/rd', focus: ['text:CL-0311', 'text:提级', 'text:急修'],
       lane: '加急人工', laneNote: '主管主动提级 · 原因必填', graph: 'rd', node: 'rd_urgent',
-      acts: [{ action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } }],
+      /* R91⑬ 认领硬闸:提级前先认领(未认领件上的处置动作会被 claimBlock 拦下) */
+      acts: [
+        { action: 'claim', params: { clueId: 'CL-0311', actor: '复核主管' } },
+        { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } }
+      ],
       title: '主管主动提级 · 养护 → 急修',
       say: '批量池里那条 CL-0311,同一路口的车载过检与固定相机复扫已经连着命中几次。注意系统在这里没有自动提级:观测次数只是排序的输入,不构成定性理由。提级是复核主管自己落的一个显名动作,原因必填、进日志可回查;提完级这一件的车道从批量转单条必审,SLA 按急修档重算。'
     },
@@ -290,6 +304,7 @@
       lane: '自动处理', laneNote: '并入周批 · 处置流程同款', graph: 'rd', node: 'rd_do',
       phone: { src: 'crew.html?crew=CR-03', title: '现场端 · 道路养护班' },
       acts: [
+        { action: 'claim', params: { clueId: 'CL-0311', actor: '复核主管' } },
         { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
@@ -305,6 +320,7 @@
       route: '#/m4', focus: ['text:完工抽查', 'text:抽审'],
       lane: null, laneNote: '抽查兜底(复核主管)', graph: 'rd', node: 'rd_spot',
       acts: [
+        { action: 'claim', params: { clueId: 'CL-0311', actor: '复核主管' } },
         { action: 'clue_escalate', params: { clueId: 'CL-0311', reason: '同一路口复扫连续命中、沉陷范围较上周扩大,主干道行车安全优先', actor: '复核主管' } },
         { action: 'crew_accept', params: { ticketId: 'WO-9007', actor: '班组账号' } },
         { action: 'crew_arrive', params: { ticketId: 'WO-9007', actor: '班组账号' } },
@@ -962,6 +978,9 @@
         /* Z4 口径 13:超时兜底派单是一个真节点,不是注脚 —— 加急人工件三级升级走完仍无人给结论,系统自己把单发出去(来源④) */
         nd('mh_overdue', '超时兜底派单', '三级升级走完仍无人 · 来源④', 616, 12, 190, '机器直派', null),
         nd('mh_do', '处置', '班组五格状态机', 616, 78, 190, null, 'S5'),
+        /* R91 条7:现场受阻是处置格上的一条真分支 —— 班组到场发现干不了(缺工具/设备/条件/管制),
+           工单转「受阻挂起」SLA 停表,出口两个都在调度侧:重新派单(带装备要求)/ 补给后原班组恢复。 */
+        nd('mh_block', '现场受阻', '挂起停表 · 重派带装备 / 补给恢复', 616, 144, 190, null, null),
         nd('mh_dev', '设备侧闭环', '传感网运维方承接', 616, 210, 190, null, null),
         nd('mh_arch', '归档 · 原因回流', '按原因码找消费者', 616, 276, 190, null, 'F2'),
         nd('mh_verify', '复验闭环', 'AI 配准判定', 846, 78, 178, null, 'S6'),
@@ -986,6 +1005,10 @@
         { from: 'mh_auto', to: 'mh_dev' },
         { from: 'mh_reject', to: 'mh_arch' },
         { from: 'mh_do', to: 'mh_verify' },
+        /* 处置 ⇄ 现场受阻 是同一列上下相邻的两格,竖干只有 16px —— 标签放不下也不该硬塞:
+           两条边都不带标签(下行=受阻上报,上行=重派/补给恢复),边义写在节点副标题里。 */
+        { from: 'mh_do', to: 'mh_block', type: 'v', dash: true },
+        { from: 'mh_block', to: 'mh_do', type: 'vu', dash: true },
         { from: 'mh_verify', to: 'mh_close', type: 'v', label: '判不出' },
         { from: 'mh_verify', to: 'mh_do', type: 'back', via: 348, dash: true, label: '复验打回' },
         { from: 'mh_machine', to: 'mh_arch', dash: true, label: '窗内撤回' }
@@ -995,9 +1018,10 @@
         mh_machine: 'mh_route', mh_urgent: 'mh_route', mh_normal: 'mh_route', mh_auto: 'mh_route', mh_reject: 'mh_route',
         mh_overdue: 'mh_urgent',
         mh_do: 'mh_machine', mh_dev: 'mh_auto', mh_arch: 'mh_reject',
+        mh_block: 'mh_do',
         mh_verify: 'mh_do', mh_close: 'mh_verify'
       },
-      note: '判据句:双传感器互证(MH-R01)或 AI 多帧一致(MH-R03)才走先派后审;单一传感器越限只能先审后派。人一直不来也不空转 —— MH-R08 超时兜底把单先发出去,定性仍悬、件全量拘抽审。'
+      note: '判据句:双传感器互证(MH-R01)或 AI 多帧一致(MH-R03)才走先派后审;单一传感器越限只能先审后派。人一直不来也不空转 —— MH-R08 超时兜底把单先发出去,定性仍悬、件全量拘抽审。班组到场干不了这活(缺工具 / 辅助设备 / 现场条件 / 需管制配合)也不闷着 —— 现场受阻上报把单挂起停表,回流调度换装备重派或补给后接着干。'
     },
     rd: {
       name: '路面线', line: '路面', vb: [1040, 422], start: 'rd_find',
