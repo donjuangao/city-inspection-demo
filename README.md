@@ -36,7 +36,7 @@ python3 -m http.server 8000
 | `crew.html` | 班组处置端(手机竖屏 390px) |
 | `spec.html` | 产品协议 · 界面与参数对照 |
 | `manual.html` | 演示手册 |
-| `Tour-A-Narrated.dc.html` / `Tour-B-Console.dc.html` / `Tour-C-Overview.dc.html` | 三支导览(叙事 / 控制台 / 总览) |
+| `Tour-C-Overview.dc.html` | 系统全览(一页地图) |
 
 **怎么看**:底部分镜导览条点「▶ 下一镜」,按「Al Ain 暴雨前夜」主线 20 镜(另有支线 19 镜,点「☰ 章节」跳镜)依次推进;每镜自动定位到对应位置并弹一行叙事,页面上的数字、队列、班组状态、动作日志随之变化。点错了或想重来,点顶栏「重置数据」回到开场。
 
